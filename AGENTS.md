@@ -1,0 +1,28 @@
+# MiniCPM Design
+
+Design source for the MiniCPM client: a single-file web prototype, design docs in Chinese, and design tokens. The final product is native UI on Android, iOS, macOS and Web.
+
+Current stage: draft. Copy is not final, the web prototype is the main test bed, and device testing is deferred.
+
+Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` records settled and open decisions; do not reverse a settled one without the user.
+
+## Rules
+
+- The prototype is a design artifact. It simulates behavior; do not add real backends, frameworks or build steps.
+- Native platforms use system controls. The prototype defines structure, states, semantics and copy; its styling is final only for Web. Do not design simulated OS chrome.
+- Keep features and settings unless the user removes them; trimming happens after team discussion.
+- Default UI uses plain language. Technical terms stay behind advanced settings and the "show technical info" switch.
+- Privacy copy must stay true: when `isRemote()`, every on-device claim changes to name the destination.
+- Scene ids (`life`, `work`, `game`, `community`) are stable; display names are separate.
+
+## Working in the prototype
+
+- The prototype is `index.html`, the only copy kept here. There is no git repository, so back it up outside this directory before large changes.
+- One DOM and one state serve both forms. `COMPACT_QUERY` in the script mirrors the CSS "Compact form" block; change them together.
+- Color values live in `tokens/*.json`. Run `node tools/tokens.mjs` to sync them into the `/* tokens:* */` blocks and check contrast. Do not edit those blocks by hand.
+- Every state must open from a query parameter. When adding one, update the boot comment, `states.html` and `docs/05-states.md`.
+- Check changes by rendering at 1440, 390 and 360 wide, in light and dark.
+
+## Docs
+
+Write docs in Simplified Chinese. Mark platform claims that need device testing with **[待实测]**.

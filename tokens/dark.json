@@ -1,0 +1,93 @@
+{
+  "color": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#0F1412",
+      "$description": "侧栏、详情栏等外壳底色"
+    },
+    "surface": {
+      "$value": "#141A18",
+      "$description": "内容底色"
+    },
+    "raised": {
+      "$value": "#1B2320",
+      "$description": "卡片、输入框、菜单"
+    },
+    "sunken": {
+      "$value": "#0B0F0D",
+      "$description": "悬停、代码块、次级填充"
+    },
+    "ink": {
+      "$value": "#E8EDE8",
+      "$description": "正文"
+    },
+    "ink-2": {
+      "$value": "#B1BCB5",
+      "$description": "次要文字"
+    },
+    "ink-3": {
+      "$value": "#8E9A93",
+      "$description": "辅助文字"
+    },
+    "line": {
+      "$value": "#28322E",
+      "$description": "分隔线"
+    },
+    "line-2": {
+      "$value": "#3C4843",
+      "$description": "容器描边，装饰用"
+    },
+    "control": {
+      "$value": "#6B7770",
+      "$description": "开关和输入框边界，满足 3:1"
+    },
+    "jade": {
+      "$value": "#5ADBB8",
+      "$description": "模型的文字和图标；主操作"
+    },
+    "jade-wave": {
+      "$value": "#3FD0AA",
+      "$description": "模型的图形：波形、光标、开关"
+    },
+    "jade-soft": {
+      "$value": "#14332A",
+      "$description": "模型相关的浅底"
+    },
+    "on-jade": {
+      "$value": "#06231B",
+      "$description": "青瓷底上的文字"
+    },
+    "cinnabar": {
+      "$value": "#FF8466",
+      "$description": "正在采集；结束；错误"
+    },
+    "cinnabar-soft": {
+      "$value": "#3B1C15",
+      "$description": "朱砂浅底"
+    },
+    "on-cinnabar": {
+      "$value": "#2B0C05",
+      "$description": "朱砂底上的文字"
+    },
+    "amber": {
+      "$value": "#E9BE6C",
+      "$description": "注意、暂停、等待"
+    },
+    "amber-soft": {
+      "$value": "#35290F",
+      "$description": "琥珀浅底"
+    },
+    "you-wave": {
+      "$value": "#D5DDD7",
+      "$description": "你的波形"
+    },
+    "user-bubble": {
+      "$value": "#212A27",
+      "$description": "用户消息气泡"
+    },
+    "overlap": {
+      "$value": "#FF846628",
+      "$description": "两轨重叠的铺色"
+    }
+  }
+}

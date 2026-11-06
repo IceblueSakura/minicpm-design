@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniCPM 状态总览</title>
+<style>
+  :root{color-scheme:light dark;--bg:#E7EAE4;--fg:#17211D;--sub:#47544E;--line:#C5CCC3}
+  @media (prefers-color-scheme:dark){:root{--bg:#0B0F0D;--fg:#E8EDE8;--sub:#B1BCB5;--line:#3C4843}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 'PingFang SC','Noto Sans CJK SC','Microsoft YaHei UI',system-ui,sans-serif}
+  header{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:16px;font-weight:600}
+  label{display:inline-flex;align-items:center;gap:4px}
+  nav{display:flex;flex-wrap:wrap;gap:4px 12px;margin-left:auto}
+  nav a{color:var(--sub)}
+  section{padding:16px 20px 8px}
+  h2{margin:0;font-size:15px;font-weight:600}
+  section>p{margin:0 0 10px;color:var(--sub)}
+  .grid{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+  figure{margin:0}
+  figcaption{display:flex;justify-content:space-between;gap:8px;padding:4px 2px;font-size:12.5px;color:var(--sub)}
+  figcaption a{color:inherit}
+  .frame{overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#fff}
+  iframe{display:block;border:0;transform-origin:0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>MiniCPM 状态总览</h1>
+  <label><input type="radio" name="form" value="phone" checked>手机 390</label>
+  <label><input type="radio" name="form" value="desktop">桌面 1280</label>
+  <label><input type="checkbox" id="dark">深色</label>
+  <nav id="toc"></nav>
+</header>
+<main id="main"></main>
+<script>
+const PROTOTYPE = 'index.html';
+// [group, note, [[label, query, phone-only | desktop-only]]]
+const GROUPS = [
+  ['首次启动', '第一次打开到可以开口。docs/05-states.md', [
+    ['欢迎', '?onboard=welcome'], ['选模型', '?onboard=model'], ['内存偏小', '?onboard=model&device=low'], ['空间不足', '?onboard=model&storage=low'],
+    ['下载中', '?onboard=download&dl=62'], ['等待 Wi-Fi', '?onboard=download&dl=34&dlstate=wifi', 'phone'], ['下载中断', '?onboard=download&dl=71&dlstate=failed'],
+    ['下载时使用', '?view=empty&dl=62'], ['第一次开麦', '?view=empty&perm=ask'],
+  ]],
+  ['对话', '根页面和文字对话。', [
+    ['新对话', '?view=empty'], ['临时对话', '?temp=1'], ['看图回答', '?task=report'], ['普通对话', '?task=notes'], ['定时任务未运行', '?task=community'],
+    ['对话详情', '?task=report&inspector=1'], ['视觉模型（可换到实时）', '?view=empty&model=minicpm-v-4.6'], ['视觉模型（没有实时）', '?view=empty&model=minicpm-v-4.6&omni=none'],
+  ]],
+  ['消息内容', '回答可能出现的所有内容形态。', [
+    ['标题、列表、引用、链接', '?task=repot'], ['代码块与产物', '?task=script'], ['宽表、截断、对话快满', '?task=trip'], ['联网前询问', '?task=camping'],
+  ]],
+  ['实时会话', '话轮和通道。', [
+    ['语音', '?view=empty&live=voice&t=2'], ['语音·你在说', '?view=empty&live=voice&t=2.5'], ['语音·重叠', '?view=empty&live=voice&t=10.6'], ['摄像头', '?view=empty&live=camera&t=6'],
+    ['共享屏幕', '?view=empty&live=screen&t=6', 'desktop'], ['主动提醒', '?view=empty&live=camera&t=25&proactive=high'],
+  ]],
+  ['实时打断', '系统和环境造成的中断。docs/04-live-session.md', [
+    ['来电', '?task=camera&live=voice&t=11&hold=call'], ['来电结束', '?task=camera&live=voice&t=11&hold=call&ready=1'], ['回到前台', '?task=camera&live=camera&t=11&hold=background&ready=1'],
+    ['耳机断开', '?task=camera&live=voice&t=11&hold=route'], ['断线重连', '?task=camera&live=voice&t=11&link=1'], ['闲置·倒计时', '?task=camera&live=camera&t=30&idle=1'], ['闲置·已暂停', '?task=camera&live=camera&t=30&hold=idle'],
+    ['发热·放慢', '?task=camera&live=camera&t=11&heat=1'], ['发热·只用声音', '?task=camera&live=camera&t=11&heat=2'], ['发热·暂停', '?task=camera&live=camera&t=11&hold=heat'],
+  ]],
+  ['换模型', '一次只运行一个模型，所有对话共用。docs/03-structure.md', [
+    ['换模型确认', '?view=empty&swap=ask'], ['换模型中', '?view=empty&swap=loading'], ['载不下', '?view=empty&swap=failed&model=minicpm-v-4.6'], ['实时要换模型', '?view=empty&model=minicpm-v-4.6&live=voice'], ['模型设置', '?settings=models'],
+  ]],
+  ['运行位置', '这台设备和远程服务可以切换。Web 的“这台设备”是浏览器。docs/03-structure.md', [
+    ['浏览器·新对话', '?view=empty&runtime=browser'], ['浏览器·模型设置', '?settings=models&runtime=browser'], ['浏览器·选模型', '?onboard=model&runtime=browser'],
+    ['浏览器跑不了', '?view=empty&runtime=nogpu'], ['浏览器跑不了·首次', '?onboard=model&runtime=nogpu'], ['远程连不上', '?view=empty&backend=remote&engine=offline'],
+    ['切换后的对话标记', '?task=notes&backend=remote&place=1'],
+  ]],
+  ['异常', '后端、权限和网络。', [
+    ['本机模型未启动', '?view=empty&engine=offline'], ['权限被拒绝', '?view=empty&perm=denied'], ['远程未配置', '?view=empty&backend=remote&remote=empty'],
+    ['远程·实时', '?view=empty&backend=remote&live=camera&t=6'], ['网络不稳', '?view=empty&backend=remote&net=weak&live=camera&t=6'], ['内存紧张', '?view=empty&mem=tight', 'desktop'],
+  ]],
+  ['隐私', '锁定、遮盖和数据控制。', [
+    ['应用锁', '?lock=1'], ['后台遮盖', '?cover=1'], ['隐私与数据', '?settings=privacy'], ['已记住的内容', '?settings=memories'], ['联网记录', '?settings=network'],
+  ]],
+  ['设置', '手机是列表进详情，桌面是两栏。', [
+    ['设置首页', '?settings=index', 'phone'], ['通用', '?settings=general'], ['声音与人设', '?settings=voice'], ['实时会话', '?settings=live'], ['模型', '?settings=models'],
+    ['模型下载中', '?settings=models&dl=40'], ['应用场景', '?settings=applications'], ['高级', '?settings=advanced'],
+  ]],
+];
+const SIZE = { phone: [390, 844, .62], desktop: [1280, 800, .46] };
+function render() {
+  const form = document.querySelector('[name=form]:checked').value, dark = document.querySelector('#dark').checked;
+  const [w, h, k] = SIZE[form];
+  document.querySelector('#toc').innerHTML = GROUPS.map(([g], i) => `<a href="#g${i}">${g}</a>`).join('');
+  document.querySelector('#main').innerHTML = GROUPS.map(([group, note, items], i) => `<section id="g${i}"><h2>${group}</h2><p>${note}</p><div class="grid">${items.filter(it => !it[2] || it[2] === form).map(([label, q]) => {
+    const url = `${PROTOTYPE}${q}&theme=${dark ? 'dark' : 'light'}`;
+    return `<figure style="width:${Math.round(w * k)}px"><div class="frame" style="height:${Math.round(h * k)}px"><iframe loading="lazy" title="${label}" src="${url}" width="${w}" height="${h}" style="transform:scale(${k})"></iframe></div><figcaption><span>${label}</span><a href="${url}" target="_blank" rel="noopener">打开</a></figcaption></figure>`;
+  }).join('')}</div></section>`).join('');
+}
+document.querySelectorAll('input').forEach(i => i.addEventListener('change', render));
+render();
+</script>
+</body>
+</html>
