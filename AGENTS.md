@@ -17,7 +17,7 @@ Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` rec
 
 ## Working in the prototype
 
-- The prototype is `index.html`, the only copy kept here. There is no git repository, so back it up outside this directory before large changes.
+- The prototype is `index.html`, the only copy kept here. Use git history to roll back. Pushing to `main` publishes it to GitHub Pages.
 - One DOM and one state serve both forms. `COMPACT_QUERY` in the script mirrors the CSS "Compact form" block; change them together.
 - Color values live in `tokens/*.json`. Run `node tools/tokens.mjs` to sync them into the `/* tokens:* */` blocks and check contrast. Do not edit those blocks by hand.
 - Every state must open from a query parameter. When adding one, update the boot comment, `states.html` and `docs/05-states.md`.
