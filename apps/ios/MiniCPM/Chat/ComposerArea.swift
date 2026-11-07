@@ -10,6 +10,7 @@ struct ComposerArea: View {
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dictation) private var dictation
+    @Environment(\.dynamicTypeSize) private var typeSize
     @FocusState private var focused: Bool
     @State private var showsPhotos = false
     @State private var showsFiles = false
@@ -25,7 +26,8 @@ struct ComposerArea: View {
         @Bindable var model = model
         VStack(spacing: 8) {
             BannerView()
-            if model.current.isBlank && !hasContent {
+            // At accessibility sizes the cards cut their own words and push the banner over the title. They are shortcuts, so they go.
+            if model.current.isBlank && !hasContent && !typeSize.isAccessibilitySize {
                 StartersRow(takePhoto: takePhoto, usePrompt: { text in
                     model.draftText = text
                     focused = true
@@ -236,16 +238,19 @@ struct BannerView: View {
                         .foregroundStyle(text.isProblem ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(text.title).font(.subheadline.weight(.semibold))
-                        Text(text.detail).font(.footnote).foregroundStyle(.secondary)
+                        // Grows instead of truncating: what went wrong and what was kept are never cut.
+                        Text(text.title).font(.subheadline.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                        Text(text.detail).font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 if case .downloading(let state, _) = banner {
                     ProgressView(value: state.fraction)
                 }
-                HStack(spacing: 8) { actions(banner) }
-                    .buttonStyle(.bordered)
-                    .font(.footnote)
+                // Side by side while they fit; stacked for long translations and large text, never cut.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { actions(banner) }
+                    VStack(alignment: .leading, spacing: 8) { actions(banner) }
+                }
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -253,53 +258,58 @@ struct BannerView: View {
         }
     }
 
+    /// The way out is filled, the rest are bordered. Nothing that sends content off the device is the filled one.
     @ViewBuilder
     private func actions(_ banner: Banner) -> some View {
         switch banner {
         case .permissionDenied:
-            Button("去系统设置") { openURL(SystemSettings.url) }
-            Button("用文字") { model.permissionDenied = nil }
+            primary("去系统设置") { openURL(SystemSettings.url) }
+            secondary("用文字") { model.permissionDenied = nil }
         case .remoteNotSet:
-            Button("去设置") { model.settingsRoute = .models }
-            useDevice
+            primary("去设置") { model.settingsRoute = .models }
+            secondary("改用这台设备") { model.setPlace(.local) }
         case .offlineMode:
-            Button("关闭离线模式") { model.prefs.offlineMode = false }
-            useDevice
+            primary("改用这台设备") { model.setPlace(.local) }
+            secondary("关闭离线模式") { model.prefs.offlineMode = false }
         case .noGPU:
-            Button("改用远程服务") { model.setPlace(.remote) }
+            secondary("改用远程服务") { model.setPlace(.remote) }
         case .notResponding(let remote):
-            Button("重试") { Task { await model.reconnect() } }
+            primary("重试") { Task { await model.reconnect() } }
             if remote {
-                useDevice
+                secondary("改用这台设备") { model.setPlace(.local) }
             } else if !model.remoteURL.isEmpty {
-                Button("改用远程服务") { model.setPlace(.remote) }
+                secondary("改用远程服务") { model.setPlace(.remote) }
             } else {
-                Button("检查设置") { model.settingsRoute = .models }
+                secondary("检查设置") { model.settingsRoute = .models }
             }
         case .downloading(let state, _):
-            DownloadActions(state: state)
+            DownloadActions(state: state).buttonStyle(.bordered)
         case .modelMissing(let option):
-            Button("下载") { model.startDownload(option.id) }
-            Button("换模型") { model.settingsRoute = .models }
+            primary("下载") { model.startDownload(option.id) }
+            secondary("换模型") { model.settingsRoute = .models }
         case .swapFailed(let option, let restored):
             if restored != nil {
-                Button("重试") { model.setModel(option.id) }
-                Button("知道了") { model.dismissSwapFailure() }
+                primary("重试") { model.setModel(option.id) }
+                secondary("知道了") { model.dismissSwapFailure() }
             } else {
-                Button("重试") { model.retryLoad() }
+                primary("重试") { model.retryLoad() }
             }
         case .crashedLoading:
-            Button("再试一次") { model.retryLoad() }
-            Button("换模型") { model.settingsRoute = .models }
+            primary("再试一次") { model.retryLoad() }
+            secondary("换模型") { model.settingsRoute = .models }
         case .switching:
-            Button("取消") { model.cancelLoad() }
+            secondary("取消") { model.cancelLoad() }
         case .preparing:
             EmptyView()
         }
     }
 
-    private var useDevice: some View {
-        Button("改用这台设备") { model.setPlace(.local) }
+    private func primary(_ title: LocalizedStringKey, action: @escaping @MainActor () -> Void) -> some View {
+        Button(title, action: action).prominentButton()
+    }
+
+    private func secondary(_ title: LocalizedStringKey, action: @escaping @MainActor () -> Void) -> some View {
+        Button(title, action: action).buttonStyle(.bordered)
     }
 }
 

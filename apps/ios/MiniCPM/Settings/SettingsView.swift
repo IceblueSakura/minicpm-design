@@ -544,8 +544,14 @@ private struct RemindersView: View {
 private struct MemoriesView: View {
     @Environment(AppModel.self) private var model
 
+    /// "只" holds only while nothing goes out: not with a remote service, not with the backup on.
     private var intro: String {
-        if model.sendingOut { return String(localized: "这些内容保存在这台设备上，用来让回答更贴合你。用远程服务时，用得上的内容会随请求发送到 \(model.remoteHost)。") }
+        if model.sendingOut {
+            return model.backupOn
+                ? String(localized: "这些内容保存在这台设备上，也会备份到你的 iCloud，用来让回答更贴合你。用远程服务时，用得上的内容会随请求发送到 \(model.remoteHost)。")
+                : String(localized: "这些内容保存在这台设备上，用来让回答更贴合你。用远程服务时，用得上的内容会随请求发送到 \(model.remoteHost)。")
+        }
+        if model.backupOn { return String(localized: "这些内容保存在这台设备上，也会备份到你的 iCloud，用来让回答更贴合你。") }
         return String(localized: "这些内容只保存在这台设备上，用来让回答更贴合你。")
     }
 
@@ -570,15 +576,33 @@ private struct MemoriesView: View {
     }
 }
 
+/// The claim on top has to agree with the rows below it: once a search or a backup went out, "nothing left" is false.
 private struct NetworkLogView: View {
     @Environment(AppModel.self) private var model
+
+    private var searches: Int { model.networkLog.filter { $0.kind == .search }.count }
+    private var backedUp: Bool { model.backupOn || model.networkLog.contains { $0.kind == .backup } }
+
+    private var claim: String {
+        if model.sendingOut { return String(localized: "内容正发送到 \(model.remoteHost)") }
+        if model.backupOn { return String(localized: "对话记录备份到你的 iCloud") }
+        if backedUp { return String(localized: "对话记录备份到过你的 iCloud") }
+        if searches > 0 { return String(localized: "只有 \(searches) 句搜索词离开过这台设备") }
+        return String(localized: "没有内容离开这台设备")
+    }
+
+    private var detail: LocalizedStringKey {
+        if model.sendingOut || backedUp { return "下面写明了发送什么、发到哪里。" }
+        if searches > 0 { return "除了这些搜索词，下面的请求不包含你的对话或文件。" }
+        return "下面的请求不包含你的对话或文件。"
+    }
 
     var body: some View {
         List {
             Section {
-                Label(model.sendingOut ? String(localized: "内容正发送到 \(model.remoteHost)") : String(localized: "没有内容离开这台设备"), systemImage: "checkmark.shield")
+                Label(claim, systemImage: "checkmark.shield")
             } footer: {
-                Text(model.sendingOut ? "下面写明了发送什么、发到哪里。" : "下面的请求不包含你的对话或文件。")
+                Text(detail)
             }
             Section("最近 7 天") {
                 if model.sendingOut {

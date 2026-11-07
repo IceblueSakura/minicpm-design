@@ -9,15 +9,16 @@ struct RootView: View {
     var body: some View {
         @Bindable var model = model
         ZStack {
-            if model.device == nil {
+            // Locked, the content is not built at all. Covering it would hide the pixels only: VoiceOver could still
+            // read and tap the conversation underneath. This also closes panels that were open on it.
+            if model.isLocked {
+                LockView()
+            } else if model.device == nil {
                 Color.clear
             } else if model.onboarding != nil {
                 OnboardingView()
             } else {
                 MainView()
-            }
-            if model.isLocked {
-                LockView()
             }
         }
         .privacyCovered()

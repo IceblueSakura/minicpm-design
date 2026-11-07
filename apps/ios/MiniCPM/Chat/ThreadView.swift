@@ -97,7 +97,8 @@ struct AttachmentLabel: View {
     let attachment: Attachment
 
     var body: some View {
-        if attachment.kind == .image, let url = attachment.fileURL, let image = UIImage(contentsOfFile: url.path()) {
+        // `path()` percent-encodes, and the folder is "Application Support": the encoded path names no file.
+        if attachment.kind == .image, let url = attachment.fileURL, let image = UIImage(contentsOfFile: url.path(percentEncoded: false)) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()

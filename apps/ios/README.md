@@ -85,6 +85,8 @@ nix shell nixpkgs#swift nixpkgs#swiftpm -c bash -c '
 - `Section` 上的修饰符会落到每一行。`.sheet`、`.fileImporter` 要放在 `Form` 上。
 - 长标签的 `Picker`、`LabeledContent` 会把值挤到单独一行，用 `ActionRow`。
 - 手机上 `List` 的选中项一变就推出详情，所以停在列表时选中项是空。
+- `URL.path()` 默认做百分号编码，数据目录 `Application Support` 带空格，文件接口拿到的路径就不存在。读文件用 `path(percentEncoded: false)`。
+- 不透明的视图只遮住画面，被遮住的内容仍在无障碍树里，读屏能读、能点。给 `NavigationSplitView` 外面加 `accessibilityHidden` 也拿不掉它，所以锁定时不构建内容。
 
 **还没在模拟器上看的**
 
@@ -103,6 +105,6 @@ nix shell nixpkgs#swift nixpkgs#swiftpm -c bash -c '
 
 - 第一阶段里还没做：恢复 iCloud 备份的欢迎步骤、对照原图、空闲释放内存、发热响应。这些设置项能保存，但不产生效果。
 - 说话输入、联网搜索、定时通知、备忘录、备份、导出导入、打开时验证和录屏遮盖有接口和规则，真实实现还没有。
-- 锁定时已经打开的面板用标记遮住，不显示解锁按钮，要等面板关闭。
+- 锁定时不构建对话内容，挂在对话上的标题面板和对话详情应随之关闭，还没在模拟器上走查。设置在锁定前关闭；导出后的分享面板挂在根视图上，锁定时还在。
 - 下阶段的实时、语音回复和全能模型没有实现。`Conversation` 读到不认识的条目会跳过。
 - 没有 macOS 目标。`MiniCPMCore` 已声明 macOS 27，加目标时能直接用。

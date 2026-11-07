@@ -49,6 +49,8 @@ struct ConversationDetailsView: View {
             .navigationTitle("对话详情")
             .navigationBarTitleDisplayMode(.inline)
         }
+        // On a phone the inspector is a sheet above the root, so it needs its own cover, like the other sheets.
+        .privacyCovered(inSheet: true)
     }
 
     private var footer: String {
