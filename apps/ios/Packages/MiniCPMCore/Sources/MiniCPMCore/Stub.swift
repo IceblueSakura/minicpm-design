@@ -9,16 +9,29 @@ public struct StubOptions: Sendable {
     public var failNextLoad = false
     public var loadDelay = Duration.seconds(2)
     public var tokenDelay = Duration.milliseconds(36)
+    /// Swaps the unconnected services for the demo ones, so the screens behind them can be walked.
+    public var demoServices = false
+    public var backupStatus = BackupStatus.idle(last: nil)
+    public var conditions: [DeviceCondition] = []
+    public var lockPasses = true
 
     public init() {}
 
-    /// `-stub nogpu,offline,oom` as a launch argument opens those states.
+    /// `-stub nogpu,offline,oom` as a launch argument opens those states. `services` connects the demo services,
+    /// and `backupfull`, `signedout`, `nocloud`, `capture`, `hot`, `lockfail` add their states to it.
     public init(arguments: [String]) {
         guard let flag = arguments.firstIndex(of: "-stub"), arguments.indices.contains(flag + 1) else { return }
         let names = arguments[flag + 1].split(separator: ",")
         canRun = !names.contains("nogpu")
         reachable = !names.contains("offline")
         failNextLoad = names.contains("oom")
+        demoServices = names.contains("services")
+        if names.contains("backupfull") { backupStatus = .full(missingGB: 1.2, last: Date()) }
+        if names.contains("signedout") { backupStatus = .signedOut }
+        if names.contains("nocloud") { backupStatus = .noCloud }
+        if names.contains("capture") { conditions.append(.screenCaptured(true)) }
+        if names.contains("hot") { conditions.append(.thermal(.hot)) }
+        lockPasses = !names.contains("lockfail")
     }
 
     public static let instant: StubOptions = {

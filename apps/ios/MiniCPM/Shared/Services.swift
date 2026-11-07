@@ -9,10 +9,13 @@ import UniformTypeIdentifiers
 /// The real one wraps `SFSpeechRecognizer` with `requiresOnDeviceRecognition`.
 protocol DictationService: Sendable {
     var isAvailable: Bool { get }
+    /// Yields the whole text so far, so a correction can replace earlier words. Cancelling the consumer stops it.
+    func transcribe() -> AsyncThrowingStream<String, any Error>
 }
 
 struct UnavailableDictation: DictationService {
     var isAvailable: Bool { false }
+    func transcribe() -> AsyncThrowingStream<String, any Error> { AsyncThrowingStream { $0.finish() } }
 }
 
 extension EnvironmentValues {
@@ -51,6 +54,17 @@ enum Files {
         let kind: Attachment.Kind = type?.conforms(to: .image) == true ? .image : type?.conforms(to: .movie) == true ? .video : .file
         return try store(data: Data(contentsOf: url), name: url.lastPathComponent, kind: kind)
     }
+}
+
+/// SwiftUI's `ShareLink` needs the file before the tap; the file exists only after the export runs.
+struct ShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
 /// Copy goes through UIKit because SwiftUI has no pasteboard writer.

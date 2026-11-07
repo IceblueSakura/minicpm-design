@@ -49,7 +49,19 @@ public enum IdleRelease: String, Codable, CaseIterable, Sendable { case m5, m15,
 public enum WebSearch: String, Codable, CaseIterable, Sendable { case off, ask, auto }
 public enum CrashReports: String, Codable, CaseIterable, Sendable { case ask, never, auto }
 public enum Retention: String, Codable, CaseIterable, Sendable { case never, d90, d30, d7 }
-public enum AutoLock: String, Codable, CaseIterable, Sendable { case immediately, m1, m5, never }
+public enum AutoLock: String, Codable, CaseIterable, Sendable {
+    case immediately, m1, m5, never
+
+    /// nil never locks.
+    public var seconds: TimeInterval? {
+        switch self {
+        case .immediately: 0
+        case .m1: 60
+        case .m5: 300
+        case .never: nil
+        }
+    }
+}
 
 /// Settings that only exist for the next stage (live, voice, nudges) join here when that stage lands.
 public struct Prefs: Hashable, Sendable {

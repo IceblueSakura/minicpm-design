@@ -87,6 +87,14 @@ public enum Notice: Hashable, Sendable {
     case notResponding(remote: Bool)
     case paramsReset
     case notConnectedYet
+    case searchFailed
+    case actionFailed
+    case backedUp
+    case backupOff
+    case backupPaused
+    case cloudCopyDeleted
+    case imported(added: Int, skipped: Int)
+    case restored(count: Int)
 }
 
 public struct ToastAction {
@@ -102,6 +110,13 @@ public struct Toast: Identifiable {
     public var action: ToastAction?
 }
 
+public struct ExportedFile: Identifiable, Hashable, Sendable {
+    public var id: URL { url }
+    public var url: URL
+
+    public init(url: URL) { self.url = url }
+}
+
 public struct ReplyState: Hashable, Sendable {
     public var conversationID: UUID
     public var itemID: UUID
@@ -114,6 +129,7 @@ public final class AppModel {
     @ObservationIgnored private let remoteEngine: any Engine
     @ObservationIgnored private let modelStore: any ModelStore
     @ObservationIgnored private let persistence: any Persistence
+    @ObservationIgnored private let services: AppServices
 
     public private(set) var onboarding: OnboardingStep?
     public private(set) var conversations: [Conversation]
@@ -153,8 +169,15 @@ public final class AppModel {
     public private(set) var preset: Preset
     public private(set) var params: GenerationParams
     public private(set) var networkLog: [NetworkRecord]
-    /// iCloud backup has no implementation yet, so this stays false outside tests.
-    public var backupOn = false
+    public internal(set) var backup = BackupState()
+    public var backupOn: Bool { backup.isOn }
+    /// The picked file could not be read. Shown in settings; conversations stay as they were.
+    public private(set) var importFailed = false
+    public var exportFile: ExportedFile?
+    public var isPickingImport = false
+    public private(set) var isLocked = false
+    public private(set) var isScreenCaptured = false
+    public private(set) var thermal = ThermalLevel.nominal
 
     @ObservationIgnored private var onboarded: Bool
     @ObservationIgnored private var started = false
@@ -163,12 +186,14 @@ public final class AppModel {
     @ObservationIgnored private var pendingAfterLoad: [@MainActor () -> Void] = []
     @ObservationIgnored private var downloadHandle: (any DownloadHandle)?
     @ObservationIgnored private var prepareTasks: [UUID: Task<PreparedImage?, Never>] = [:]
+    @ObservationIgnored private var leftAt: Date?
 
-    public init(localEngine: any Engine, remoteEngine: any Engine, modelStore: any ModelStore, persistence: any Persistence) {
+    public init(localEngine: any Engine, remoteEngine: any Engine, modelStore: any ModelStore, persistence: any Persistence, services: AppServices = .unconnected) {
         self.localEngine = localEngine
         self.remoteEngine = remoteEngine
         self.modelStore = modelStore
         self.persistence = persistence
+        self.services = services
 
         let saved = persistence.load() ?? Snapshot()
         onboarded = saved.onboarded
@@ -201,7 +226,8 @@ public final class AppModel {
             localEngine: StubEngine(options: options),
             remoteEngine: StubEngine(options: options),
             modelStore: StubModelStore(file: AppPaths.root.appendingPathComponent("stub-installed.json")),
-            persistence: persistence
+            persistence: persistence,
+            services: options.demoServices ? .demo(backup: options.backupStatus, conditions: options.conditions, lockPasses: options.lockPasses) : .unconnected
         )
     }
 
@@ -209,6 +235,10 @@ public final class AppModel {
     public func start() async {
         guard !started else { return }
         started = true
+        // Before anything renders, so content never flashes ahead of the lock.
+        isLocked = prefs.appLock && services.lock.isAvailable
+        watchConditions()
+        backup = await services.backup.state()
         let profile = await localEngine.probe()
         device = profile
         isResponding = profile.isResponding
@@ -639,28 +669,220 @@ public final class AppModel {
     }
 
     /// Models do not run in the background, so leaving the app ends the reply and keeps what was written.
-    public func didEnterBackground() { stopReply() }
+    public func didEnterBackground() {
+        stopReply()
+        leftAt = Date()
+    }
+
+    /// Locks when the app was away longer than the chosen time. Sheets close first, since they would sit above the lock.
+    public func didBecomeActive(now: Date = Date()) {
+        defer { leftAt = nil }
+        guard prefs.appLock, services.lock.isAvailable, let leftAt, let limit = prefs.autoLock.seconds else { return }
+        if now.timeIntervalSince(leftAt) >= limit {
+            settingsRoute = nil
+            isLocked = true
+        }
+    }
+
+    public func unlock() async {
+        if await services.lock.authenticate() { isLocked = false }
+    }
+
+    private func watchConditions() {
+        let updates = services.conditions.updates
+        Task { [weak self] in
+            for await condition in updates {
+                guard let self else { return }
+                switch condition {
+                case .screenCaptured(let on): isScreenCaptured = on
+                case .thermal(let level): thermal = level
+                }
+            }
+        }
+    }
 
     // MARK: Cards
 
+    /// Only a request that really went out reaches the network log.
     public func answerSearch(_ itemID: UUID, accept: Bool) {
-        guard !accept else { return show(.notConnectedYet) }
+        guard accept else { return setSearch(itemID, .declined) }
+        guard !prefs.offlineMode, let card = searchCard(itemID) else { return }
+        Task {
+            do {
+                _ = try await services.search.search(query: card.query)
+                networkLog.insert(NetworkRecord(kind: .search, detail: card.query), at: 0)
+                setSearch(itemID, .accepted)
+            } catch ServiceError.notConnected {
+                show(.notConnectedYet)
+            } catch {
+                show(.searchFailed)
+            }
+        }
+    }
+
+    public func answerAction(_ itemID: UUID, accept: Bool) {
+        guard accept else { return setAction(itemID, .declined) }
+        guard let card = actionCard(itemID) else { return }
+        let id = currentID
+        Task {
+            do {
+                switch card.kind {
+                case .notify: try await services.actions.scheduleNotification(when: card.when, text: card.text, conversationID: id)
+                case .memo: try await services.actions.writeMemo(card.text)
+                }
+                setAction(itemID, .accepted)
+            } catch ServiceError.notConnected {
+                show(.notConnectedYet)
+            } catch {
+                show(.actionFailed)
+            }
+        }
+    }
+
+    private func searchCard(_ itemID: UUID) -> SearchAsk? {
+        for case .search(let card) in current.items where card.id == itemID { return card }
+        return nil
+    }
+
+    private func actionCard(_ itemID: UUID) -> ActionCard? {
+        for case .action(let card) in current.items where card.id == itemID { return card }
+        return nil
+    }
+
+    private func setSearch(_ itemID: UUID, _ state: CardState) {
         edit(currentID) { conversation in
             guard let index = conversation.items.firstIndex(where: { $0.id == itemID }), case .search(var card) = conversation.items[index] else { return }
-            card.state = .declined
+            card.state = state
             conversation.items[index] = .search(card)
         }
         persist()
     }
 
-    public func answerAction(_ itemID: UUID, accept: Bool) {
-        guard !accept else { return show(.notConnectedYet) }
+    private func setAction(_ itemID: UUID, _ state: CardState) {
         edit(currentID) { conversation in
             guard let index = conversation.items.firstIndex(where: { $0.id == itemID }), case .action(var card) = conversation.items[index] else { return }
-            card.state = .declined
+            card.state = state
             conversation.items[index] = .action(card)
         }
         persist()
+    }
+
+    // MARK: Backup and files
+
+    /// Uploading cannot be undone, so the confirm sits in front of this. The rest of the backup path is `backUpNow`.
+    public func enableBackup() async {
+        guard !prefs.offlineMode else { return show(.backupPaused) }
+        do {
+            try await services.backup.enable()
+            backup = await services.backup.state()
+            await backUpNow()
+        } catch ServiceError.notConnected {
+            show(.notConnectedYet)
+        } catch {
+            backup = await services.backup.state()
+        }
+    }
+
+    public func disableBackup() async {
+        await services.backup.disable()
+        backup = await services.backup.state()
+        show(.backupOff, action: ToastAction(kind: .undo) { [weak self] in
+            guard let self else { return }
+            Task { await self.enableBackup() }
+        })
+    }
+
+    /// Failures show only in settings, through the state, and never interrupt.
+    public func backUpNow() async {
+        guard !prefs.offlineMode else { return show(.backupPaused) }
+        do {
+            for try await fraction in services.backup.backUp(makeSnapshot()) {
+                backup.status = .running(fraction: fraction)
+            }
+            backup = await services.backup.state()
+            networkLog.insert(NetworkRecord(kind: .backup, detail: ""), at: 0)
+            persist()
+            show(.backedUp)
+        } catch ServiceError.notConnected {
+            show(.notConnectedYet)
+        } catch {
+            backup = await services.backup.state()
+        }
+    }
+
+    /// Takes back only what this device does not have, and never overwrites.
+    public func restoreBackup() async {
+        do {
+            let found = try await services.backup.restore()
+            let added = merge(found)
+            show(.restored(count: added.count))
+        } catch ServiceError.notConnected {
+            show(.notConnectedYet)
+        } catch {
+            backup = await services.backup.state()
+        }
+    }
+
+    public func deleteCloudCopy() async {
+        do {
+            try await services.backup.deleteCloudCopy()
+            backup = await services.backup.state()
+            show(.cloudCopyDeleted)
+        } catch ServiceError.notConnected {
+            show(.notConnectedYet)
+        } catch {
+            backup = await services.backup.state()
+        }
+    }
+
+    public var exportableCount: Int { conversations.filter { !$0.isTemporary && !$0.isBlank }.count }
+
+    /// `nil` exports every conversation that is kept. Temporary ones are never written out.
+    public func export(_ id: UUID? = nil) {
+        let chosen = conversations.filter { !$0.isTemporary && !$0.isBlank && (id == nil || $0.id == id) }
+        Task {
+            do {
+                exportFile = ExportedFile(url: try await services.archive.export(chosen))
+            } catch ServiceError.notConnected {
+                show(.notConnectedYet)
+            } catch {
+                show(.actionFailed)
+            }
+        }
+    }
+
+    public func beginImport() {
+        guard services.archive.isConnected else { return show(.notConnectedYet) }
+        importFailed = false
+        isPickingImport = true
+    }
+
+    /// Duplicates are skipped and existing conversations stay as they are, so a bad file changes nothing.
+    public func importFile(_ url: URL) async {
+        do {
+            let found = try await services.archive.read(url)
+            let added = merge(found)
+            show(.imported(added: added.count, skipped: found.count - added.count), action: added.isEmpty ? nil : ToastAction(kind: .undo) { [weak self] in
+                guard let self else { return }
+                let ids = Set(added.map(\.id))
+                conversations.removeAll { ids.contains($0.id) }
+                persist()
+            })
+        } catch ServiceError.notConnected {
+            show(.notConnectedYet)
+        } catch {
+            importFailed = true
+        }
+    }
+
+    public func dismissImportFailure() { importFailed = false }
+
+    private func merge(_ found: [Conversation]) -> [Conversation] {
+        let known = Set(conversations.map(\.id))
+        let added = found.filter { !known.contains($0.id) }
+        conversations.append(contentsOf: added)
+        persist()
+        return added
     }
 
     // MARK: Memory
@@ -928,7 +1150,9 @@ public final class AppModel {
         }
     }
 
-    private func persist() {
+    private func persist() { persistence.save(makeSnapshot()) }
+
+    private func makeSnapshot() -> Snapshot {
         var snapshot = Snapshot()
         snapshot.onboarded = onboarded
         // Blank conversations are free to recreate. Temporary ones must never reach the disk.
@@ -944,6 +1168,6 @@ public final class AppModel {
         snapshot.optionID = currentOptionID
         snapshot.hiddenScenes = hiddenScenes
         snapshot.networkLog = networkLog
-        persistence.save(snapshot)
+        return snapshot
     }
 }

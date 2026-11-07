@@ -15,6 +15,7 @@ struct ComposerArea: View {
     @State private var showsFiles = false
     @State private var showsCamera = false
     @State private var photoItems: [PhotosPickerItem] = []
+    @State private var listening: Task<Void, Never>?
 
     private var hasContent: Bool { model.draft.hasContent }
     /// Empty on a phone, the main button is the fastest way to show it something. Wide windows drag files in instead.
@@ -53,8 +54,8 @@ struct ComposerArea: View {
                             .lineLimit(1...6)
                             .focused($focused)
                             .accessibilityLabel("消息")
-                        if dictation.isAvailable && !hasContent {
-                            Button("说话输入", systemImage: "mic") { model.show(.notConnectedYet) }
+                        if dictation.isAvailable && (!hasContent || listening != nil) {
+                            Button("说话输入", systemImage: "mic", action: toggleDictation)
                                 .labelStyle(.iconOnly)
                         }
                     }
@@ -125,6 +126,23 @@ struct ComposerArea: View {
             .prominentGlassButton()
             .buttonBorderShape(.circle)
             .disabled(!model.isReplyingHere && (!hasContent || model.cannotSend || model.isQueued))
+        }
+    }
+
+    private func toggleDictation() {
+        if let listening {
+            listening.cancel()
+            self.listening = nil
+            return
+        }
+        let start = model.draftText
+        listening = Task {
+            do {
+                for try await text in dictation.transcribe() { model.draftText = start + text }
+            } catch {
+                model.permissionDenied = .microphone
+            }
+            listening = nil
         }
     }
 

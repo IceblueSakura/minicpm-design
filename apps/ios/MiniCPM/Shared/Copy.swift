@@ -180,6 +180,15 @@ enum Copy {
         case .notResponding(let remote): remote ? String(localized: "连不上远程服务") : String(localized: "连不上本机模型")
         case .paramsReset: String(localized: "已恢复默认")
         case .notConnectedYet: String(localized: "这项还没接入")
+        case .searchFailed: String(localized: "没有查到，检查网络后再试")
+        case .actionFailed: String(localized: "没有成功，可以再试一次")
+        case .backedUp: String(localized: "已备份到 iCloud")
+        case .backupOff: String(localized: "备份已关闭，iCloud 里的副本还在")
+        case .backupPaused: String(localized: "离线模式开着，备份已暂停")
+        case .cloudCopyDeleted: String(localized: "iCloud 里的备份已删除")
+        case .imported(let added, 0): String(localized: "导入了 \(added) 个对话")
+        case .imported(let added, let skipped): String(localized: "导入了 \(added) 个对话，跳过 \(skipped) 个重复")
+        case .restored(let count): String(localized: "取回了 \(count) 个对话")
         }
     }
 

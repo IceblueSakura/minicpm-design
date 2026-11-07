@@ -102,7 +102,7 @@ struct ConversationListView: View {
                 newTitle = conversation.title
                 renaming = conversation
             }
-            Button("导出", systemImage: "square.and.arrow.up") { model.show(.notConnectedYet) }
+            Button("导出", systemImage: "square.and.arrow.up") { model.export(conversation.id) }
             Button("删除", systemImage: "trash", role: .destructive) { model.delete(conversation.id) }
         }
     }

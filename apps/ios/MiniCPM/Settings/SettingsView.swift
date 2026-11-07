@@ -2,6 +2,7 @@ import AVFoundation
 import MiniCPMCore
 import SwiftUI
 import UserNotifications
+import UniformTypeIdentifiers
 
 /// Grouped by what people want to do. Stage one leaves out live, voice and nudges; they return with the next stage.
 /// Appearance and text size follow the system here, and language jumps to the system's per-app setting.
@@ -40,6 +41,7 @@ struct SettingsView: View {
             }
         }
         .overlay(alignment: .bottom) { ToastView(announces: false) }
+        .privacyCovered(inSheet: true)
     }
 
     private func link(_ page: SettingsPage, _ title: LocalizedStringKey, _ image: String) -> some View {
@@ -73,6 +75,24 @@ struct SettingToggle: View {
         Toggle(isOn: $isOn) {
             Text(title)
             if let detail { Text(detail) }
+        }
+    }
+}
+
+/// A title, a line of consequence, and a control beside them. A system row drops the control to its own line under a long label.
+struct ActionRow<Control: View>: View {
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    @ViewBuilder let control: Control
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            control.fixedSize()
         }
     }
 }
@@ -303,20 +323,13 @@ private struct PrivacySettings: View {
 
             Section("联网") {
                 SettingToggle(title: "离线模式", detail: "关闭所有联网功能，包括更新、联网搜索、远程服务和备份。", isOn: $model.prefs.offlineMode)
-                // A picker or LabeledContent drops its value to a line of its own under a long label, so the text wraps beside it here.
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("联网搜索")
-                        Text("需要时让它上网查资料，搜索词会离开这台设备。").font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 8)
+                ActionRow(title: "联网搜索", detail: "需要时让它上网查资料，搜索词会离开这台设备。") {
                     Picker("联网搜索", selection: $model.prefs.webSearch) {
                         Text("关闭").tag(WebSearch.off)
                         Text("每次询问").tag(WebSearch.ask)
                         Text("自动").tag(WebSearch.auto)
                     }
                     .labelsHidden()
-                    .fixedSize()
                 }
                 SettingToggle(title: "自动检查更新", detail: "只发送版本号。", isOn: $model.prefs.updates)
                 SettingToggle(title: "匿名使用统计", detail: "不包含对话和文件。", isOn: $model.prefs.analytics)
@@ -364,16 +377,7 @@ private struct PrivacySettings: View {
                 SettingToggle(title: "录屏时遮盖内容", isOn: $model.prefs.coverWhileRecording)
             }
 
-            Section("备份与迁移") {
-                LabeledContent {
-                    Button("开启") { model.show(.notConnectedYet) }
-                } label: {
-                    Text("备份到 iCloud")
-                    Text("对话和已记住的内容上传到你的 iCloud。不包括模型文件和临时对话。")
-                }
-                Button("导出对话") { model.show(.notConnectedYet) }
-                Button("导入对话") { model.show(.notConnectedYet) }
-            }
+            BackupSection()
 
             Section("数据") {
                 SettingToggle(title: "加密保存", detail: "用设备密钥加密对话和材料。", isOn: $model.prefs.encrypt)
@@ -381,6 +385,11 @@ private struct PrivacySettings: View {
             }
         }
         .navigationTitle("隐私与数据")
+        // On the form, not the section: a section hands its modifiers to every row, and the rows then fight over one sheet.
+        .sheet(item: $model.exportFile) { ShareSheet(url: $0.url) }
+        .fileImporter(isPresented: $model.isPickingImport, allowedContentTypes: [.json]) { result in
+            if let url = try? result.get() { Task { await model.importFile(url) } }
+        }
         .confirmationDialog("清除全部对话？", isPresented: $confirmsClear, titleVisibility: .visible) {
             Button("清除", role: .destructive) { model.clearAll() }
         } message: {
@@ -579,8 +588,17 @@ private struct NetworkLogView: View {
                     LabeledContent {
                         Text(record.date.formatted(date: .abbreviated, time: .shortened))
                     } label: {
-                        Text(record.kind == .modelDownload ? "模型下载" : "联网搜索")
-                        Text(record.kind == .modelDownload ? "只请求模型文件" : "只发送“\(record.detail)”")
+                        switch record.kind {
+                        case .modelDownload:
+                            Text("模型下载")
+                            Text("只请求模型文件")
+                        case .search:
+                            Text("联网搜索")
+                            Text("只发送“\(record.detail)”")
+                        case .backup:
+                            Text("iCloud 备份")
+                            Text("对话记录上传到你的 iCloud")
+                        }
                     }
                 }
                 if model.networkLog.isEmpty && !model.sendingOut {
@@ -589,6 +607,109 @@ private struct NetworkLogView: View {
             }
         }
         .navigationTitle("联网记录")
+    }
+}
+
+/// Uploading and deleting cannot be undone, so they confirm in place. Turning off can, so it uses the toast.
+private struct BackupSection: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.openURL) private var openURL
+    @State private var asking: Ask?
+
+    private enum Ask { case enable, delete }
+
+    private var isRunning: Bool { if case .running = model.backup.status { true } else { false } }
+
+    private var status: String {
+        let last = { (date: Date?) in date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? String(localized: "还没有") }
+        if !model.backup.isOn { return String(localized: "对话和已记住的内容上传到你的 iCloud。不包括模型文件和临时对话。") }
+        if model.prefs.offlineMode { return String(localized: "离线模式开着，备份已暂停。") }
+        switch model.backup.status {
+        case .noCloud: return ""
+        case .signedOut: return String(localized: "这台设备没有登录 iCloud，登录后会接着备份。")
+        case .idle(let date): return String(localized: "上次备份：\(last(date))")
+        case .running: return String(localized: "正在备份，可以继续用。")
+        case .full(let missing, let date): return String(localized: "iCloud 空间不够，还差 \(Copy.size(missing))。上次备份：\(last(date))。")
+        }
+    }
+
+    var body: some View {
+        Section("备份与迁移") {
+            if model.backup.status != .noCloud {
+                Toggle(isOn: Binding { model.backup.isOn || asking == .enable } set: { on in
+                    if on {
+                        asking = .enable
+                    } else if asking == .enable {
+                        asking = nil
+                    } else {
+                        Task { await model.disableBackup() }
+                    }
+                }) {
+                    Text("备份到 iCloud")
+                    Text(status)
+                }
+                if asking == .enable {
+                    confirm("开启后，对话记录会离开这台设备，存到你的 iCloud。之后会自动备份。", "开启备份") {
+                        await model.enableBackup()
+                    }
+                }
+                if case .running(let fraction) = model.backup.status {
+                    ProgressView(value: fraction) { Text("已备份 \(Copy.percent(fraction))").font(.footnote) }
+                }
+                if model.backup.isOn && !model.prefs.offlineMode {
+                    switch model.backup.status {
+                    case .idle:
+                        Button("立即备份") { Task { await model.backUpNow() } }
+                    case .full:
+                        Button("管理 iCloud 空间") { openURL(SystemSettings.url) }
+                    case .signedOut:
+                        Button("去系统设置") { openURL(SystemSettings.url) }
+                    default:
+                        EmptyView()
+                    }
+                }
+                if model.backup.hasCloudCopy && !isRunning {
+                    ActionRow(title: "从备份恢复", detail: "把这台设备上没有的对话取回来。") {
+                        Button("恢复") { Task { await model.restoreBackup() } }
+                    }
+                    ActionRow(title: "删除 iCloud 里的备份", detail: "这台设备上的对话不受影响。") {
+                        Button("删除", role: .destructive) { asking = .delete }
+                    }
+                    if asking == .delete {
+                        confirm("删除后不能恢复。", "删除备份", role: .destructive) {
+                            await model.deleteCloudCopy()
+                        }
+                    }
+                }
+            }
+            ActionRow(title: "导出对话", detail: "把 \(model.exportableCount) 个对话存成一个文件，换设备时可以导入。文件里有对话全文，由你保管。") {
+                Button("导出") { model.export() }.disabled(model.exportableCount == 0)
+            }
+            ActionRow(title: "导入对话", detail: "从导出的文件恢复。不覆盖现有对话，重复的会跳过。") {
+                Button("导入") { model.beginImport() }
+            }
+            if model.importFailed {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("读不了这个文件", systemImage: "exclamationmark.triangle.fill").font(.subheadline.weight(.semibold))
+                    Text("它不是 MiniCPM 导出的，或者来自更新的版本。现有对话没有变化。").font(.footnote).foregroundStyle(.secondary)
+                    Button("知道了") { model.dismissImportFailure() }.font(.footnote).buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+
+    private func confirm(_ message: LocalizedStringKey, _ title: LocalizedStringKey, role: ButtonRole? = nil, action: @escaping @MainActor () async -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(message).font(.footnote)
+            HStack {
+                Button(title, role: role) {
+                    asking = nil
+                    Task { await action() }
+                }
+                .prominentButton()
+                Button("先不") { asking = nil }.buttonStyle(.bordered)
+            }
+        }
     }
 }
 

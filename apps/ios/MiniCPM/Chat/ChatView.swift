@@ -77,7 +77,7 @@ struct ChatView: View {
             ToolbarOverflowMenu {
                 if !model.current.isBlank {
                     Button("重命名", systemImage: "pencil") { beginRename() }
-                    Button("导出这段对话", systemImage: "square.and.arrow.up") { model.show(.notConnectedYet) }
+                    Button("导出这段对话", systemImage: "square.and.arrow.up") { model.export(model.currentID) }
                     Button("删除对话", systemImage: "trash", role: .destructive) { model.delete(model.currentID) }
                 }
             }

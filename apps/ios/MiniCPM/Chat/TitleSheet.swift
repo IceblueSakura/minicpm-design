@@ -55,7 +55,7 @@ struct TitleSheet: View {
                     }
                     Button("对话详情", systemImage: "info.circle") { close(then: showDetails) }
                     if named {
-                        Button("导出这段对话", systemImage: "square.and.arrow.up") { model.show(.notConnectedYet) }
+                        Button("导出这段对话", systemImage: "square.and.arrow.up") { close { model.export(model.currentID) } }
                         Button("删除对话", systemImage: "trash", role: .destructive) {
                             model.delete(model.currentID)
                             dismiss()
@@ -71,6 +71,7 @@ struct TitleSheet: View {
                 }
             }
             .overlay(alignment: .bottom) { ToastView(announces: false) }
+            .privacyCovered(inSheet: true)
             .confirmationDialog("换用这个模型？", item: regularAsking, titleVisibility: .visible) { option in
                 Button("换用") { model.setModel(option.id) }
                 Button("先不换", role: .cancel) {}

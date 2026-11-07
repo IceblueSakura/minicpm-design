@@ -16,10 +16,11 @@ struct RootView: View {
             } else {
                 MainView()
             }
-            if scenePhase != .active && model.prefs.hidePreview {
-                PrivacyCover()
+            if model.isLocked {
+                LockView()
             }
         }
+        .privacyCovered()
         .overlay(alignment: .bottom) {
             if model.onboarding != nil { ToastView() }
         }
@@ -27,25 +28,69 @@ struct RootView: View {
         .sheet(item: $model.settingsRoute) { page in
             SettingsView(start: page)
         }
+        // Settings shares from its own sheet: a second one cannot open from under it.
+        .sheet(item: Binding { model.settingsRoute == nil ? model.exportFile : nil } set: { model.exportFile = $0 }) { file in
+            ShareSheet(url: file.url)
+        }
         .task { await model.start() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background {
                 model.didEnterBackground()
                 reader.stop()
+            } else if phase == .active {
+                model.didBecomeActive()
             }
         }
     }
 }
 
-/// Keeps content out of the app switcher when "切到后台时隐藏内容" is on.
-private struct PrivacyCover: View {
+/// Keeps content out of the app switcher and out of recordings when those settings are on.
+/// Sheets sit above the root, so each one carries this too; there it also stands in for the lock.
+private struct PrivacyCover: ViewModifier {
+    @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
+    let coversLock: Bool
+
+    private var isCovered: Bool {
+        (scenePhase != .active && model.prefs.hidePreview) || (model.isScreenCaptured && model.prefs.coverWhileRecording) || (coversLock && model.isLocked)
+    }
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            if isCovered {
+                ZStack {
+                    Rectangle().fill(.background)
+                    BrandMark().frame(width: 56, height: 56)
+                }
+                .ignoresSafeArea()
+                .accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+extension View {
+    func privacyCovered(inSheet: Bool = false) -> some View {
+        modifier(PrivacyCover(coversLock: inSheet))
+    }
+}
+
+/// Only the mark and the way in, per the privacy design. Asks by itself once, then waits for the button.
+private struct LockView: View {
+    @Environment(AppModel.self) private var model
+
     var body: some View {
         ZStack {
             Rectangle().fill(.background)
-            BrandMark().frame(width: 56, height: 56)
+            VStack(spacing: 24) {
+                BrandMark().frame(width: 56, height: 56)
+                Button("解锁") { Task { await model.unlock() } }
+                    .prominentGlassButton()
+                    .controlSize(.large)
+            }
         }
         .ignoresSafeArea()
-        .accessibilityHidden(true)
+        .task { await model.unlock() }
     }
 }
 

@@ -10,6 +10,7 @@ private func makeApp(
     installed: [String] = [v46, v45],
     onboarded: Bool = true,
     loadMarker: String? = nil,
+    services: AppServices = .unconnected,
     configure: (inout Snapshot) -> Void = { _ in }
 ) async -> (app: AppModel, engine: StubEngine, persistence: InMemoryPersistence) {
     var snapshot = Snapshot()
@@ -22,7 +23,8 @@ private func makeApp(
         localEngine: engine,
         remoteEngine: StubEngine(options: .instant),
         modelStore: StubModelStore(installed: installed, tick: .zero),
-        persistence: persistence
+        persistence: persistence,
+        services: services
     )
     await app.start()
     await settled { app.loadingOptionID == nil }
@@ -53,7 +55,7 @@ private func settled(_ condition: () -> Bool) async {
     @Test func backupChangesTheLocalClaim() async {
         let (app, _, _) = await makeApp()
         #expect(app.privacy == .onDevice)
-        app.backupOn = true
+        app.backup.isOn = true
         #expect(app.privacy == .onDeviceBackedUp)
     }
 
@@ -192,5 +194,163 @@ private func settled(_ condition: () -> Bool) async {
         await settled { !app.isQueued && app.reply == nil }
         let sent = app.current.items.filter { if case .user = $0 { true } else { false } }
         #expect(sent.count == 1)
+    }
+}
+
+/// Records what reached the service, so a test can say nothing left the device.
+private actor Spy: SearchService, SystemActionService {
+    private(set) var queries: [String] = []
+    private(set) var memos: [String] = []
+    var failure: ServiceError?
+
+    func fail(with error: ServiceError) { failure = error }
+    func search(query: String) async throws -> [SearchResult] {
+        if let failure { throw failure }
+        queries.append(query)
+        return []
+    }
+    func scheduleNotification(when: String?, text: String, conversationID: UUID) async throws {}
+    func writeMemo(_ text: String) async throws { memos.append(text) }
+}
+
+private struct Lock: AppLockService {
+    var isAvailable: Bool { true }
+    let passes: Bool
+    func authenticate() async -> Bool { passes }
+}
+
+@MainActor
+private func reply(_ app: AppModel, _ text: String) async {
+    app.draftText = text
+    app.send()
+    await settled { app.reply == nil && !app.isQueued }
+}
+
+@MainActor
+@Suite struct Services {
+    private func searchCardID(_ app: AppModel) -> (id: UUID, state: CardState)? {
+        for case .search(let card) in app.current.items { return (card.id, card.state) }
+        return nil
+    }
+
+    @Test func aSearchIsLoggedOnlyAfterItWentOut() async throws {
+        let spy = Spy()
+        let (app, _, _) = await makeApp(services: AppServices(search: spy))
+        await reply(app, "查一下 天气")
+        let card = try #require(searchCardID(app))
+        app.answerSearch(card.id, accept: true)
+        await settled { searchCardID(app)?.state == .accepted }
+        #expect(await spy.queries.count == 1)
+        #expect(app.networkLog.first?.kind == .search)
+    }
+
+    @Test func anUnconnectedSearchLeavesTheCardAndTheLogAlone() async throws {
+        let (app, _, _) = await makeApp()
+        await reply(app, "查一下 天气")
+        let before = app.networkLog.count
+        let card = try #require(searchCardID(app))
+        app.answerSearch(card.id, accept: true)
+        await settled { app.toast?.notice == .notConnectedYet }
+        #expect(searchCardID(app)?.state == .pending)
+        #expect(app.networkLog.count == before)
+    }
+
+    @Test func offlineModeBlocksTheSearchEvenIfTheCardIsTapped() async throws {
+        let spy = Spy()
+        let (app, _, _) = await makeApp(services: AppServices(search: spy))
+        await reply(app, "查一下 天气")
+        app.prefs.offlineMode = true
+        let card = try #require(searchCardID(app))
+        app.answerSearch(card.id, accept: true)
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(await spy.queries.isEmpty)
+    }
+
+    @Test func enablingBackupChangesTheClaimAndUploads() async {
+        let (app, _, _) = await makeApp(services: .demo())
+        #expect(app.privacy == .onDevice)
+        await app.enableBackup()
+        #expect(app.privacy == .onDeviceBackedUp)
+        #expect(app.backup.hasCloudCopy)
+        #expect(app.networkLog.first?.kind == .backup)
+    }
+
+    @Test func unconnectedBackupStaysOff() async {
+        let (app, _, _) = await makeApp()
+        await app.enableBackup()
+        #expect(!app.backupOn)
+        #expect(app.privacy == .onDevice)
+        #expect(app.toast?.notice == .notConnectedYet)
+    }
+
+    @Test func offlineModePausesBackup() async {
+        let (app, _, _) = await makeApp(services: .demo())
+        app.prefs.offlineMode = true
+        await app.enableBackup()
+        #expect(!app.backupOn)
+        #expect(app.toast?.notice == .backupPaused)
+    }
+
+    @Test func importSkipsDuplicatesAndCanBeUndone() async throws {
+        let (app, _, _) = await makeApp(services: .demo())
+        await reply(app, "第一段")
+        app.export()
+        await settled { app.exportFile != nil }
+        let file = try #require(app.exportFile).url
+        let existing = app.conversations.count
+
+        await app.importFile(file)
+        #expect(app.toast?.notice == .imported(added: 0, skipped: 1))
+
+        let other = Conversation(scene: .life)
+        try JSONEncoder().encode([other]).write(to: file)
+        await app.importFile(file)
+        #expect(app.conversations.count == existing + 1)
+        app.runToastAction()
+        #expect(app.conversations.count == existing)
+    }
+
+    @Test func aBadImportChangesNothing() async throws {
+        let (app, _, _) = await makeApp(services: .demo())
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("not-minicpm.json")
+        try Data("nope".utf8).write(to: file)
+        let before = app.conversations
+        await app.importFile(file)
+        #expect(app.importFailed)
+        #expect(app.conversations == before)
+    }
+
+    @Test func noLockServiceMeansNoLock() async {
+        let (app, _, _) = await makeApp { $0.prefs.appLock = true }
+        #expect(!app.isLocked)
+    }
+
+    @Test func locksAtLaunchAndAfterTheChosenTime() async {
+        let (app, _, _) = await makeApp(services: AppServices(lock: Lock(passes: true))) {
+            $0.prefs.appLock = true
+            $0.prefs.autoLock = .m1
+        }
+        #expect(app.isLocked)
+        await app.unlock()
+        #expect(!app.isLocked)
+
+        app.didEnterBackground()
+        app.didBecomeActive(now: Date().addingTimeInterval(30))
+        #expect(!app.isLocked)
+
+        app.didEnterBackground()
+        app.didBecomeActive(now: Date().addingTimeInterval(61))
+        #expect(app.isLocked)
+    }
+
+    @Test func aFailedCheckKeepsItLocked() async {
+        let (app, _, _) = await makeApp(services: AppServices(lock: Lock(passes: false))) { $0.prefs.appLock = true }
+        await app.unlock()
+        #expect(app.isLocked)
+    }
+
+    @Test func conditionsReachTheModel() async {
+        let (app, _, _) = await makeApp(services: .demo(conditions: [.screenCaptured(true), .thermal(.hot)]))
+        await settled { app.isScreenCaptured && app.thermal == .hot }
     }
 }

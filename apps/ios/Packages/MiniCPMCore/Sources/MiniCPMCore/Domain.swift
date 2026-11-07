@@ -257,7 +257,7 @@ public struct ModelOption: Identifiable, Hashable, Sendable {
 }
 
 public struct NetworkRecord: Identifiable, Codable, Hashable, Sendable {
-    public enum Kind: String, Codable, Sendable { case modelDownload, search }
+    public enum Kind: String, Codable, Sendable { case modelDownload, search, backup }
 
     public var id = UUID()
     public var kind: Kind
