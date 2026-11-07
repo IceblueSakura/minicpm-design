@@ -57,7 +57,7 @@ git -C refs/minicpm-v-apps fetch --unshallow
 
 ## refs/minicpm-o-demo —— 实时双工与会话界面，形态最全的一处
 
-官方全模态 Web Demo。后端是 Python（`gateway.py`、`worker.py`、`core/`、`vad/`），**界面有两套**：`static/` 下的手写 HTML/CSS/JS 页面（线上实际在跑的那套，中文界面），和 `frontend/mobile/` 下的 React 重写版。`static/` 里还有一个专门画交互的 `mobile-flow-mock.html`（标题就是"移动端交互草图"），对本项目参考价值最高。
+官方全模态 Web Demo。后端是 Python（`gateway.py`、`worker.py`、`core/`、`vad/`），**界面有两套**：`static/` 下的手写 HTML/CSS/JS 页面（中文界面，页面之间按 `/static/` 路径互引），和 `frontend/mobile/` 下的 React 重写版。`static/` 里还有一个专门画交互的 `mobile-flow-mock.html`（标题就是"移动端交互草图"），对本项目参考价值最高。
 
 手写页面（`static/`，同一套 `duplex/duplex-shared.css`）：
 
