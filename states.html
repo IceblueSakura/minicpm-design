@@ -39,28 +39,33 @@ const PROTOTYPE = 'index.html';
 // [group, note, [[label, query, phone-only | desktop-only]]]
 const GROUPS = [
   ['首次启动', '第一次打开到可以开口。docs/05-states.md', [
-    ['欢迎', '?onboard=welcome'], ['选模型', '?onboard=model'], ['内存偏小', '?onboard=model&device=low'], ['空间不足', '?onboard=model&storage=low'],
+    ['欢迎', '?onboard=welcome'], ['恢复备份', '?onboard=restore'], ['选模型', '?onboard=model'], ['内存偏小', '?onboard=model&device=low'], ['内存充足', '?onboard=model&device=high'], ['空间不足', '?onboard=model&storage=low'],
     ['下载中', '?onboard=download&dl=62'], ['等待 Wi-Fi', '?onboard=download&dl=34&dlstate=wifi', 'phone'], ['下载中断', '?onboard=download&dl=71&dlstate=failed'],
-    ['下载时使用', '?view=empty&dl=62'], ['第一次开麦', '?view=empty&perm=ask'],
+    ['下载时使用', '?view=empty&dl=62'], ['正在准备模型', '?view=empty&prep=1'], ['第一次开麦', '?view=empty&perm=ask'],
   ]],
   ['对话', '根页面和文字对话。', [
-    ['新对话', '?view=empty'], ['临时对话', '?temp=1'], ['看图回答', '?task=report'], ['普通对话', '?task=notes'], ['定时任务未运行', '?task=community'],
+    ['新对话', '?view=empty'], ['临时对话', '?temp=1'], ['看图回答', '?task=report'], ['普通对话', '?task=notes'], ['对照原图', '?task=report&source=glucose'], ['对照原图·看不太清', '?task=report&source=chol'],
+    ['定时通知', '?task=community'], ['定时通知·没有权限', '?task=community&notify=denied'], ['定时通知·浏览器', '?task=community&runtime=browser'], ['写备忘录', '?task=memo'],
+    ['写入记忆', '?task=allergy'], ['写入记忆·已忘掉', '?task=allergy&forgot=1'], ['写入记忆·记忆关着', '?task=allergy&forgot=1&memory=off'],
     ['对话详情', '?task=report&inspector=1'], ['视觉模型（可换到实时）', '?view=empty&model=minicpm-v-4.6'], ['视觉模型（没有实时）', '?view=empty&model=minicpm-v-4.6&omni=none'],
   ]],
   ['消息内容', '回答可能出现的所有内容形态。', [
     ['标题、列表、引用、链接', '?task=repot'], ['代码块与产物', '?task=script'], ['宽表、截断、对话快满', '?task=trip'], ['联网前询问', '?task=camping'],
   ]],
   ['实时会话', '话轮和通道。', [
-    ['语音', '?view=empty&live=voice&t=2'], ['语音·你在说', '?view=empty&live=voice&t=2.5'], ['语音·重叠', '?view=empty&live=voice&t=10.6'], ['摄像头', '?view=empty&live=camera&t=6'],
+    ['聆听', '?view=empty&live=voice&t=0.3'], ['你在说', '?view=empty&live=voice&t=2.5'], ['回应', '?view=empty&live=voice&t=6'], ['重叠', '?view=empty&live=voice&t=9.6'], ['麦克风已关', '?view=empty&live=voice&t=0.3&mute=1'],
+    ['远看模式', '?view=empty&live=voice&t=6&far=1', 'phone'], ['摄像头', '?view=empty&live=camera&t=6'],
     ['共享屏幕', '?view=empty&live=screen&t=6', 'desktop'], ['主动提醒', '?view=empty&live=camera&t=25&proactive=high'],
   ]],
   ['实时打断', '系统和环境造成的中断。docs/04-live-session.md', [
-    ['来电', '?task=camera&live=voice&t=11&hold=call'], ['来电结束', '?task=camera&live=voice&t=11&hold=call&ready=1'], ['回到前台', '?task=camera&live=camera&t=11&hold=background&ready=1'],
+    ['屏幕锁定', '?task=camera&live=voice&t=11&hold=lock'], ['来电', '?task=camera&live=voice&t=11&hold=call'], ['来电结束', '?task=camera&live=voice&t=11&hold=call&ready=1'], ['回到前台', '?task=camera&live=camera&t=11&hold=background&ready=1'],
     ['耳机断开', '?task=camera&live=voice&t=11&hold=route'], ['断线重连', '?task=camera&live=voice&t=11&link=1'], ['闲置·倒计时', '?task=camera&live=camera&t=30&idle=1'], ['闲置·已暂停', '?task=camera&live=camera&t=30&hold=idle'],
     ['发热·放慢', '?task=camera&live=camera&t=11&heat=1'], ['发热·只用声音', '?task=camera&live=camera&t=11&heat=2'], ['发热·暂停', '?task=camera&live=camera&t=11&hold=heat'],
+    ['电量·放慢', '?task=camera&live=camera&t=11&battery=1'], ['电量·只用声音', '?task=camera&live=camera&t=11&battery=2'], ['电量·语音实时', '?task=camera&live=voice&t=11&battery=2'], ['电量·暂停', '?task=camera&live=voice&t=11&hold=battery'], ['电量·接上电源', '?task=camera&live=voice&t=11&hold=battery&ready=1'],
+    ['模型中断', '?task=camera&live=voice&t=11&crash=model'], ['实时里写入记忆', '?task=camera&live=voice&t=11&remember=1'],
   ]],
   ['换模型', '一次只运行一个模型，所有对话共用。docs/03-structure.md', [
-    ['换模型确认', '?view=empty&swap=ask'], ['换模型中', '?view=empty&swap=loading'], ['载不下', '?view=empty&swap=failed&model=minicpm-v-4.6'], ['实时要换模型', '?view=empty&model=minicpm-v-4.6&live=voice'], ['模型设置', '?settings=models'],
+    ['换模型确认', '?view=empty&swap=ask'], ['换模型中', '?view=empty&swap=loading'], ['载不下', '?view=empty&swap=failed&model=minicpm-v-4.6'], ['实时要换模型', '?view=empty&model=minicpm-v-4.6&live=voice'], ['模型设置', '?settings=models'], ['模型设置·内存充足', '?settings=models&device=high'],
   ]],
   ['运行位置', '这台设备和远程服务可以切换。Web 的“这台设备”是浏览器。docs/03-structure.md', [
     ['浏览器·新对话', '?view=empty&runtime=browser'], ['浏览器·模型设置', '?settings=models&runtime=browser'], ['浏览器·选模型', '?onboard=model&runtime=browser'],
@@ -70,12 +75,22 @@ const GROUPS = [
   ['异常', '后端、权限和网络。', [
     ['本机模型未启动', '?view=empty&engine=offline'], ['权限被拒绝', '?view=empty&perm=denied'], ['远程未配置', '?view=empty&backend=remote&remote=empty'],
     ['远程·实时', '?view=empty&backend=remote&live=camera&t=6'], ['网络不稳', '?view=empty&backend=remote&net=weak&live=camera&t=6'], ['内存紧张', '?view=empty&mem=tight', 'desktop'],
+    ['离线模式·远程', '?view=empty&backend=remote&offline=1'], ['离线模式·联网询问', '?task=camping&offline=1'],
+  ]],
+  ['崩溃', '模型或应用意外退出之后。docs/04-live-session.md', [
+    ['模型重启失败', '?task=camera&live=voice&t=11&crash=model&fail=1'], ['上次实时意外结束', '?crash=live'], ['回答中断', '?crash=reply'], ['载入时退出', '?view=empty&crash=load'],
+    ['发送崩溃报告', '?view=empty&crash=report'], ['联网记录·崩溃报告', '?settings=network&crash=sent'],
   ]],
   ['隐私', '锁定、遮盖和数据控制。', [
     ['应用锁', '?lock=1'], ['后台遮盖', '?cover=1'], ['隐私与数据', '?settings=privacy'], ['已记住的内容', '?settings=memories'], ['联网记录', '?settings=network'],
+    ['联网记录·远程', '?settings=network&backend=remote'], ['联网记录·备份', '?settings=network&backup=on'], ['已记住的内容·远程', '?settings=memories&backend=remote'],
+  ]],
+  ['备份与迁移', '备份是用户开启的。Android 和 Web 只有导出导入。docs/08-privacy.md', [
+    ['备份关闭', '?settings=privacy&import=none'], ['没有 iCloud（Android）', '?settings=privacy&backup=none'], ['备份开启', '?settings=privacy&backup=on'], ['正在备份', '?settings=privacy&backup=running'], ['iCloud 空间不够', '?settings=privacy&backup=full'], ['没有登录', '?settings=privacy&backup=signedout'],
+    ['浏览器·只有导出', '?settings=privacy&runtime=browser&import=none'], ['导入失败', '?settings=privacy&import=failed'], ['新对话·备份开启', '?view=empty&backup=on'],
   ]],
   ['设置', '手机是列表进详情，桌面是两栏。', [
-    ['设置首页', '?settings=index', 'phone'], ['通用', '?settings=general'], ['声音与人设', '?settings=voice'], ['实时会话', '?settings=live'], ['模型', '?settings=models'],
+    ['设置首页', '?settings=index', 'phone'], ['通用', '?settings=general'], ['定时通知', '?settings=reminders'], ['声音与人设', '?settings=voice'], ['实时会话', '?settings=live'], ['模型', '?settings=models'],
     ['模型下载中', '?settings=models&dl=40'], ['应用场景', '?settings=applications'], ['高级', '?settings=advanced'],
   ]],
 ];
@@ -85,7 +100,7 @@ function render() {
   const [w, h, k] = SIZE[form];
   document.querySelector('#toc').innerHTML = GROUPS.map(([g], i) => `<a href="#g${i}">${g}</a>`).join('');
   document.querySelector('#main').innerHTML = GROUPS.map(([group, note, items], i) => `<section id="g${i}"><h2>${group}</h2><p>${note}</p><div class="grid">${items.filter(it => !it[2] || it[2] === form).map(([label, q]) => {
-    const url = `${PROTOTYPE}${q}&theme=${dark ? 'dark' : 'light'}`;
+    const url = `${PROTOTYPE}${q}&theme=${dark ? 'dark' : 'light'}&still=1`;
     return `<figure style="width:${Math.round(w * k)}px"><div class="frame" style="height:${Math.round(h * k)}px"><iframe loading="lazy" title="${label}" src="${url}" width="${w}" height="${h}" style="transform:scale(${k})"></iframe></div><figcaption><span>${label}</span><a href="${url}" target="_blank" rel="noopener">打开</a></figcaption></figure>`;
   }).join('')}</div></section>`).join('');
 }

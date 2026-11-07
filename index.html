@@ -102,6 +102,7 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .task:hover .task-more,.task-more:focus-visible,.task-more[aria-expanded=true]{opacity:1}
 .task-flag{flex:none}
 .task-flag.live{width:8px;height:8px;border-radius:50%;background:var(--cinnabar);animation:lamp 1.6s ease-in-out infinite}
+.task-flag.live.held{background:var(--amber);animation:none}
 .task-flag.busy{width:12px;height:12px;border:2px solid var(--line-2);border-top-color:var(--jade);border-radius:50%;animation:spin .9s linear infinite}
 .task-flag.unread{width:7px;height:7px;border-radius:50%;background:var(--jade-wave)}
 .task-flag.sched svg{width:14px;height:14px;color:var(--ink-3);display:block}
@@ -149,6 +150,10 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 :root[data-theme=dark] .livebar button{background:#0000001f}
 :root[data-theme=dark] .livebar button:hover{background:#00000038}
 .livebar .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Cinnabar means capturing, so the bar steps down as soon as nothing is being captured. */
+.livebar.held{background:var(--amber-soft);color:var(--ink)}
+.livebar.held button,:root[data-theme=dark] .livebar.held button{background:var(--raised);box-shadow:inset 0 0 0 1px var(--line-2)}
+.livebar.held button:hover,:root[data-theme=dark] .livebar.held button:hover{background:var(--sunken)}
 
 .body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;position:relative}
 .body.empty{grid-template-rows:auto auto;align-content:center;overflow-y:auto;padding-bottom:6vh}
@@ -205,9 +210,10 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .ask .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .net-note{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;font-size:13px;color:var(--ink-3)}
 .net-note svg{width:15px;height:15px}
+.net-note .link{min-height:24px}
 .caret::after{content:'';display:inline-block;width:7px;height:1em;margin-left:2px;vertical-align:-.14em;background:var(--jade-wave);animation:blink 1s steps(2) infinite}
 .msg-tools{display:flex;align-items:center;gap:2px;margin:6px 0 0 -7px;min-height:30px;color:var(--ink-3);opacity:.0;transition:opacity .15s}
-.msg-ai:hover .msg-tools,.msg-ai:focus-within .msg-tools,.msg-ai:last-child .msg-tools{opacity:1}
+.msg-ai:hover .msg-tools,.msg-ai:focus-within .msg-tools,.msg-ai:last-child .msg-tools,.msg-ai:has(+ .mem-line:last-child) .msg-tools{opacity:1}
 .msg-tools .icon-btn{width:30px;height:30px}
 .msg-tools .icon-btn svg{width:16px;height:16px}
 .msg-stat{margin-left:8px;font-size:12px;color:var(--ink-3)}
@@ -259,7 +265,7 @@ details[open]>.live-head svg.chev{transform:rotate(90deg)}
 .turn.model .turn-who b{color:var(--jade);font-weight:600}
 .turn-who b{font-weight:500}
 .turn p{overflow-wrap:anywhere}
-.turn-act{font-size:12px;color:var(--ink-3);text-decoration:underline;text-underline-offset:3px;min-height:20px}
+.turn-act{font-size:12px;color:var(--ink-3);text-decoration:underline;text-underline-offset:3px;min-height:24px}
 .turn-act:hover{color:var(--ink)}
 .turn .pill{padding:0 6px;font-size:11.5px}
 .live-end{margin-top:2px;font-size:12.5px;color:var(--ink-3)}
@@ -355,17 +361,29 @@ button.tag:hover{background:#0B0F0DF0}
 /* Mock: camera */
 .mock-cam{position:absolute;inset:-3%;width:106%;height:106%;animation:handheld 7s ease-in-out infinite alternate}
 
+/* Far view: voice live with the phone set down. It is a stage, so the frame still means capturing. */
+.viewport.far{display:grid}
+.viewport.far .corner{display:none}
+.far-view{--you-wave:#D5DDD7;--jade-wave:#3FD0AA;--jade-soft:#14332A;--amber:#E9BE6C;display:grid;place-content:center;justify-items:center;gap:14px;width:100%;padding:60px 24px calc(var(--safe-b) + 200px);color:#E8EDE8;text-align:center}
+.far-view .lamp{width:18px;height:18px}
+.far-view strong{font-size:clamp(34px,11vw,46px);font-weight:600;line-height:1.25}
+.far-view small{font-size:15px;color:#A9B5AE}
+.far-view[data-phase=listening] .lamp,.far-view[data-phase=model] .lamp,.far-view[data-phase=proactive] .lamp{background:var(--jade-wave)}
+.far-view[data-phase=you] .lamp,.far-view[data-phase=overlap] .lamp{background:var(--you-wave)}
+.far-view[data-phase=held] .lamp,.far-view[data-phase=reconnect] .lamp,.far-view[data-phase=connecting] .lamp{background:var(--amber)}
+
 /* ---------- Live dock ---------- */
 .dock{display:grid;grid-template-columns:auto minmax(120px,1fr) auto;align-items:center;gap:12px;padding:8px 8px 8px 14px;border-radius:14px;background:var(--raised);border:1px solid var(--line-2);animation:dock-in .28s var(--ease)}
 .dock-status{min-width:118px;text-align:left;padding:4px 8px 4px 0;border-radius:8px}
 .ds-row{display:flex;align-items:center;gap:8px}
 .dock-status strong{font-weight:600;font-size:14.5px;white-space:nowrap}
-.dock-status small{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink-3);padding-left:18px;white-space:nowrap}
+.dock-status small{position:relative;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink-3);padding-left:18px;white-space:nowrap}
+.dock-status .rec{position:absolute;left:1.5px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--cinnabar);animation:lamp 1.6s ease-in-out infinite}
 .lamp{width:10px;height:10px;border-radius:50%;background:var(--ink-3);flex:none;transition:background .2s,box-shadow .2s}
 .dock[data-phase=listening] .lamp{background:var(--jade-wave)}
 .dock[data-phase=you] .lamp{background:var(--you-wave)}
 .dock[data-phase=model] .lamp,.dock[data-phase=proactive] .lamp{background:var(--jade-wave);box-shadow:0 0 0 4px var(--jade-soft)}
-.dock[data-phase=overlap] .lamp{background:var(--cinnabar);box-shadow:0 0 0 4px var(--cinnabar-soft)}
+.dock[data-phase=overlap] .lamp{background:var(--you-wave);box-shadow:0 0 0 4px var(--jade-soft)}
 .dock[data-phase=connecting] .lamp{background:var(--amber);animation:lamp 1s ease-in-out infinite}
 .tracks{position:relative;height:60px;min-width:0;border-radius:8px;background:var(--surface);overflow:hidden}
 .tracks canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -378,7 +396,7 @@ button.tag:hover{background:#0B0F0DF0}
 .ctl:hover{background:var(--sunken);color:var(--ink)}
 .ctl[aria-pressed=true]{background:var(--jade-soft);color:var(--jade)}
 .ctl:disabled{opacity:.45}
-.ctl.off{background:var(--cinnabar-soft);color:var(--cinnabar)}
+.ctl.off{background:var(--sunken);color:var(--ink)}
 .ctl.end{margin-left:6px;min-width:64px;background:var(--cinnabar);color:var(--on-cinnabar);font-weight:600}
 .ctl.end:hover{filter:brightness(1.08);background:var(--cinnabar);color:var(--on-cinnabar)}
 .ctl-sep{width:1px;height:28px;margin:0 3px;background:var(--line)}
@@ -527,6 +545,31 @@ button.tag:hover{background:#0B0F0DF0}
 .temp-tag{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--ink-3);white-space:nowrap}
 .temp-tag svg{width:15px;height:15px}
 
+.ob-sub{margin-top:14px;font-size:13px;font-weight:500;color:var(--ink-3)}
+.specs{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ob-models.specs{margin-top:6px}
+.specs .voice{align-items:flex-start}
+.specs .voice:disabled{opacity:1;background:var(--sunken);border-color:transparent}
+.specs .voice:disabled b{color:var(--ink-2)}
+.spec-tag{font:12px var(--mono);color:var(--ink-3)}
+.set-in .note{margin-top:10px}
+.set-in .dl{margin:0;padding:10px 0;border-bottom:1px solid var(--line)}
+
+/* ---------- Checking a number against its source ---------- */
+.src{display:inline-block;min-height:24px;margin:0 -2px;padding:0 2px;border-bottom:1px dashed var(--control);border-radius:3px 3px 0 0;line-height:inherit}
+.src:hover{background:var(--sunken)}
+.src-note{margin-top:8px;font-size:13px;color:var(--ink-3)}
+.source-view{padding:8px 9px 6px;max-width:320px}
+.menu.sheet .source-view{max-width:none;padding-top:0}
+.source-view>b{display:block;font-size:15px;font-weight:600}
+.paper{margin:8px 0 6px;padding:8px;border-radius:8px;background:#F4F2EC;color:#2B2B28;font:12.5px/1.8 var(--mono);box-shadow:inset 0 0 0 1px #0000001A;overflow:hidden}
+.paper div{display:grid;grid-template-columns:minmax(0,1fr) 62px 72px;gap:6px;padding:0 6px;white-space:nowrap}
+.paper .hit{background:#F2D06B80;box-shadow:0 0 0 2px #8A6100;border-radius:3px}
+.paper.blur .hit span:nth-child(2){filter:blur(1px)}
+.source-view .stat{padding:3px 0}
+.source-view .hint{margin-top:4px;padding:0;max-width:none}
+.source-view .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+
 /* ---------- Parts that only exist in the compact form ---------- */
 .ctl.only-compact,.live-cap,.hero .mark,.grip{display:none}
 .app.bar-on .settings{margin-top:42px;height:calc(100% - 42px)}
@@ -606,13 +649,16 @@ button.tag:hover{background:#0B0F0DF0}
   .ask .acts{gap:8px}
   .msg-tools{margin-left:-12px;gap:0;min-height:44px}
   .msg-tools .icon-btn{width:44px;height:44px}
-  .msg-stat,.msg-ai:not(:last-child) .msg-tools{display:none}
+  .msg-stat,.msg-ai:not(:last-child):not(:has(+ .mem-line:last-child)) .msg-tools{display:none}
+  .mem-line .link{min-height:44px;padding:0 6px}
   .steps{font-size:14px}
   .steps summary{min-height:44px}
   .turn p{font-size:16px}
   .turn-act{position:relative}
   .turn-act::after{content:'';position:absolute;inset:-12px -6px}
   .att button{width:36px;height:36px;margin-right:-8px}
+  .src{position:relative}
+  .src::after{content:'';position:absolute;inset:-10px -6px}
 
   /* Empty conversation */
   .body.empty{grid-template-rows:minmax(0,1fr) auto;align-content:stretch;overflow:hidden;padding-bottom:0}
@@ -719,7 +765,7 @@ button.tag:hover{background:#0B0F0DF0}
   .set-body{padding:12px 16px calc(32px + var(--safe-b))}
   .set-in h2{display:none}
   .row .ctrl{flex:0 1 auto;min-width:0}
-  .row .ctrl:has(>.sw,>.btn,>.pill){flex:none}
+  .row .ctrl:has(>.sw,>.btn,>.pill,>select){flex:none}
   .row:has(.ctrl>.btn+.btn){flex-wrap:wrap;gap:8px}
   .row select{min-width:0;width:auto;max-width:48vw;height:44px;font-size:16px}
   .row:has(input[type=text],input[type=password]){flex-wrap:wrap;gap:8px}
@@ -904,18 +950,24 @@ const SCENES = {
     { icon: 'screen', title: '陪我打一局', sub: '看着画面实时提醒', live: 'screen' },
     { icon: 'file', title: '分析一张截图', sub: '看阵容、地图或配装', prompt: '帮我分析这张游戏截图' },
     { icon: 'duplex', title: '语音复盘', sub: '说说刚才那局', live: 'voice' } ] },
-  community: { name: '社区助手', source: '内置', hint: '社区消息整理、定时汇总', starters: [
-    { icon: 'clock', title: '设置每日汇总', sub: '定时整理需要回复的消息', prompt: '每天早上帮我汇总社区里需要回复的消息' },
+  community: { name: '社区助手', source: '内置', hint: '社区消息整理、定时通知', starters: [
+    { icon: 'clock', title: '设置定时通知', sub: '到点提醒你来整理消息', prompt: '每天早上提醒我整理社区消息' },
     { icon: 'file', title: '整理一批消息', sub: '粘贴或上传聊天记录', prompt: '帮我整理这批社区消息' },
     { icon: 'duplex', title: '口述公告', sub: '说出要点，由它写成稿', live: 'voice' } ] },
 };
 const CAPS = { image: '看图', video: '看视频', audio: '听语音', speech: '说话', live: '实时对话' };
 const MODELS = {
-  'minicpm-o-4.5': { name: 'MiniCPM-o 4.5', short: 'o 4.5', kind: '全能', caps: ['image', 'video', 'audio', 'speech', 'live'], mem: { weights: 4.9, media: 1.1 } },
-  'minicpm-v-4.6': { name: 'MiniCPM-V 4.6', short: 'V 4.6', kind: '视觉', caps: ['image', 'video'], mem: { weights: 3.2, media: .5 } },
-  'minicpm-v-4.5': { name: 'MiniCPM-V 4.5', short: 'V 4.5', kind: '视觉', caps: ['image', 'video'], mem: { weights: 4.6, media: .5 } },
+  'minicpm-o-4.5': { name: 'MiniCPM-o 4.5', short: 'o 4.5', kind: '全能', caps: ['image', 'video', 'audio', 'speech', 'live'], mem: { media: 1.1 }, specs: { q4: { size: 6, memory: 8 }, f16: { size: 18, memory: 20 } } },
+  'minicpm-v-4.6': { name: 'MiniCPM-V 4.6', short: 'V 4.6', kind: '看图', caps: ['image', 'video'], mem: { media: .5 }, specs: { q4: { size: 3.7, memory: 5 }, f16: { size: 11, memory: 13 } } },
+  'minicpm-v-4.5': { name: 'MiniCPM-V 4.5', short: 'V 4.5', kind: '看图', caps: ['image', 'video'], mem: { media: .5 }, specs: { q4: { size: 5.1, memory: 7 }, f16: { size: 16, memory: 18 } } },
 };
 const OMNI = 'minicpm-o-4.5';
+// The word is what people choose by; the tag is the precision, kept small for those who know it.
+// Sizes and memory are placeholders. A per-device table replaces bestSpec() later.
+const SPECS = {
+  q4: { label: '轻量', tag: 'Q4', sub: '占用小，响应快' },
+  f16: { label: '完整', tag: 'F16', sub: '回答最接近原版，占用大' },
+};
 const capsText = m => m.caps.map(c => CAPS[c]).join(' · ');
 // Proactive speech is decided per 1 s chunk by forceListen() below.
 // cooldown = minimum seconds between two unprompted utterances.
@@ -933,10 +985,23 @@ const HOLDS = {
   background: { title: '离开时已暂停', sub: '实时会话不在后台运行，它现在听不到也看不到。', after: '回来了，要继续吗？', gap: '离开了应用' },
   route: { title: '耳机断开了，已暂停', sub: '回答不会突然外放，确认后再继续。', resume: '外放继续', gap: '耳机断开' },
   heat: { title: '设备太热，已暂停', sub: '等它降温后再继续，通常要几分钟。', wait: 8, after: '已经降温了，要继续吗？', gap: '设备过热' },
+  // Not a safety stop, so the tap stays available. The title only changes once the charger is in.
+  battery: { title: '电量快用完了，已暂停', sub: '转写都在。接上电源更稳妥，现在继续也可以。', wait: Infinity, anyway: true, after: '接上电源了，要继续吗？', gap: '电量不足' },
   idle: { title: '很久没听到声音，已暂停', sub: '它现在听不到也看不到，点继续后才会重新开始。', gap: '长时间没说话' },
+  lock: { title: '屏幕锁定了，已暂停', sub: '按电源键算离开，它现在听不到也看不到。', after: '回来了，要继续吗？', gap: '屏幕锁定' },
+};
+// Heat and battery walk the same ladder. The worse one sets the level and gets named; heat wins a tie.
+const STRAIN = {
+  heat: { word: '设备发热', slow: '设备有点热，看画面放慢了', voice: '设备太热，先只用声音', back: '降温后画面会恢复，语音还在继续。', ok: '温度恢复了' },
+  battery: { word: '电量低', slow: '电量低，看画面放慢了', voice: '电量很低，先只用声音', back: '接上电源后画面会恢复，语音还在继续。', ok: '接上电源了' },
+};
+// The same retry loop serves a dropped connection and a model that stopped; only the words differ.
+const LINK = {
+  net: { word: '正在重连', title: '连接断了，正在重连', gap: '连接中断', end: '连接中断，已保留到此为止的转写。' },
+  model: { word: '正在重启', title: '模型停止响应，正在重启', gap: '模型中断', end: '模型中断，已保留到此为止的转写。' },
 };
 const ROUTES = { speaker: '扬声器', earpiece: '听筒', buds: 'AirPods Pro' };
-const FIRST_MODELS = [[null, '全能', '能听、能说、能看，可以实时对话'], ['minicpm-v-4.6', '轻量', '看图、读文档，用文字回答']];
+const FIRST_MODELS = [[null, '全能', '能听、能说、能看，可以实时对话'], ['minicpm-v-4.6', '看图', '看图、读文档，用文字回答']];
 const REPLY_WINDOW = 4;                    // seconds after you stop talking that count as a reply
 const SOURCES = {
   voice: { label: '语音', icon: 'duplex', sub: '只用麦克风，随时打断' },
@@ -962,13 +1027,21 @@ const PAST_CAMERA_TURNS = [
   { who: 'user', text: '除垢液用柠檬酸可以吗？', start: 11, end: 13 },
   { who: 'model', text: '可以，按说明书比例稀释，做完再用清水循环两次。', start: 14, end: 19 },
 ];
+// A small model can misread a photo, so every number it read stays one tap from where it read it.
+const SOURCE_REFS = {
+  bp: { item: '血压', value: '118/76', unit: 'mmHg', range: '< 140/90' },
+  chol: { item: '总胆固醇', value: '5.6', unit: 'mmol/L', range: '< 5.2', doubt: '这里有反光，也可能是 5.8。建议自己看一眼。' },
+  glucose: { item: '空腹血糖', value: '6.2', unit: 'mmol/L', range: '3.9–6.1' },
+};
+const srcBtn = (ref, text) => `<button class="src" data-action="show-source" data-ref="${ref}" aria-haspopup="dialog" aria-label="${text}，对照原图">${text}</button>`;
 const REPORT_ANSWER = `<p>整体正常，有两项值得留意。</p>
 <table><thead><tr><th>项目</th><th>结果</th><th>说明</th></tr></thead><tbody>
-<tr><td>血压</td><td>118/76</td><td>在正常范围内</td></tr>
-<tr><td>总胆固醇</td><td>5.6</td><td>略高于参考上限 5.2</td></tr>
-<tr><td>空腹血糖</td><td>6.2</td><td>略高于参考上限 6.1</td></tr>
+<tr><td>血压</td><td>${srcBtn('bp', '118/76')}</td><td>在正常范围内</td></tr>
+<tr><td>总胆固醇</td><td>${srcBtn('chol', '5.6')} <span class="pill warn">看不太清</span></td><td>略高于参考上限 5.2</td></tr>
+<tr><td>空腹血糖</td><td>${srcBtn('glucose', '6.2')}</td><td>略高于参考上限 6.1</td></tr>
 </tbody></table>
-<p>这两项都只是轻微偏高，可以先调整饮食，三个月后复查。具体判断以医生意见为准。</p>`;
+<p>这两项都只是轻微偏高，可以先调整饮食，三个月后复查。具体判断以医生意见为准。</p>
+<p class="src-note">数字是从体检报告.jpg 读出来的，点一下可以对照原图。</p>`;
 const REPOT_ANSWER = `<p>春秋两季最合适。换盆分四步：</p>
 <h3>准备</h3>
 <ul><li>新盆比旧盆大一圈，底部要有<strong>排水孔</strong></li><li>疏松的营养土，加一把珍珠岩</li></ul>
@@ -1031,13 +1104,27 @@ const tasks = [
       { type: 'ai', text: '先按截止时间和依赖关系排了一版：周四前收尾的两件事放在最前，等别人输入的事排在周五。你看优先级要不要调整？', stat: '38 tok/s · 0.9 s' },
     ],
     ctx: { agents: [['Core Agent', '主会话']], skills: [], sources: [], outputs: [] } },
-  { id: 'community', title: '社区消息每日汇总', scene: 'community', group: '昨天', meta: '定时', scheduled: true,
+  { id: 'community', title: '社区消息每日汇总', scene: 'community', group: '昨天', meta: '周三',
     items: [
       { type: 'user', text: '每天早上帮我汇总社区里需要回复的消息。' },
-      { type: 'ai', text: '可以。这个对话由 Schedule Task Agent 按时执行，消息从 Gateway 接入。', stat: '36 tok/s · 0.7 s' },
-      { type: 'note', title: '定时汇总还没有开始运行', body: 'Scheduler 和 Gateway 配置好之后，这里会按天出现汇总结果。', action: ['配置资源服务', 'open-settings', 'resources'] },
+      { type: 'ai', text: '我只在你打开时工作，不能在后台自动汇总。可以每天早上 9 点发一条通知，点开后把消息贴过来，我马上整理。', stat: '36 tok/s · 0.7 s' },
+      { type: 'action', kind: 'notify', when: '每天 09:00', text: '该整理社区消息了' },
     ],
-    ctx: { agents: [['Core Agent', '主会话'], ['Schedule Task Agent', '等待配置']], skills: ['社区消息汇总'], sources: [], outputs: [] } },
+    ctx: { agents: [['Core Agent', '主会话']], skills: ['社区消息汇总'], sources: [], outputs: [] } },
+  { id: 'memo', title: '记一下交发票的事', scene: 'work', group: '昨天', meta: '周三',
+    items: [
+      { type: 'user', text: '帮我记一下：周五前把发票交给财务。' },
+      { type: 'ai', text: '好，这句可以写到备忘录里。', stat: '41 tok/s · 0.4 s' },
+      { type: 'action', kind: 'memo', text: '周五前把发票交给财务' },
+    ],
+    ctx: { agents: [['Core Agent', '主会话']], skills: [], sources: [], outputs: [] } },
+  { id: 'allergy', title: '感冒了能吃什么', scene: 'life', group: '昨天', meta: '周三',
+    items: [
+      { type: 'user', text: '我对青霉素过敏，感冒了能吃什么？' },
+      { type: 'ai', text: '普通感冒一般不用抗生素，主要是退热、止咳、多喝水。你对青霉素过敏，买药时告诉药师，具体用药以医生和药师的意见为准。', stat: '42 tok/s · 0.9 s' },
+      { type: 'memory', text: '你对青霉素过敏' },
+    ],
+    ctx: { agents: [['Core Agent', '主会话']], skills: [], sources: [], outputs: [] } },
   { id: 'repot', title: '给绿萝换盆', scene: 'life', group: '昨天', meta: '周三',
     items: [{ type: 'user', text: '绿萝怎么换盆？' }, { type: 'ai', html: REPOT_ANSWER, stat: '44 tok/s · 1.6 s' }],
     ctx: { agents: [['Core Agent', '主会话']], skills: [], sources: [], outputs: [] } },
@@ -1094,7 +1181,8 @@ const SETTINGS_NAV = [
 // Pages reached from another settings page rather than from the list.
 const DEVELOPER_PAGES = [['agents', 'Agents', '执行角色和它们的状态'], ['skills', 'Skills', '已安装的技能分组'], ['resources', '资源服务', '媒体、工具与外部通道']];
 const PRIVACY_PAGES = [['memories', '已记住的内容'], ['network', '联网记录']];
-const parentOf = tab => (DEVELOPER_PAGES.some(([id]) => id === tab) ? 'advanced' : PRIVACY_PAGES.some(([id]) => id === tab) ? 'privacy' : null);
+const GENERAL_PAGES = [['reminders', '定时通知']];
+const parentOf = tab => (DEVELOPER_PAGES.some(([id]) => id === tab) ? 'advanced' : PRIVACY_PAGES.some(([id]) => id === tab) ? 'privacy' : GENERAL_PAGES.some(([id]) => id === tab) ? 'general' : null);
 // Values are placeholders; the keys are the engine's real request fields.
 const PRESETS = {
   saver: { label: '省电', sub: '回答更短，更省电', params: { max_tokens: 512, temperature: .7, top_p: .9, top_k: 40, repeat_penalty: 1.05, n_ctx: 2048, n_gpu_layers: 99 } },
@@ -1113,16 +1201,23 @@ const state = {
   address: '127.0.0.1:9060',
   onboard: null,                 // welcome | model | download
   obModel: OMNI,
+  obSpec: null,                  // null follows bestSpec()
   locked: false,
   cover: false,
-  dl: null,                      // { id, pct, status: running | paused | wifi | failed | verifying }
+  dl: null,                      // { id, spec, pct, status: running | paused | wifi | failed | verifying }
   netLog: [],
+  crashed: null,                 // what the last run left behind: { kind: 'live', taskId, source, at } or { kind: 'load' }
+  crashAsk: false,               // a crash report is waiting for an answer
+  crashSent: null,               // when one went out; it stays in the network log
   model: OMNI,                   // the app's one current model
-  loaded: OMNI,                  // what the on-device engine holds in memory
+  loaded: OMNI,                  // what the on-device engine holds in memory; null before the first load or after idle release
   loading: null,
+  liveQueued: null,              // a live source waiting for the model; nothing is captured until it starts
   loadThen: [],                  // what waits for the load: a sent message, a live start
   swapFail: null,                // { id } a model that would not fit
   installed: new Set(['minicpm-o-4.5', 'minicpm-v-4.6']),
+  specs: { 'minicpm-o-4.5': 'q4', 'minicpm-v-4.6': 'q4' },   // one spec per model stays on disk
+  askSpec: null,
   backend: store.get('backend', 'local'),   // local | remote
   remote: { url: store.get('remoteUrl', ''), hasToken: false },   // the token itself is never kept here
   voice: 'qing',
@@ -1133,7 +1228,7 @@ const state = {
     // Voice
     speed: '1', replyLang: 'ui', replyLength: 'normal', callName: '',
     // Live
-    interrupt: 'mid', captions: true, captionSize: 'm', defaultSource: 'voice', cameraDefault: 'back', idlePause: '10',
+    interrupt: 'mid', captions: true, captionSize: 'm', defaultSource: 'voice', cameraDefault: 'back', idlePause: '10', keepAwake: true, farView: true,
     // Model
     idleRelease: '15', lowPower: true, thermal: true, wifiOnly: true,
     // Privacy
@@ -1141,6 +1236,9 @@ const state = {
     muteNotify: true, blurFaces: false, autoLock: '1', hidePreview: true, noScreenshot: false, encrypt: true },
   sceneOff: new Set(),
   memories: ['你习惯用公制单位', '你对青霉素过敏', '回答尽量简短'],
+  timers: [{ id: 'tm1', when: '工作日 18:00', text: '把今天的发票拍下来', taskId: 'invoice' }],   // system notifications; the model does not run for them
+  backup: { on: false, status: 'idle', pct: 0, last: '今天 03:12', size: '98 MB', hasCloud: false, ask: null },   // status: idle | running | full | signedout
+  importFail: false,
   preset: 'balanced',            // saver | balanced | detail | custom
   params: { ...PRESETS.balanced.params },
   placeOpen: false,
@@ -1152,7 +1250,7 @@ const state = {
   reply: null,                   // { taskId, item, timer }
   live: null,
   permError: null,
-  proto: { perm: 'granted', weak: false, hw: 'discrete', tight: false, heat: 0, device: 'ok', storage: 'ok', runtime: 'app', oom: false },   // runtime: app | browser | nogpu
+  proto: { perm: 'granted', notify: 'granted', icloud: true, weak: false, hw: 'discrete', tight: false, heat: 0, battery: 0, device: 'ok', storage: 'ok', runtime: 'app', oom: false },   // runtime: app | browser | nogpu
 };
 const task = id => tasks.find(t => t.id === id);
 const activeScenes = t => Object.keys(SCENES).filter(id => !state.sceneOff.has(id) || id === t?.scene);
@@ -1182,10 +1280,10 @@ function renderNav() {
     if (t.group !== group) { group = t.group; html += `<div class="nav-group">${group}</div>`; }
     const live = state.live?.taskId === t.id;
     const busy = state.reply?.taskId === t.id;
-    const flag = live ? '<span class="task-flag live" title="实时会话进行中"></span>'
+    const flag = live ? `<span class="task-flag live ${capturing(state.live) ? '' : 'held'}" title="${state.live.hold ? '实时会话已暂停' : '实时会话进行中'}"></span>`
       : busy ? '<span class="task-flag busy" title="正在生成"></span>'
       : t.unread ? '<span class="task-flag unread" title="有新回复"></span>'
-      : t.scheduled ? `<span class="task-flag sched" title="定时任务">${icon('clock')}</span>` : '';
+      : state.timers.some(x => x.taskId === t.id) ? `<span class="task-flag sched" title="有定时通知">${icon('clock')}</span>` : '';
     html += `<div class="task ${t.id === state.current ? 'current' : ''}">
       <button class="task-main" data-action="select-task" data-id="${t.id}" ${t.id === state.current ? 'aria-current="page"' : ''}>
         <span class="task-title"><b>${esc(t.title)}</b>${flag}</span>
@@ -1212,19 +1310,34 @@ const isRemote = () => state.backend === 'remote';
 const inBrowser = () => state.proto.runtime !== 'app';
 const hereIn = () => (inBrowser() ? '这个浏览器里' : '这台设备上');
 const remoteHost = () => { try { return new URL(state.remote.url).host; } catch { return state.remote.url; } };
-const backendState = () => (isRemote() && !state.remote.url ? 'unset' : !isRemote() && state.proto.runtime === 'nogpu' ? 'nogpu' : state.engine === 'offline' ? 'offline' : !isRemote() && cur() && !state.installed.has(state.model) ? 'nomodel' : 'ready');
+const backendState = () => (isRemote() && !state.remote.url ? 'unset' : isRemote() && state.prefs.offlineMode ? 'nonet' : !isRemote() && state.proto.runtime === 'nogpu' ? 'nogpu' : state.engine === 'offline' ? 'offline' : !isRemote() && cur() && !state.installed.has(state.model) ? 'nomodel' : 'ready');
 const backendReady = () => backendState() === 'ready';
-const needsLocal = () => ['nomodel', 'nogpu'].includes(backendState());
+const cannotSend = () => ['nomodel', 'nogpu', 'nonet'].includes(backendState());
+// Every "where does my content go" line reads from these, so a new path out of the device has one place to land.
+const sendingOut = () => isRemote() && !!state.remote.url && !state.prefs.offlineMode;
+const hasICloud = () => !inBrowser() && state.proto.icloud;
+const backupOn = () => hasICloud() && state.backup.on;
+const localClaim = () => (backupOn() ? '在本机处理' : '内容不离开本机');
+function privacyLine() {
+  if (isRemote()) return !state.remote.url ? '还没设置远程服务，内容不会发送' : state.prefs.offlineMode ? '离线模式开着，内容不会发送' : `内容会发送到 ${remoteHost()} 处理`;
+  return backupOn() ? '只在这台设备上处理，记录备份到你的 iCloud' : '只在这台设备上处理，内容不会离开';
+}
+function privacySummary() {
+  if (sendingOut()) return [`内容正发送到 ${remoteHost()}`, `处理时声音、画面和文字会离开本机，对话记录仍保存在这里${backupOn() ? '，并备份到你的 iCloud' : ''}。`];
+  if (isRemote()) return ['内容现在不会发送', state.remote.url ? '离线模式开着，关闭后才会发送到远程服务。' : '运行位置选了远程服务，填好地址后才会发送到那里。'];
+  if (backupOn()) return ['对话记录备份到你的 iCloud', '声音、画面和文件在本机处理，断网也能用。备份时对话记录会离开这台设备。'];
+  return ['你的内容留在这台设备上', '声音、画面、文件和对话都在本机处理，断网也能用。'];
+}
 const weakLink = () => isRemote() && state.proto.weak;
 const usage = { gpu: 0, cpu: 0, temp: 0, parts: null, ram: 0, rtt: 0, jitter: 0, loss: 0, ready: false };
 function usageTarget() {
-  const off = !backendReady() || isRemote(), L = state.live;
+  const off = !backendReady() || isRemote(), L = state.live, held = MODELS[state.loaded], idle = off || !held;
   const video = L && L.source !== 'voice' && !L.videoOff;
   const load = off ? .02 : L ? (video ? .74 : .46) : state.reply ? .68 : .04;
   const weak = weakLink();
   return {
     gpu: load * 100, cpu: 6 + load * 26, temp: 42 + load * 30, ram: 9.4 + (L ? .5 : 0) + (video ? .4 : 0),
-    parts: { weights: off ? 0 : MODELS[state.loaded].mem.weights, media: off ? 0 : MODELS[state.loaded].mem.media, kv: off ? 0 : L ? L.kv * .00012 : .15, other: state.proto.tight ? 1.05 : .4 },
+    parts: { weights: idle ? 0 : held.specs[specOf(state.loaded)].size - held.mem.media, media: idle ? 0 : held.mem.media, kv: idle ? 0 : L ? L.kv * .00012 : .15, other: state.proto.tight ? 1.05 : .4 },
     rtt: weak ? 640 : L ? 112 : 86, jitter: weak ? 150 : 9, loss: weak ? 2.4 : 0,
   };
 }
@@ -1255,14 +1368,15 @@ function backendHealth() {
   const [, word, kind] = grade(score, isRemote() ? LINK_GRADES : LOAD_GRADES);
   return { label: isRemote() ? '连接质量' : '系统负载', score, word, kind, cause };
 }
-const footerModel = () => (isRemote() ? curModel() : MODELS[state.loading ?? state.loaded]);
+const footerModel = () => (isRemote() ? curModel() : MODELS[state.loading ?? state.loaded] ?? curModel());
 function engineStatus() {
   const st = backendState();
   if (st === 'unset') return ['bad', '远程服务未配置'];
+  if (st === 'nonet') return ['bad', '离线模式已开'];
   if (st === 'nogpu') return ['bad', '这个浏览器不能本机运行'];
   if (st === 'offline') return ['bad', isRemote() ? '连不上远程服务' : '模型未启动'];
   if (st === 'nomodel') return ['warn', state.dl ? `下载中 ${Math.round(state.dl.pct)}%` : '模型未下载'];
-  if (state.loading) return ['warn', '正在换模型'];
+  if (state.loading) return ['warn', state.loaded ? '正在换模型' : '正在准备模型'];
   if (!isRemote() && !state.live && !state.reply && curModel() !== MODELS[state.loaded]) return ['ok', `本机运行 · 发送时载入 ${curModel().short}`];
   const activity = state.live ? '实时会话' : state.reply ? '生成中' : '空闲';
   return [backendHealth()?.kind || 'ok', `${isRemote() ? '远程' : '本机运行'} · ${activity}`];
@@ -1299,6 +1413,7 @@ function resourceDetail() {
   const stat = (k, v, cls = '') => `<div class="stat ${cls}"><span>${k}</span><span class="mono">${v}</span></div>`;
   const st = backendState(), perf = backendHealth();
   if (st === 'unset') return '<div class="hint">填好服务地址后，这里会显示连接质量。</div>';
+  if (st === 'nonet') return '<div class="hint">离线模式开着，连不了远程服务。</div>';
   if (st === 'nogpu') return '<div class="hint">这个浏览器跑不了本机模型，可以换一个浏览器或改用远程服务。</div>';
   if (st === 'nomodel') return '<div class="hint">模型下载好之后，这里会显示系统负载。</div>';
   if (st === 'offline') return `<div class="hint">${isRemote() ? `${esc(remoteHost())} 没有响应。` : '本机模型没有响应。'}检查后重试。</div>`;
@@ -1327,7 +1442,7 @@ function renderHead() {
     const fresh = isBlank(t) && t.autoTitle, model = t.temp && fresh ? '临时对话' : curModel().name, where = isRemote() ? '远程' : '本机';
     $('#head').innerHTML = `
       <button class="icon-btn" data-action="toggle-nav" aria-label="打开对话列表">${icon('menu')}</button>
-      <button class="head-title" data-action="title-sheet" aria-haspopup="dialog" aria-expanded="false"><span class="ht-main"><b>${esc(fresh ? model : t.title)}</b>${icon('down')}</span><small>${state.loading ? '正在换模型' : t.temp ? '不保存记录' : fresh ? `${where}处理` : `${esc(curModel().short)} · ${where}`}</small></button>
+      <button class="head-title" data-action="title-sheet" aria-haspopup="dialog" aria-expanded="false"><span class="ht-main"><b>${esc(fresh ? model : t.title)}</b>${icon('down')}</span><small>${state.loading ? (state.loaded ? '正在换模型' : '正在准备') : t.temp ? '不保存记录' : fresh ? `${where}处理` : `${esc(curModel().short)} · ${where}`}</small></button>
       ${fresh ? tempButton(t) : `<button class="icon-btn" data-action="new-task" aria-label="新对话">${icon('compose')}</button>`}`;
     return;
   }
@@ -1384,7 +1499,7 @@ function turnHTML(t) {
 }
 function liveItemHTML(it) {
   const src = SOURCES[it.source];
-  const turns = `<div class="turns" id="turns-${it.id}">${it.turns.map(t => (t.gap ? `<div class="turn-gap">${esc(t.text)}</div>` : `<div class="turn ${t.who === 'user' ? 'user' : 'model'}" id="${t.id ?? ''}">${turnHTML(t)}</div>`)).join('')}${it.endNote ? `<div class="live-end">${esc(it.endNote)}</div>` : ''}</div>`;
+  const turns = `<div class="turns" id="turns-${it.id}">${it.turns.map(t => (t.memory ? memoryLine(t) : t.gap ? `<div class="turn-gap">${esc(t.text)}</div>` : `<div class="turn ${t.who === 'user' ? 'user' : 'model'}" id="${t.id ?? ''}">${turnHTML(t)}</div>`)).join('')}${it.endNote ? `<div class="live-end">${esc(it.endNote)}</div>` : ''}</div>`;
   if (!it.ended) return `<section class="live-block on"><div class="live-head"><span>实时会话 · ${src.label}</span></div>${turns}</section>`;
   return `<details class="live-block" ${it.open ? 'open' : ''}><summary class="live-head">${icon('chev', 'i chev')}<span class="lbl">实时会话 · ${src.label}</span><span class="mono" style="font-size:12.5px;color:var(--ink-3)">${clock(it.duration)}</span>${miniTimeline(it.turns, it.duration)}</summary>${turns}</details>`;
 }
@@ -1396,7 +1511,8 @@ function aiHTML(it) {
   const voice = it.voice ? `<div class="voice-strip"><button data-action="play-voice" aria-label="播放语音回复">${icon('play')}</button><span class="bars" aria-hidden="true">${[6, 11, 16, 9, 14, 7, 12, 17, 10, 6, 13, 8, 15, 9, 5].map(h => `<i style="height:${h}px"></i>`).join('')}</span><span class="mono" style="font-size:12px">00:${String(it.voice).padStart(2, '0')}</span></div>` : '';
   const live = state.reply?.item === it;
   const art = it.artifact ? `<div class="artifact">${icon('file')}<div><b>${esc(it.artifact.name)}</b><small>${esc(it.artifact.sub)}</small></div><button class="btn" data-action="proto-note" data-msg="原型中不打开文件">打开</button></div>` : '';
-  const cut = it.cut === 'length' ? `<div class="cut">回答太长，到这里停了<button class="btn" data-action="continue-reply" data-id="${it.id}">接着写</button></div>` : '';
+  const cutWhy = { length: '回答太长，到这里停了', crash: '模型中断了，回答到这里' }[it.cut];
+  const cut = cutWhy ? `<div class="cut">${cutWhy}<button class="btn" data-action="continue-reply" data-id="${it.id}">接着写</button></div>` : '';
   return `${steps}${think}${voice}<div class="content ${live ? 'caret' : ''}" id="${it.id}">${content}</div>${art}${cut}
     ${live ? '' : `<div class="msg-tools"><button class="icon-btn" data-action="copy" aria-label="复制" title="复制">${icon('copy')}</button><button class="icon-btn" data-action="regen" aria-label="重新生成" title="重新生成">${icon('retry')}</button><button class="icon-btn" data-action="read-aloud" aria-label="朗读" title="朗读">${icon('speaker')}</button>${it.stat && tech ? `<span class="msg-stat mono">${esc(it.stat)}</span>` : ''}</div>`}`;
 }
@@ -1404,15 +1520,48 @@ function aiHTML(it) {
 function askHTML(it) {
   if (it.state === 'allowed') return `<div class="net-note">${icon('globe')}联网查了“${esc(it.query)}”<button class="link" data-action="open-settings" data-tab="network">联网记录</button></div>`;
   if (it.state === 'denied') return `<div class="net-note">${icon('offline')}没有联网</div>`;
-  return `<div class="ask"><div class="ask-head">${icon('globe')}${esc(it.title)}</div><p>${esc(it.body)}</p><span class="ask-q">${esc(it.query)}</span>
-    <div class="acts"><button class="btn primary" data-action="ask-allow" data-id="${it.id}">查一下</button><button class="btn" data-action="ask-deny" data-id="${it.id}">不用</button></div></div>`;
+  const off = state.prefs.offlineMode;
+  return `<div class="ask"><div class="ask-head">${icon('globe')}${esc(it.title)}</div><p>${off ? '离线模式开着，现在不能联网。' : esc(it.body)}</p><span class="ask-q">${esc(it.query)}</span>
+    <div class="acts">${off ? '<button class="btn primary" data-action="offline-off">关闭离线模式</button>' : `<button class="btn primary" data-action="ask-allow" data-id="${it.id}">查一下</button>`}<button class="btn" data-action="ask-deny" data-id="${it.id}">不用</button></div></div>`;
 }
+// Timed notifications and memos are the only things that happen while the app is closed,
+// and the system does them. Same shape as the network card: nothing happens until a tap.
+function actionHTML(it) {
+  const notify = it.kind === 'notify', web = inBrowser(), ic = notify ? 'clock' : 'file';
+  const line = (it.when ? `${it.when} · ` : '') + it.text;
+  if (it.state === 'added') return `<div class="net-note">${icon(ic)}${notify ? (web ? '已存成日历提醒' : '已添加定时通知') : (web ? '已复制' : '已写到备忘录')}：${esc(line)}${notify && !web ? '<button class="link" data-action="open-settings" data-tab="reminders">管理</button>' : ''}</div>`;
+  if (it.state === 'declined') return `<div class="net-note">${icon(ic)}${notify ? '没有添加定时通知' : '没有写到备忘录'}</div>`;
+  const denied = notify && !web && state.proto.notify === 'denied';
+  const body = denied ? '没有通知权限。在系统设置里允许后重试，或者自己记下来。'
+    : notify ? (web ? '这个页面关掉后发不了通知，可以存成日历提醒。' : '到点发一条通知，点开后回到这里。它不在后台运行。')
+    : web ? '浏览器写不了系统备忘录，可以复制这段文字。' : '写到系统备忘录里，之后可以在那里修改。';
+  const yes = denied ? later('去系统设置', '原型中不跳转系统设置').replace('class="btn"', 'class="btn primary"')
+    : `<button class="btn primary" data-action="act-yes" data-id="${it.id}">${notify ? (web ? '存成日历提醒' : '添加') : (web ? '复制' : '写入')}</button>`;
+  return `<div class="ask"><div class="ask-head">${icon(ic)}${notify ? '加一个定时通知？' : '写到备忘录？'}</div><p>${body}</p><span class="ask-q">${esc(line)}</span>
+    <div class="acts">${yes}<button class="btn" data-action="act-no" data-id="${it.id}">不用</button></div></div>`;
+}
+// What got saved shows up where it happened. It reads state.memories, so a deletion in settings
+// reaches the line too, and the words go with it: someone who took a memory back wants it gone.
+const canRemember = t => state.prefs.memory && !t.temp;
+function memoryLine(it) {
+  const kept = state.memories.includes(it.text);
+  return `<div class="net-note mem-line">${icon('bulb')}${kept
+    ? `已记住：${esc(it.text)}<button class="link" data-action="memory-undo" data-id="${it.id}">撤销</button><button class="link" data-action="open-settings" data-tab="memories">管理</button>`
+    : `已忘掉这条${state.prefs.memory ? `<button class="link" data-action="memory-redo" data-id="${it.id}">重新记住</button>` : ''}`}</div>`;
+}
+function keepMemory(text) {
+  if (!state.memories.includes(text)) state.memories.push(text);
+  say(`已记住：${text}`);
+}
+const memoryItem = id => cur().items.flatMap(i => (i.type === 'live' ? i.turns : [i])).find(x => x.id === id);
 function itemHTML(it) {
   it.id ??= uid('it');
   if (it.type === 'user') return `<div class="msg-user">${it.atts?.length ? `<div class="attach-row">${it.atts.map(a => attHTML(a)).join('')}</div>` : ''}${it.text ? `<div class="bubble">${esc(it.text)}</div>` : ''}${it.failed ? `<div class="msg-fail">${icon('alert')}没有发出去<button data-action="retry-send" data-id="${it.id}">重试</button></div>` : ''}</div>`;
   if (it.type === 'ai') return `<article class="msg-ai">${aiHTML(it)}</article>`;
   if (it.type === 'live') return liveItemHTML(it);
   if (it.type === 'ask') return askHTML(it);
+  if (it.type === 'action') return actionHTML(it);
+  if (it.type === 'memory') return memoryLine(it);
   if (it.type === 'place') return `<div class="turn-gap place">${esc(it.text)}</div>`;
   if (it.type === 'note') return `<div class="note">${icon(it.tone === 'context' ? 'alert' : 'clock')}<div class="grow"><strong>${esc(it.title)}</strong><p>${esc(it.body)}</p>${it.action ? `<div class="acts"><button class="btn" data-action="${it.action[1]}" data-tab="${it.action[2]}">${esc(it.action[0])}</button></div>` : ''}</div></div>`;
   return '';
@@ -1435,7 +1584,7 @@ function renderThread({ stick = false } = {}) {
 function heroHTML() {
   const t = cur();
   return `<div class="hero">${MARK}<h1>${t.temp ? '这段对话不会留下' : '想一起做点什么？'}</h1><p>${t.temp ? '离开后不保存记录，也不写入记忆。' : can('live') ? '打字、说话，或者直接给它看。' : '打字，或者把图片和文档给它看。'}</p>
-    <p class="privacy">${icon('shield')}${isRemote() ? `内容会发送到 ${esc(remoteHost())} 处理` : '只在这台设备上处理，内容不会离开'}</p>
+    <p class="privacy">${icon('shield')}${esc(privacyLine())}</p>
     <div class="scene-row" role="radiogroup" aria-label="应用场景">${activeScenes(t).map(s => `<button class="scene-opt" role="radio" aria-checked="${s === t.scene}" data-action="set-scene" data-scene="${s}" title="${SCENES[s].hint}">${sceneName(s)}</button>`).join('')}</div></div>`;
 }
 const scroller = () => $('#scroll');
@@ -1453,24 +1602,28 @@ function loadModel(then) {
   const id = state.model;
   if (isRemote() || state.loaded === id || !state.installed.has(id)) return then?.();
   if (then) state.loadThen.push(then);
-  if (state.loading === id) return;
+  if (state.loading === id && loadTimer) return;
   const from = state.loaded;
   state.loading = id;
+  if (state.crashed?.kind === 'load') state.crashed = null;
   usage.ready = false; renderAll();
   clearTimeout(loadTimer);
   loadTimer = setTimeout(() => {
-    if (state.proto.oom) { state.proto.oom = false; state.swapFail = { id }; state.model = from; } else state.loaded = id;
+    loadTimer = 0;
+    if (state.proto.oom) { state.proto.oom = false; state.swapFail = { id, cold: !from }; if (from) state.model = from; } else state.loaded = id;
     finishLoad();
   }, 2400);
 }
 function finishLoad() {
-  const waiting = state.loadThen;
-  state.loading = null; state.loadThen = [];
+  // With nothing in memory to fall back on, whatever was waiting keeps waiting for a retry.
+  const stuck = state.swapFail?.cold, waiting = stuck ? [] : state.loadThen;
+  state.loading = null;
+  if (!stuck) state.loadThen = [];
   usage.ready = false; renderAll();
   waiting.forEach(f => f());
 }
 function cancelLoad() {
-  clearTimeout(loadTimer);
+  clearTimeout(loadTimer); loadTimer = 0;
   state.model = state.loaded;
   finishLoad();
   showToast(`已取消，继续用 ${curModel().name}`);
@@ -1517,6 +1670,10 @@ function renderBanner() {
     bad = true;
     html = `${icon('alert')}<span class="txt"><b>还没配置远程服务</b> <span>填好服务地址后才能发送。你写的内容会留在这里。</span></span>
       <button class="btn" data-action="open-settings" data-tab="models">去设置</button>${otherPlace()}`;
+  } else if (backendState() === 'nonet') {
+    bad = true;
+    html = `${icon('alert')}<span class="txt"><b>离线模式开着，连不了远程服务</b> <span>你写的内容会留在这里。</span></span>
+      <button class="btn" data-action="offline-off">关闭离线模式</button>${otherPlace()}`;
   } else if (backendState() === 'nogpu') {
     bad = true;
     html = `${icon('alert')}<span class="txt"><b>这个浏览器跑不了本机模型</b> <span>换一个浏览器，或者改用远程服务。你写的内容会留在这里。</span></span>
@@ -1532,13 +1689,27 @@ function renderBanner() {
       <button class="btn" data-action="download-model" data-id="${state.model}">下载</button><button class="btn" data-action="model-menu" aria-haspopup="menu">换模型</button>`;
   } else if (state.swapFail) {
     bad = true;
-    html = `${icon('alert')}<span class="txt"><b>载不下 ${esc(MODELS[state.swapFail.id].name)}</b> <span>内存不够，已换回 ${esc(curModel().name)}。关掉其他应用后可以重试。</span></span>
-      <button class="btn" data-action="set-model" data-id="${state.swapFail.id}">重试</button><button class="btn" data-action="dismiss-swap">知道了</button>`;
+    html = `${icon('alert')}<span class="txt"><b>载不下 ${esc(MODELS[state.swapFail.id].name)}</b> <span>内存不够${state.swapFail.cold ? '' : `，已换回 ${esc(curModel().name)}`}。关掉其他应用后可以重试。${state.swapFail.cold ? '你写的内容会留在这里。' : ''}</span></span>
+      ${state.swapFail.cold ? '<button class="btn" data-action="load-retry">重试</button>' : `<button class="btn" data-action="set-model" data-id="${state.swapFail.id}">重试</button><button class="btn" data-action="dismiss-swap">知道了</button>`}`;
+  } else if (state.crashed?.kind === 'load') {
+    bad = true;
+    html = `${icon('alert')}<span class="txt"><b>上次载入 ${esc(curModel().name)} 时应用退出了</b> <span>可能是内存不够，这次没有自动载入。你写的内容会留在这里。</span></span>
+      <button class="btn" data-action="crash-load">再试一次</button><button class="btn" data-action="open-settings" data-tab="models">换模型</button>`;
+  } else if (state.loading && !state.loaded) {
+    const wait = `约 ${loadSeconds(state.loading)} 秒`;
+    html = `${icon('clock')}<span class="txt"><b>正在准备 ${esc(MODELS[state.loading].name)}</b> <span>${state.liveQueued ? `${wait}，准备好就开始实时。现在还没有在听。` : `${wait}。可以先写，发送后会自动接上。`}</span></span>
+      ${state.liveQueued ? '<button class="btn" data-action="live-wait-cancel">取消</button>' : ''}`;
   } else if (state.loading) {
     html = `${icon('clock')}<span class="txt"><b>正在换到 ${esc(MODELS[state.loading].name)}</b> <span>约 ${loadSeconds(state.loading)} 秒。可以先写，发送后会自动接上。</span></span>
       <button class="btn" data-action="cancel-load">取消</button>`;
   } else if (state.live && !liveHere()) {
     html = `${icon('alert')}<span class="txt"><b>${state.live.hold ? '实时会话已暂停' : '正在实时会话中'}</b> <span>一次只能运行一个会话，结束后就能在这里发送。</span></span>`;
+  } else if (state.crashed?.kind === 'live' && state.crashed.taskId === state.current) {
+    html = `${icon('alert')}<span class="txt"><b>上次实时会话意外结束</b> <span>转写保留到 ${clock(state.crashed.at)}，现在没有在听。</span></span>
+      <button class="btn" data-action="crash-restart">重新开始</button><button class="btn" data-action="crash-dismiss">知道了</button>`;
+  } else if (state.crashAsk && !state.prefs.offlineMode && !liveHere()) {
+    html = `${icon('alert')}<span class="txt"><b>发送崩溃报告？</b> <span>只含设备型号、应用版本和出错的位置，不含对话、声音或画面。</span></span>
+      <button class="btn" data-action="crash-send">发送</button><button class="btn" data-action="crash-skip">不发送</button>`;
   }
   b.hidden = !html; b.className = `banner${bad ? ' bad' : ''}`; b.innerHTML = html;
 }
@@ -1558,12 +1729,12 @@ function syncComposer() {
   const send = $('#sendBtn');
   const unreadable = state.atts.some(a => !attOk(a));
   send.hidden = !(has || busy || !canLive()) || !!state.recording;
-  send.disabled = !busy && (engineTaken || !has || unreadable || needsLocal());
+  send.disabled = !busy && (engineTaken || !has || unreadable || cannotSend());
   send.innerHTML = icon(busy ? 'stop' : 'up');
   send.setAttribute('aria-label', busy ? '停止生成' : '发送');
   send.title = busy ? '停止生成 (Esc)' : state.sendKey === 'enter' ? '发送 (Enter)' : `发送 (${MOD}Enter)`;
   const live = $('#liveBtn');
-  live.disabled = !backendReady() || engineTaken || !!state.loading;
+  live.disabled = !backendReady() || engineTaken || !!state.liveQueued || (!!state.loading && !!state.loaded);
   live.hidden = !!state.recording || !canLive();
   $('#recBtn').hidden = !can('audio');
   $('#voiceReply').hidden = !can('speech');
@@ -1603,7 +1774,7 @@ function markPlace(t) {
 }
 function send() {
   if (state.reply?.taskId === state.current) return stopReply();
-  if ((state.live && !liveHere()) || needsLocal()) return;
+  if ((state.live && !liveHere()) || cannotSend()) return;
   const text = $('#prompt').value.trim();
   if (!text && !state.atts.length) return;
   const t = cur();
@@ -1643,18 +1814,22 @@ function buildFollowUp(t) {
     messages: [{ role: 'system', text: system }, ...history, { role: 'user', text: last?.text || '请结合这个画面继续。', images: image ? [image.name] : [] }],
   };
 }
+// The prototype saves what you ask it to. A real model picks for itself; the line works the same.
+const memoryFrom = text => text?.match(/^(?:请|帮我)?记住[：:，,\s]*(.+?)[。.！!]?$/)?.[1].replace(/^我/, '你');
 function startReply(t) {
+  const asked = memoryFrom(t.items.at(-1).text), keep = !!asked && canRemember(t);
   const req = state.lastRequest = buildFollowUp(t);
   const prev = t.items.at(-2);                       // item before the user's message
   const liveBefore = prev?.type === 'live' ? prev : null;
-  const full = liveBefore ? LIVE_FOLLOW_UP[liveBefore.source] : REPLIES[t.items.length % REPLIES.length];
+  const full = asked ? (keep ? '好，记下了。' : t.temp ? '这是临时对话，我不会记下来。' : '记忆关着，我不会记下来。可以在“隐私与数据”里打开。')
+    : liveBefore ? LIVE_FOLLOW_UP[liveBefore.source] : REPLIES[t.items.length % REPLIES.length];
   const it = { type: 'ai', text: '', voice: state.voiceReply && curModel().caps.includes('speech') ? 9 : 0, thought: state.thinking ? 3 : 0 };
   if (liveBefore) {
     const frame = req.messages.at(-1).images.length > 0;
     it.steps = [['Core Agent', `带上实时记录 ${req.carried} 段${frame ? '和 1 帧画面' : ''}`]];
   }
   t.items.push(it);
-  const r = state.reply = { taskId: t.id, item: it, timer: 0, t0: performance.now() };
+  const r = state.reply = { taskId: t.id, item: it, timer: 0, t0: performance.now(), remember: keep ? asked : null };
   renderAll({ stick: true });
   let i = 0;
   const step = () => {
@@ -1673,12 +1848,14 @@ function finishReply() {
   const secs = ((performance.now() - r.t0) / 1000).toFixed(1);
   r.item.stat = `${curModel().short} · ${Math.round(38 + Math.random() * 6)} tok/s · ${secs} s`;
   state.reply = null;
+  if (r.remember) { keepMemory(r.remember); task(r.taskId).items.push({ type: 'memory', text: r.remember }); }
   if (r.taskId !== state.current) task(r.taskId).unread = true;
   renderAll();
 }
 function stopReply() {
   const r = state.reply; if (!r) return;
   r.item.text += r.item.text ? ' …' : '已停止。';
+  r.remember = null;
   finishReply();
 }
 
@@ -1732,7 +1909,12 @@ function startLive(source) {
   if (state.live) return;
   if (!backendReady()) return;
   if (!can('live')) return !liveReachable() ? undefined : isRemote() ? setModel(OMNI, () => startLive(source)) : swapPrimer(source);
-  if (!isRemote() && state.loaded !== state.model) return loadModel(() => startLive(source));
+  if (!isRemote() && state.loaded !== state.model) {
+    if (state.liveQueued) { state.liveQueued = source; return; }
+    state.liveQueued = source;
+    loadModel(() => { const queued = state.liveQueued; state.liveQueued = null; if (queued) startLive(queued); });
+    return renderBanner(), syncComposer();
+  }
   if (state.proto.perm === 'ask') return permPrimer(source);
   if (state.proto.perm === 'denied') {
     state.permError = { source, title: source === 'screen' ? '没有屏幕录制权限' : source === 'camera' ? '没有摄像头权限' : '没有麦克风权限' };
@@ -1744,6 +1926,7 @@ function startLive(source) {
   if (isBlank(t) && t.autoTitle) { t.title = `实时会话 · ${SOURCES[source].label}`; t.autoTitle = false; }
   const item = { type: 'live', source, turns: [], ended: false, duration: 0, id: uid('it') };
   t.items.push(item);
+  if (state.crashed?.kind === 'live') state.crashed = null;
   state.live = {
     taskId: t.id, source, item, phase: 'connecting', connect: .9,
     clock: 0, script: 0, queue: LIVE_SCRIPT[source].map(e => ({ ...e })), active: [],
@@ -1759,7 +1942,7 @@ function startLive(source) {
 function setLiveSource(source) {
   const L = state.live;
   if (!L) return;
-  L.source = L.item.source = source; L.videoOff = false;
+  L.source = L.item.source = source; L.videoOff = false; L.far = false;
   renderThread({ stick: true }); renderStage(); renderDock();
 }
 function endLive({ note = null, toast = true } = {}) {
@@ -1798,6 +1981,7 @@ function holdLive(reason) {
   if (!L || L.hold) return;
   for (const a of [...L.active]) finishTurn(L, a, a.who === 'model' ? 'hold' : undefined);
   L.hold = { reason, ...HOLDS[reason], ready: !HOLDS[reason].wait };
+  if (reason === 'battery') state.proto.battery = 3;
   L.holdFor = 0; L.idle = null; L.link = null;
   closeMenu(); renderAll({ stick: true });
   say(L.hold.title);
@@ -1808,26 +1992,36 @@ function resumeLive() {
   const { reason, gap } = L.hold;
   if (reason === 'route') L.route = 'speaker';
   if (reason === 'heat') state.proto.heat = 1;
+  if (reason === 'battery') state.proto.battery = L.hold.ready ? 0 : 2;
   L.hold = null; L.lastUser = L.clock;
   pushGap(L, `${gap} · 暂停了 ${spanText(L.holdFor)}`);
   renderAll({ stick: true });
   say('实时会话已继续');
 }
-function applyHeat() {
-  const L = state.live, h = state.proto.heat;
-  if (!L) return;
-  if (h === 3) return holdLive('heat');
-  if (L.hold?.reason === 'heat') L.hold.ready = true;
-  const line = ['温度恢复了', '设备有点热，看画面放慢了', '设备太热，先只用声音'][h];
-  if (!L.hold) pushGap(L, line);
-  showToast(line);
+// With auto power saving off only the last step stays: a dead phone is a worse pause.
+const batteryLevel = () => (state.prefs.lowPower || state.proto.battery === 3 ? state.proto.battery : 0);
+const strain = () => Math.max(state.proto.heat, batteryLevel());
+const strainCopy = () => STRAIN[batteryLevel() > state.proto.heat ? 'battery' : 'heat'];
+function applyStrain(cause) {
+  const L = state.live, level = cause === 'battery' ? batteryLevel() : state.proto.heat;
+  if (!L || (cause === 'battery' && state.proto.battery && !level)) return;
+  if (level === 3) return holdLive(cause);
+  if (L.hold?.reason === cause) L.hold.ready = true;
+  // A voice session has no picture to slow down, so only the status word changes.
+  if (L.source !== 'voice') {
+    const s = STRAIN[cause], line = [s.ok, s.slow, s.voice][level];
+    if (!L.hold) pushGap(L, line);
+    showToast(line);
+  }
   renderStage(); renderDock(); syncPresence();
 }
 // Once the cause is gone the title turns into a question, and the line under it says what the tap does.
 const holdCopy = h => (h.ready && h.after ? [h.after, '点继续后才会重新开始听和看。'] : [h.title, h.sub]);
-const seeing = L => L.source !== 'voice' && !L.videoOff && !L.hold && state.proto.heat < 2;
-const fpsText = () => (state.proto.heat >= 1 ? '每 3 秒看 1 帧' : weakLink() ? '每 2 秒看 1 帧' : '每秒看 1 帧');
-const healthText = () => (state.live?.hold || state.live?.link ? '没有在听' : state.proto.heat ? '设备发热' : weakLink() ? '网络不稳' : '运行正常');
+const seeing = L => L.source !== 'voice' && !L.videoOff && !L.hold && strain() < 2;
+// Cinnabar answers this and nothing else: is the device listening or looking right now?
+const capturing = L => L.phase !== 'connecting' && !L.hold && !L.link && (!L.muted || seeing(L));
+const fpsText = () => (strain() >= 1 ? '每 3 秒看 1 帧' : weakLink() ? '每 2 秒看 1 帧' : '每秒看 1 帧');
+const healthText = () => (state.live?.hold || state.live?.link ? '没有在听' : strain() ? strainCopy().word : weakLink() ? '网络不稳' : '运行正常');
 const revealed = a => Math.floor(a.turn.text.length * Math.min(1, (state.live.clock - a.start) / a.dur));
 function phaseOf(L) {
   if (L.phase === 'connecting') return 'connecting';
@@ -1839,11 +2033,31 @@ function phaseOf(L) {
   if (u) return 'you';
   return 'listening';
 }
-const PHASE_LABEL = { held: '已暂停', reconnect: '正在重连', connecting: '正在连接', listening: '聆听中', you: '正在听你说', model: '正在回应', proactive: '主动提醒', overlap: '听到你了，让出话轮' };
+const PHASE_LABEL = { held: '已暂停', reconnect: LINK.net.word, connecting: '正在连接', listening: '聆听中', you: '正在听你说', model: '正在回应', proactive: '主动提醒', overlap: '听到你了，先停下' };
+const presenceWord = (L, phase = phaseOf(L)) => (phase === 'reconnect' && L.link ? LINK[L.link.kind].word : L.muted && phase === 'listening' ? '麦克风已关' : L.hush && phase === 'listening' ? '先听你说' : PHASE_LABEL[phase]);
 const speech = (t, seed) => (.3 + .7 * Math.abs(Math.sin(t * 8.3 + seed + Math.sin(t * 2.1) * 2))) * (.55 + .45 * Math.random()) * (Math.sin(t * 1.3 + seed) > -.75 ? 1 : .15);
+// Set the phone down and the words grow. Wall clock, so fast-forwarded review states stay as linked.
+const FAR_AFTER_MS = 15000, AUTO_FAR = !new URLSearchParams(location.search).has('live');
+let lastTouch = performance.now();
+addEventListener('pointerdown', () => { lastTouch = performance.now(); }, { passive: true });
+function setFar(on) {
+  const L = state.live;
+  if (!L) return;
+  L.far = on; lastTouch = performance.now();
+  renderStage(); renderDock();
+  say(on ? '远看模式' : '已回到记录');
+}
+// Out of retries: the session keeps what it has and the banner takes over from the dock.
+function failLink() {
+  const L = state.live, { kind } = L.link;
+  L.link = null; state.engine = 'offline';
+  endLive({ note: LINK[kind].end, toast: false });
+  if (kind === 'model') reportCrash();
+}
 function stepLive(dt) {
   const L = state.live;
   if (!L) return;
+  if (AUTO_FAR && !L.far && state.prefs.farView && L.source === 'voice' && isCompact() && liveHere() && !state.settingsTab && $('#menu').hidden && performance.now() - lastTouch > FAR_AFTER_MS) setFar(true);
   if (L.hold) {
     L.holdFor += dt;
     if (!L.hold.ready && L.holdFor >= L.hold.wait) { L.hold.ready = true; renderStage(); renderDock(); say(L.hold.after); }
@@ -1852,8 +2066,9 @@ function stepLive(dt) {
   if (L.link) {
     L.link.t += dt;
     if (L.link.t >= L.link.tries * 1.8) { L.link.tries++; renderDockNote(); }
+    if (L.link.tries > L.link.giveUp) return failLink();
     if (L.link.t >= L.link.recover) {
-      pushGap(L, `连接中断 ${spanText(L.link.t)}，这段时间没有听到`);
+      pushGap(L, `${LINK[L.link.kind].gap} ${spanText(L.link.t)}，这段时间没有听到`);
       L.link = null; renderDock(); syncPresence();
     }
     return;
@@ -1893,7 +2108,7 @@ function stepLive(dt) {
     if (L.samples.length > 520) L.samples.shift();
   }
   L.secAcc += dt;
-  const period = state.proto.heat >= 1 ? 3 : weakLink() ? 2 : 1;
+  const period = strain() >= 1 ? 3 : weakLink() ? 2 : 1;
   if (L.secAcc >= period && L.samples.length) {
     L.secAcc -= period;
     const s = L.samples.at(-1);
@@ -1919,7 +2134,7 @@ function finishTurn(L, a, cut) {
 }
 function repaintTurns() {
   const L = state.live;
-  for (const t of L?.item.turns ?? []) paintTurn(L, t);
+  for (const t of L?.item.turns ?? []) if (!t.gap) paintTurn(L, t);
 }
 function paintTurn(L, turn) {
   const box = document.getElementById(`turns-${L.item.id}`);
@@ -1974,10 +2189,13 @@ function paintLive() {
     const d = $('#dock');
     if (d.dataset.phase !== phase) {
       d.dataset.phase = phase;
-      $('#presence').textContent = L.muted && phase === 'listening' ? '麦克风已关' : L.hush && phase === 'listening' ? '先听你说' : PHASE_LABEL[phase];
+      $('#presence').textContent = presenceWord(L, phase);
+      const far = $('.far-view');
+      if (far) { far.dataset.phase = phase; $('#farWord').textContent = presenceWord(L, phase); }
       if (phase === 'listening' || phase === 'model' || phase === 'proactive') say(PHASE_LABEL[phase]);
     }
     $('#liveT').textContent = clock(L.clock);
+    $('#liveRec').hidden = !capturing(L);
     drawTracks();
     if (L.sampled) {
       L.sampled = false;
@@ -2065,7 +2283,7 @@ const CAMERA_MOCK = `<svg class="mock-cam" viewBox="0 0 800 560" preserveAspectR
   </g>
 </svg>`;
 function renderStage() {
-  const L = state.live, on = liveHere() && L.source !== 'voice';
+  const L = state.live, on = liveHere() && (L.source !== 'voice' || (L.far && isCompact()));
   $('#body').classList.toggle('has-stage', !!on);
   $('#app').classList.toggle('stage-on', !!on && isCompact());
   if (!on) $('#app').classList.remove('log-open');
@@ -2074,26 +2292,27 @@ function renderStage() {
   const was = st.dataset.source;
   st.hidden = !on;
   if (!on) { st.dataset.source = ''; st.innerHTML = ''; return; }
-  const blind = !seeing(L);
+  const voice = L.source === 'voice', blind = voice ? !capturing(L) : !seeing(L), covered = voice ? !!L.hold : blind;
   const [pauseTitle, pauseSub] = L.hold ? holdCopy(L.hold)
-    : state.proto.heat >= 2 ? ['设备太热，先只用声音', '降温后画面会恢复，语音还在继续。'] : ['画面已暂停', '语音还在继续，模型现在看不到任何内容。'];
+    : strain() >= 2 ? [strainCopy().voice, strainCopy().back] : ['画面已暂停', '语音还在继续，模型现在看不到任何内容。'];
   const pause = `${icon(L.hold ? 'hush' : 'camera-off')}<b>${pauseTitle}</b><small>${pauseSub}</small>`;
   const fps = fpsText();
   const name = L.source === 'screen' ? '窗口：session.ts' : '前置摄像头';
-  const tags = `<div class="stage-tags"><span class="tag">${blind ? '模型看不到画面' : `<i class="rec"></i>${isRemote() ? '正在上传' : '本机处理'} · ${fps}`}</span>
+  const tags = `<div class="stage-tags"><span class="tag">${blind ? (voice ? '没有在听' : '模型看不到画面') : `<i class="rec"></i>${isRemote() ? '正在上传' : '本机处理'} · ${voice ? '只用声音' : fps}`}</span>
     ${!isCompact() ? `<button class="tag" data-action="source-menu" aria-haspopup="menu" title="更换来源">${esc(name)}${icon('down', 'i')}</button>`
       : L.source === 'camera' ? `<button class="tag" data-action="flip-camera" aria-label="切换前后摄像头">${icon('flip')}${L.facing === 'front' ? '前置' : '后置'}</button>` : ''}</div>`;
   if (was === L.source && st.firstElementChild) {
     st.querySelector('.stage-tags').outerHTML = tags;
     st.querySelector('.viewport').classList.toggle('off', blind);
-    st.querySelector('.paused').hidden = !blind;
+    st.querySelector('.paused').hidden = !covered;
     st.querySelector('.paused').innerHTML = pause;
     return;
   }
   st.dataset.source = L.source;
-  st.innerHTML = `<div class="viewport ${blind ? 'off' : ''}">${L.source === 'screen' ? SCREEN_MOCK : CAMERA_MOCK}
+  const far = `<button class="far-view" data-action="far-off" data-phase="${phaseOf(L)}" aria-label="回到记录"><i class="lamp"></i><strong id="farWord">${presenceWord(L)}</strong><small>点屏幕回到记录</small></button>`;
+  st.innerHTML = `<div class="viewport ${voice ? 'far' : ''} ${blind ? 'off' : ''}">${voice ? far : L.source === 'screen' ? SCREEN_MOCK : CAMERA_MOCK}
     <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>${tags}
-    <div class="paused" ${blind ? '' : 'hidden'}>${pause}</div></div>`;
+    <div class="paused" ${covered ? '' : 'hidden'}>${pause}</div></div>`;
 }
 function renderDock() {
   const L = state.live, on = liveHere();
@@ -2102,16 +2321,16 @@ function renderDock() {
   $('#composer').hidden = !!on;
   $('#bottom').classList.toggle('live', !!on);
   if (!on) { d.innerHTML = ''; d.dataset.phase = ''; return; }
-  const hasVideo = L.source !== 'voice';
+  const hasVideo = L.source !== 'voice', hot = strain() >= 2;
   const canvasKept = $('#tracks');
   const ctrl = L.hold ? `
-    <button class="ctl resume" data-action="live-resume" ${L.hold.ready ? '' : 'disabled'}>${icon('resume')}<span>${L.hold.resume ?? '继续'}</span></button>
+    <button class="ctl resume" data-action="live-resume" ${L.hold.ready || L.hold.anyway ? '' : 'disabled'}>${icon('resume')}<span>${L.hold.resume ?? '继续'}</span></button>
     <button class="ctl keep" data-action="live-to-text" title="结束实时，改用文字继续">${icon('keyboard')}<span>转文字</span></button>
     <button class="ctl end" data-action="live-end" title="结束实时会话">${icon('end')}<span>结束</span></button>` : `
     <button class="ctl ${L.muted ? 'off' : ''}" data-action="live-mute" aria-pressed="${L.muted}" title="麦克风 (Alt+M)">${icon(L.muted ? 'mic-off' : 'mic')}<span>${L.muted ? '已静音' : '麦克风'}</span></button>
     ${isCompact()
-      ? `<button class="ctl" data-action="live-camera" aria-pressed="${hasVideo}" title="${hasVideo ? '关闭摄像头，回到语音' : '打开摄像头'}">${icon('camera')}<span>画面</span></button>`
-      : `<button class="ctl ${hasVideo && L.videoOff ? 'off' : ''}" data-action="${hasVideo ? 'live-video' : 'source-menu'}" ${hasVideo ? `aria-pressed="${L.videoOff}"` : 'aria-haspopup="menu"'} title="${hasVideo ? '暂停或恢复画面 (Alt+V)' : '加入画面'}">${icon(hasVideo ? (L.videoOff ? 'camera-off' : L.source === 'screen' ? 'screen' : 'camera') : 'camera')}<span>${!hasVideo ? '加入画面' : L.videoOff ? '已暂停' : '画面'}</span></button>`}
+      ? `<button class="ctl" data-action="live-camera" aria-pressed="${hasVideo && !hot}" title="${hasVideo ? '关闭摄像头，回到语音' : '打开摄像头'}">${icon(hasVideo && hot ? 'camera-off' : 'camera')}<span>画面</span></button>`
+      : `<button class="ctl ${hasVideo && (L.videoOff || hot) ? 'off' : ''}" data-action="${hasVideo ? 'live-video' : 'source-menu'}" ${hasVideo ? `aria-pressed="${L.videoOff}"` : 'aria-haspopup="menu"'} title="${hasVideo ? '暂停或恢复画面 (Alt+V)' : '加入画面'}">${icon(hasVideo ? (L.videoOff || hot ? 'camera-off' : L.source === 'screen' ? 'screen' : 'camera') : 'camera')}<span>${!hasVideo ? '加入画面' : L.videoOff ? '已暂停' : '画面'}</span></button>`}
     ${hasVideo ? `<button class="ctl" data-action="live-freeze" ${L.videoOff ? 'disabled' : ''} title="定格这一帧，转成文字提问 (Alt+F)">${icon('freeze')}<span>定格提问</span></button>` : ''}
     <button class="ctl" data-action="live-hush" aria-pressed="${L.hush}" title="让它停下，只听不说 (Alt+H)">${icon('hush')}<span>先听我说</span></button>
     <button class="ctl only-compact" data-action="live-more" aria-haspopup="dialog" aria-expanded="false">${icon('more')}<span>更多</span></button>
@@ -2124,7 +2343,7 @@ function renderDock() {
     <button class="live-cap" id="liveCap" data-action="live-log" aria-label="查看完整记录">你可以直接开口，它在看着</button>
     <button class="dock-status" data-action="live-stats" aria-haspopup="dialog" title="查看运行状态">
       <span class="ds-row"><i class="lamp"></i><strong id="presence">正在连接</strong></span>
-      <small><span class="mono" id="liveT">00:00</span><span id="liveHealth">${healthText()}</span></small>
+      <small><i class="rec" id="liveRec" title="正在采集" hidden></i><span class="mono" id="liveT">00:00</span><span id="liveHealth">${healthText()}</span></small>
     </button>
     <div class="tracks" role="img" aria-label="双向音频轨：上方是你，下方是 MiniCPM"><span class="lane you">你</span><span class="lane me">MiniCPM</span><canvas id="tracks"></canvas></div>
     <div class="dock-ctrl">${ctrl}</div>`;
@@ -2135,7 +2354,7 @@ function renderDockNote() {
   if (!L || !n) return;
   const h = L.hold;
   const html = h ? `<b>${holdCopy(h)[0]}</b><small>${holdCopy(h)[1]}</small>`
-    : L.link ? `<b>连接断了，正在重连</b><small>第 ${L.link.tries} 次尝试，到目前为止的记录都在。</small>`
+    : L.link ? `<b>${LINK[L.link.kind].title}</b><small>第 ${L.link.tries} 次尝试，到目前为止的记录都在。</small>`
     : L.idle !== null ? `<b>没听到声音，<span id="idleN">${Math.ceil(L.idle)}</span> 秒后暂停</b><button class="btn" data-action="live-keep">继续聊</button>` : '';
   n.hidden = !html; n.innerHTML = html;
   $('#dock').classList.toggle('noted', !!html);
@@ -2152,6 +2371,7 @@ function renderLivebar() {
   b.hidden = !on;
   $('#app').classList.toggle('bar-on', on);
   if (!on) { b.innerHTML = ''; return; }
+  b.classList.toggle('held', !capturing(L));
   b.innerHTML = `<span class="grow">${L.hold ? '实时会话已暂停' : '实时会话进行中'} · ${esc(task(L.taskId).title)}</span><span class="mono" id="livebarT">${clock(L.clock)}</span>
     <button data-action="live-return">返回</button><button data-action="live-end">结束</button>`;
 }
@@ -2162,13 +2382,15 @@ function renderInspector() {
   el.hidden = !state.inspector;
   $('#app').classList.toggle('ins-open', state.inspector);
   if (!state.inspector) return;
+  const overlay = innerWidth <= 1180;
+  if (overlay) { el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); } else { el.removeAttribute('role'); el.removeAttribute('aria-modal'); }
   const list = (rows, ic, empty) => rows.length ? rows.map(n => `<div class="ins-item">${icon(ic)}<span class="nm">${esc(n)}</span></div>`).join('') : `<p class="ins-empty">${empty}</p>`;
   el.innerHTML = `<div class="ins-top">${isCompact() ? '对话详情' : '对话详情'}<button class="icon-btn" data-action="toggle-inspector" aria-label="关闭对话详情">${icon('close')}</button></div>
-    <div class="ins-sec"><h3>处理位置</h3><div class="ins-item">${icon('shield')}<span class="nm">${isRemote() ? esc(remoteHost()) : '这台设备'}</span></div><p class="ins-empty">${isRemote() ? '内容会发送到这台服务器处理。' : '声音、画面和文件都留在本机。'}</p></div>
+    <div class="ins-sec"><h3>处理位置</h3><div class="ins-item">${icon('shield')}<span class="nm">${isRemote() ? esc(remoteHost() || '还没设置远程服务') : '这台设备'}</span></div><p class="ins-empty">${sendingOut() ? '内容会发送到这台服务器处理。' : isRemote() ? '现在不会发送。' : backupOn() ? '声音、画面和文件在本机处理，记录备份到你的 iCloud。' : '声音、画面和文件都留在本机。'}</p></div>
     <div class="ins-sec"><h3>材料</h3>${list(t.ctx.sources, 'clip', '发送的文件和定格画面会收在这里。')}</div>
     <div class="ins-sec"><h3>产物</h3>${list(t.ctx.outputs, 'file', '对话生成的文档会收在这里。')}</div>
     <div class="ins-sec"><h3>应用场景</h3><div class="ins-item"><span class="nm">${esc(sceneName(t.scene))}</span><button class="btn" style="min-height:28px;padding:0 9px;font-size:12.5px" data-action="scene-menu" aria-haspopup="menu">更换</button></div><p class="ins-empty">${esc(SCENES[t.scene].hint)}</p></div>
-    <div class="ins-sec"><h3>模型</h3><div class="ins-item"><span class="nm">${esc(curModel().name)}</span><span class="pill">${esc(curModel().kind)}</span></div><p class="ins-empty">${esc(capsText(curModel()))}</p></div>
+    <div class="ins-sec"><h3>模型</h3><div class="ins-item"><span class="nm">${esc(curModel().name)}</span><span class="pill">${esc(curModel().kind)}</span></div><p class="ins-empty">${isRemote() ? '' : `${esc(specText(state.model))} · `}${esc(capsText(curModel()))}</p></div>
     ${state.prefs.tech ? `<div class="ins-sec"><h3>执行角色</h3>${t.ctx.agents.map(([n, s]) => `<div class="ins-item">${icon('agent')}<span class="nm">${esc(n)}</span><span class="pill">${esc(s)}</span></div>`).join('')}</div>
     <div class="ins-sec"><h3>Skills</h3>${t.ctx.skills.length ? `<div class="chips-wrap">${t.ctx.skills.map(s => `<span class="pill">${esc(s)}</span>`).join('')}</div>` : '<p class="ins-empty">用到技能时会出现在这里。</p>'}</div>` : ''}`;
 }
@@ -2182,7 +2404,7 @@ function renderSettings() {
   if (!tab) { el.innerHTML = ''; return; }
   const scrollTop = el.querySelector('.set-body')?.scrollTop ?? 0;
   const nav = SETTINGS_NAV.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([id, n, ic]) => `<button data-action="settings-tab" data-tab="${id}" ${id === tab || id === parentOf(tab) ? 'aria-current="page"' : ''}>${icon(ic)}${n}</button>`).join('')}`).join('');
-  const page = [...SETTINGS_NAV.flatMap(([, items]) => items), ...DEVELOPER_PAGES, ...PRIVACY_PAGES].find(([id]) => id === tab)?.[1];
+  const page = [...SETTINGS_NAV.flatMap(([, items]) => items), ...DEVELOPER_PAGES, ...PRIVACY_PAGES, ...GENERAL_PAGES].find(([id]) => id === tab)?.[1];
   const back = parentOf(tab) || (isCompact() && !root), closable = !isCompact() || root;
   const head = `${back ? `<button class="icon-btn" data-action="settings-back" aria-label="返回">${icon('chev', 'i back')}</button>${esc(page)}` : '设置'}<span class="grow"></span>${closable ? `<button class="icon-btn" data-action="close-settings" aria-label="关闭设置" title="关闭 (Esc)">${icon('close')}</button>` : ''}`;
   el.innerHTML = `<div class="set-head">${head}</div>
@@ -2195,6 +2417,33 @@ const sel = (id, opts, val, label) => `<select id="${id}" aria-label="${label}">
 const pick = (key, opts, label) => `<select data-pref="${key}" aria-label="${label}">${opts.map(([v, n]) => `<option value="${v}" ${v === state.prefs[key] ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
 const later = (label, msg = '原型中不执行') => `<button class="btn" data-action="proto-note" data-msg="${msg}">${label}</button>`;
 const pill = (s, k = '') => `<span class="pill ${k}">${s}</span>`;
+function backupHTML() {
+  const b = state.backup, off = state.prefs.offlineMode, n = tasks.filter(t => !t.temp && !isBlank(t)).length;
+  const ask = (text, yes, action) => `<div class="swap-ask" role="group" aria-label="${yes}"><p>${text}</p><div class="acts"><button class="btn" data-action="${action}">${yes}</button><button class="btn" data-action="backup-ask-close">先不</button></div></div>`;
+  const status = !b.on ? '对话、转写、材料和已记住的内容上传到你的 iCloud。不包括模型文件和临时对话。'
+    : off ? '离线模式开着，备份已暂停。'
+    : { idle: `上次备份：${b.last} · ${b.size}`, running: '正在备份，可以继续用。', full: `iCloud 空间不够，还差 1.2 GB。上次备份：${b.last}。`, signedout: '这台设备没有登录 iCloud，登录后会接着备份。' }[b.status];
+  const flag = b.on && !off ? { full: pill('空间不够', 'warn'), signedout: pill('没有登录', 'warn') }[b.status] ?? '' : '';
+  const icloud = !hasICloud() ? '' : `${row('备份到 iCloud', status, `${flag}<button class="sw" role="switch" aria-checked="${b.on}" aria-label="备份到 iCloud" data-action="backup-toggle"></button>`)}
+    ${b.ask === 'on' ? ask('开启后，对话记录会离开这台设备，存到你的 iCloud。之后会自动备份。', '开启备份', 'backup-on') : ''}
+    ${b.on && !off && b.status === 'running' ? `<div class="dl" data-status="running"><div class="dl-bar"><i style="width:${b.pct}%"></i></div><small>已备份 ${Math.round(b.pct)}%</small></div>` : ''}
+    ${b.on && !off && b.status === 'idle' ? row('立即备份', '', '<button class="btn" data-action="backup-now">备份</button>') : ''}
+    ${b.on && !off && b.status === 'full' ? row('管理 iCloud 空间', '腾出空间后会接着备份。', later('管理', '原型中不跳转系统设置')) : ''}
+    ${b.on && !off && b.status === 'signedout' ? row('登录 iCloud', '', later('去系统设置', '原型中不跳转系统设置')) : ''}
+    ${b.hasCloud ? `${row('从备份恢复', '把这台设备上没有的对话取回来。', '<button class="btn" data-action="backup-restore">恢复</button>')}
+    ${row('删除 iCloud 里的备份', '这台设备上的对话不受影响。', '<button class="btn danger" data-action="backup-delete-ask">删除</button>')}
+    ${b.ask === 'delete' ? ask('删除后不能恢复。', '删除备份', 'backup-delete') : ''}` : ''}`;
+  return `<h3 id="backupSec">备份与迁移</h3>${icloud}
+    ${row('导出对话', `把 ${n} 个对话存成一个文件，换设备时可以导入。文件里有对话全文，由你保管。`, '<button class="btn" data-action="export-all">导出</button>')}
+    ${row('导入对话', '从导出的文件恢复。不覆盖现有对话，重复的会跳过。', '<button class="btn" data-action="import-all">导入</button>')}
+    ${state.importFail ? `<div class="note bad">${icon('alert')}<div class="grow"><strong>读不了这个文件</strong><p>它不是 MiniCPM 导出的，或者来自更新的版本。现有对话没有变化。</p><div class="acts"><button class="btn" data-action="dismiss-import">知道了</button></div></div></div>` : ''}`;
+}
+function specPicker() {
+  const id = state.model, ask = state.askSpec, s = SPECS[ask];
+  return `<h3>规格</h3><p class="res-note">${esc(curModel().name)} 现在是${esc(specText(id))}。换规格要重新下载，下载时可以继续用现在的。</p>
+    <div class="voices specs" role="radiogroup" aria-label="规格">${specCards(id, ask ?? specOf(id), 'ask-spec')}</div>
+    ${s ? `<div class="swap-ask" role="group" aria-label="确认换规格"><p>要下载 ${sizeOf(id, ask)} GB，下好后替换现在的 ${sizeOf(id)} GB。</p><div class="acts"><button class="btn" data-action="spec-go">下载并替换</button><button class="btn" data-action="spec-cancel">先不换</button></div></div>` : ''}`;
+}
 function settingsBody(tab) {
   if (tab === 'general') return `<h2>通用</h2><p>外观和输入习惯。</p>
     ${row('外观', '跟随系统时，会随日夜自动切换。', sel('setTheme', [['system', '跟随系统'], ['light', '浅色'], ['dark', '深色']], state.theme, '外观'))}
@@ -2204,6 +2453,8 @@ function settingsBody(tab) {
     <h3>打开时</h3>
     ${row('打开时进入', '', pick('openTo', [['new', '新对话'], ['last', '上次的对话']], '打开时进入'))}
     ${row('新对话的场景', '', pick('defaultScene', Object.keys(SCENES).map(id => [id, sceneName(id)]), '新对话的场景'))}
+    ${inBrowser() ? '' : `<h3>通知</h3>
+    ${row('定时通知', `${state.timers.length} 条`, '<button class="btn" data-action="settings-tab" data-tab="reminders">管理</button>')}`}
     <h3>反馈</h3>
     ${row('提示音', '开始、结束实时会话时播放。', sw('sounds', '提示音'))}
     ${isCompact() ? row('触感反馈', '操作时轻微震动。', sw('haptics', '触感反馈')) : inBrowser() ? '' : `<h3>桌面</h3>
@@ -2213,7 +2464,7 @@ function settingsBody(tab) {
     const voices = [['qing', '清亮', '默认，语速适中'], ['chen', '沉稳', '偏低，适合长时间收听'], ['ref', '我的参考音频', '上传 5–20 秒清晰人声']];
     return `<h2>声音与人设</h2><p>下一次实时会话开始时生效。</p>
       <h3>声音</h3><div class="voices" role="radiogroup" aria-label="声音">${voices.map(([id, n, s]) => `<button class="voice" role="radio" aria-checked="${state.voice === id}" data-action="set-voice" data-id="${id}"><span>${n === '我的参考音频' ? icon('clip') : icon('speaker')}</span><span><b>${n}</b><small>${s}</small></span></button>`).join('')}</div>
-      <p class="res-note">参考音频只保存在这台设备上，可以随时删除。</p>
+      <p class="res-note">${sendingOut() ? `参考音频保存在这台设备上，生成声音时会发送到 ${esc(remoteHost())}，可以随时删除。` : '参考音频只保存在这台设备上，可以随时删除。'}</p>
       ${row('试听当前声音', '', later('试听', '原型中不播放声音'))}
       ${row('语速', '', pick('speed', [['.85', '慢'], ['1', '标准'], ['1.15', '快']], '语速'))}
       <h3>回答</h3>
@@ -2229,6 +2480,9 @@ function settingsBody(tab) {
     ${row('高清细节', '看清小字和细节，响应会变慢。', sw('hd', '高清细节'))}
     ${row('打断灵敏度', '你开口后，它多快停下来听你说。', pick('interrupt', [['low', '低'], ['mid', '中'], ['high', '高']], '打断灵敏度'))}
     ${row('长时间没说话时', '自动暂停可以避免忘记关闭摄像头和麦克风，点继续才会恢复。', pick('idlePause', [['5', '5 分钟后暂停'], ['10', '10 分钟后暂停'], ['30', '30 分钟后暂停'], ['never', '不自动暂停']], '长时间没说话时'))}
+    <h3>屏幕</h3>
+    ${row('保持屏幕亮着', '实时时屏幕不熄灭，放下手机也能接着聊。按电源键算离开，会暂停。', sw('keepAwake', '保持屏幕亮着'))}
+    ${isCompact() ? row('远看模式', '语音实时 15 秒没碰屏幕后，字变大，画面变暗。', sw('farView', '远看模式')) : ''}
     <h3>字幕</h3>
     ${row('显示字幕', '摄像头实时时在画面上显示。', sw('captions', '显示字幕'))}
     ${row('字幕大小', '', pick('captionSize', [['m', '标准'], ['l', '大'], ['xl', '特大']], '字幕大小'))}
@@ -2240,26 +2494,31 @@ function settingsBody(tab) {
     ${row('摄像头', '', sel('devCam', [['d', '系统默认']], 'd', '摄像头'))}
     ${row('扬声器', '外放时开启回声消除，避免它听到自己。', sel('devOut', [['d', '系统默认']], 'd', '扬声器'))}
     ${row('回声消除', '', sw('aec', '回声消除'))}`;
-  if (tab === 'memories') return `<h2>已记住的内容</h2><p>这些内容只保存在这台设备上，用来让回答更贴合你。</p>
+  if (tab === 'reminders') return `<h2>定时通知</h2><p>到点由系统发一条通知，点开后回到对话。模型不在后台运行。</p>
+    ${state.timers.length ? state.timers.map(x => row(esc(x.text), esc(x.when), `<button class="btn" data-action="timer-open" data-id="${x.id}">打开对话</button><button class="btn" data-action="timer-del" data-id="${x.id}">删除</button>`)).join('') : '<p class="ins-empty">还没有定时通知。在对话里说“每天早上提醒我……”就能添加。</p>'}`;
+  if (tab === 'memories') return `<h2>已记住的内容</h2><p>这些内容${sendingOut() ? '' : '只'}保存在这台设备上，用来让回答更贴合你。${sendingOut() ? `用远程服务时，用得上的内容会随请求发送到 ${esc(remoteHost())}。` : ''}${backupOn() ? '也会备份到你的 iCloud。' : ''}</p>
     ${state.memories.length ? state.memories.map((m, i) => row(esc(m), '', `<button class="btn" data-action="forget" data-id="${i}">删除</button>`)).join('') : '<p class="ins-empty">还没有记住任何内容。</p>'}`;
   if (tab === 'network') return `<h2>联网记录</h2><p>列出最近 7 天这台设备发出的所有请求。</p>
-    <div class="assure">${icon('shield')}<div><b>${state.netLog.length ? `只有 ${state.netLog.length} 句搜索词离开过这台设备` : '没有内容离开这台设备'}</b><small>下面的请求不包含你的对话、声音、画面或文件。</small></div></div>
+    <div class="assure">${icon('shield')}<div><b>${sendingOut() ? `内容正发送到 ${esc(remoteHost())}` : backupOn() ? '对话记录备份到你的 iCloud' : state.netLog.length ? `只有 ${state.netLog.length} 句搜索词离开过这台设备` : '没有内容离开这台设备'}</b><small>${sendingOut() || backupOn() ? '下面写明了发送什么、发到哪里。' : state.netLog.length ? '除了这些搜索词，下面的请求不包含你的对话、声音、画面或文件。' : '下面的请求不包含你的对话、声音、画面或文件。'}</small></div></div>
     <h3>最近 7 天</h3>
+    ${sendingOut() ? row('远程服务', `每次使用 · 声音、画面和文字发送到 ${esc(remoteHost())}`, pill('进行中', 'warn')) : ''}
+    ${backupOn() ? row('iCloud 备份', `${esc(state.backup.last)} · 对话记录上传到你的 iCloud`, pill('1 次', 'warn')) : ''}
     ${state.netLog.map(n => row('联网搜索', `${n.when} · 只发送“${esc(n.query)}”`, pill('1 次', 'warn'))).join('')}
     ${row('检查更新', '今天 09:12 · 只发送版本号', pill('1 次'))}
-    ${row('模型下载', '周一 21:40 · 只请求模型文件', pill('1 次'))}`;
+    ${row('模型下载', '周一 21:40 · 只请求模型文件', pill('1 次'))}
+    ${state.crashSent ? row('崩溃报告', `${esc(state.crashSent)} · 只发送设备型号、应用版本和出错的位置`, pill('1 次')) : ''}`;
   if (tab === 'privacy') {
     const denied = state.proto.perm === 'denied';
     const perm = (name, desc, status, kind = '') => row(name, desc, `${pill(status, kind)}${later('管理', '原型中不跳转系统设置')}`);
     return `<h2>隐私与数据</h2><p>决定哪些内容留在这台设备上。</p>
-    <div class="assure">${icon('shield')}<div><b>${isRemote() ? `内容正发送到 ${esc(remoteHost())}` : '你的内容留在这台设备上'}</b><small>${isRemote() ? '处理时声音、画面和文字会离开本机，对话记录仍保存在这里。' : '声音、画面、文件和对话都在本机处理，断网也能用。'}</small></div></div>
+    <div class="assure">${icon('shield')}<div><b>${esc(privacySummary()[0])}</b><small>${esc(privacySummary()[1])}</small></div></div>
     <h3>联网</h3>
-    ${row('离线模式', '关闭所有联网功能，包括更新和联网搜索。', sw('offlineMode', '离线模式'))}
+    ${row('离线模式', '关闭所有联网功能，包括更新、联网搜索、远程服务和备份。', sw('offlineMode', '离线模式'))}
     ${row('联网搜索', '需要时让它上网查资料，搜索词会离开这台设备。', pick('webSearch', [['off', '关闭'], ['ask', '每次询问'], ['auto', '自动']], '联网搜索'))}
     ${row('自动检查更新', '只发送版本号。', sw('updates', '自动检查更新'))}
     ${row('匿名使用统计', '不包含对话、声音、画面和文件。', sw('analytics', '匿名使用统计'))}
     ${row('崩溃报告', '', pick('crash', [['ask', '每次询问'], ['never', '不发送'], ['auto', '自动发送']], '崩溃报告'))}
-    ${row('联网记录', state.netLog.length ? `最近 7 天有 ${state.netLog.length} 次搜索离开这台设备。` : '最近 7 天没有内容离开这台设备。', '<button class="btn" data-action="settings-tab" data-tab="network">查看</button>')}
+    ${row('联网记录', sendingOut() ? `内容正发送到 ${esc(remoteHost())}。` : backupOn() ? '对话记录会备份到你的 iCloud。' : state.netLog.length ? `最近 7 天有 ${state.netLog.length} 次搜索离开这台设备。` : '最近 7 天没有内容离开这台设备。', '<button class="btn" data-action="settings-tab" data-tab="network">查看</button>')}
     <h3>对话记录</h3>
     ${row('保存对话记录', '关闭后，对话只在打开期间存在。', sw('keepHistory', '保存对话记录'))}
     ${row('新对话默认为临时对话', '临时对话结束后不留记录。', sw('tempDefault', '新对话默认为临时对话'))}
@@ -2276,18 +2535,19 @@ function settingsBody(tab) {
     ${perm('麦克风', '语音和实时会话', denied ? '已拒绝' : '已允许', denied ? 'bad' : 'ok')}
     ${perm('摄像头', '拍照和实时看', denied ? '已拒绝' : '已允许', denied ? 'bad' : 'ok')}
     ${isCompact() ? '' : perm('屏幕录制', '一起看屏幕', denied ? '已拒绝' : '未决定', denied ? 'bad' : '')}
-    ${perm('通知', '定时任务和主动提醒', '未决定')}
+    ${perm('通知', '定时通知', state.proto.notify === 'denied' ? '已拒绝' : '未决定', state.proto.notify === 'denied' ? 'bad' : '')}
     <h3>访问</h3>
     ${inBrowser() ? '' : `${row('打开时验证', '用面容、指纹或系统密码打开。', sw('appLock', '打开时验证'))}
     ${row('自动锁定', '', pick('autoLock', [['0', '立即'], ['1', '1 分钟后'], ['5', '5 分钟后'], ['never', '不锁定']], '自动锁定'))}`}
     ${row('切到后台时隐藏内容', '在最近使用的应用里显示空白。', sw('hidePreview', '切到后台时隐藏内容'))}
     ${isCompact() && !inBrowser() ? row('禁止截屏', '', sw('noScreenshot', '禁止截屏')) : ''}
+    ${backupHTML()}
     <h3>数据</h3>
     ${inBrowser() ? '' : row('加密保存', '用设备密钥加密对话和材料。', sw('encrypt', '加密保存'))}
-    ${row('对话和转写', '占用 12 MB', later('导出'))}
+    ${row('对话和转写', '', pill('12 MB'))}
     ${row('材料和产物', '占用 86 MB', later('清理'))}
     ${row('缓存', '占用 24 MB', later('清除'))}
-    ${row('清除全部对话', '对话、转写和产物都会从这台设备上删除。', '<button class="btn danger" data-action="clear-all">清除</button>')}`;
+    ${row('清除全部对话', `对话、转写和产物都会从这台设备上删除。${backupOn() ? '下次备份时，iCloud 里的也会删除。' : ''}`, '<button class="btn danger" data-action="clear-all">清除</button>')}`;
   }
   if (tab === 'advanced') {
     const v = state.params;
@@ -2327,22 +2587,23 @@ function settingsBody(tab) {
   return `<h2>模型</h2><p>${isRemote() ? '所有对话共用当前模型。' : `${inBrowser() ? '这个浏览器' : '这台设备'}一次只运行一个模型，所有对话共用。换模型要等它重新载入。`}</p>
     <h3>可用模型</h3>${Object.entries(MODELS).map(([id, m]) => {
       const missing = !isRemote() && !state.installed.has(id);
-      if (state.dl?.id === id) return `${row(esc(m.name), `${capsText(m)} · ${sizeOf(id)} GB`, pill('下载中'))}${dlHTML(state.dl)}`;
+      if (state.dl?.id === id) return `${row(esc(m.name), `${capsText(m)} · ${specText(id, state.dl.spec)} · ${sizeOf(id, state.dl.spec)} GB`, pill('下载中'))}${dlHTML(state.dl)}`;
       const ctrl = missing ? `${pill('未下载')}<button class="btn" data-action="download-model" data-id="${id}" ${state.dl ? 'disabled' : ''}>下载</button>`
         : id === state.model ? pill(state.loading ? '载入中' : '使用中', 'ok') : `<button class="btn" data-action="ask-model" data-id="${id}" ${state.loading ? 'disabled' : ''}>换用</button>${isRemote() ? '' : `<button class="btn" data-action="remove-model" data-id="${id}">移除</button>`}`;
-      return row(esc(m.name), `${capsText(m)} · ${sizeOf(id)} GB`, ctrl);
+      return row(esc(m.name), `${capsText(m)}${isRemote() ? '' : ` · ${specText(id)} · ${sizeOf(id)} GB`}`, ctrl);
     }).join('')}
+    ${!isRemote() && state.installed.has(state.model) ? specPicker() : ''}
     ${inBrowser() && !isRemote() ? '<p class="res-note">模型保存在这个浏览器里，清除网站数据时会一起删除。</p>' : ''}
     <h3>运行方式</h3><div class="voices" role="radiogroup" aria-label="运行方式">${Object.entries(PRESETS).map(([id, p]) => preset(id, p)).join('')}</div>
     ${state.preset === 'custom' ? '<p class="res-note">当前使用自定义参数。<button class="link" data-action="settings-tab" data-tab="advanced">查看</button></p>' : ''}
     <h3>电量与发热</h3>
     ${row('空闲后释放内存', '让出内存给其他应用，下次使用时要重新载入。', pick('idleRelease', [['5', '5 分钟后'], ['15', '15 分钟后'], ['60', '1 小时后'], ['never', '不释放']], '空闲后释放内存'))}
-    ${row('低电量时自动省电', '', sw('lowPower', '低电量时自动省电'))}
+    ${row('低电量时自动省电', '实时时先放慢看画面，再只用声音。', sw('lowPower', '低电量时自动省电'))}
     ${row('发热时降低负载', '响应会变慢，设备会更凉快。', sw('thermal', '发热时降低负载'))}
     ${isCompact() ? row('只在 Wi-Fi 下下载', '', sw('wifiOnly', '只在 Wi-Fi 下下载')) : ''}
     <details class="disclose" ${isRemote() || state.placeOpen ? 'open' : ''}><summary>${icon('chev')}运行位置<span>${isRemote() ? '远程服务' : '这台设备'}</span></summary>
       <div class="voices" role="radiogroup" aria-label="运行位置">
-        ${card('local', 'shield', '这台设备', state.proto.runtime === 'nogpu' ? '这个浏览器跑不了，换一个浏览器后可用' : inBrowser() ? `在这个浏览器里运行，内容不离开本机${state.prefs.tech ? ' · WebGPU' : ''}` : '内容不离开本机，断网也能用')}
+        ${card('local', 'shield', '这台设备', state.proto.runtime === 'nogpu' ? '这个浏览器跑不了，换一个浏览器后可用' : inBrowser() ? `在这个浏览器里运行，${localClaim()}${state.prefs.tech ? ' · WebGPU' : ''}` : `${localClaim()}，断网也能用`)}
         ${card('remote', 'server', '远程服务', '内容会发送到你指定的服务器')}
       </div>${state.live ? '<p class="res-note">实时会话进行中，结束后才能切换。</p>' : ''}${connection}
     </details>`;
@@ -2351,7 +2612,7 @@ function settingsBody(tab) {
     ${row('Multimedia Adapter', '麦克风、摄像头与屏幕捕捉。', pill('就绪', 'ok'))}
     ${row('Online Service', '在线能力与服务配置。', pill('未配置'))}
     ${row('Computer Use', '工具执行与权限边界。', pill('未配置'))}
-    ${row('Scheduler', '任务调度资源。', pill('未配置', 'warn'))}
+    ${row('Scheduler', '系统定时通知，不在后台运行模型。', pill('就绪', 'ok'))}
     ${row('Gateway', '外部消息通道。', pill('未配置', 'warn'))}`;
 }
 
@@ -2365,6 +2626,7 @@ function openMenu(anchor, html, { label = '菜单', role = 'menu' } = {}) {
   m.innerHTML = (sheet ? '<div class="grip" aria-hidden="true"></div>' : '') + html;
   m.hidden = false; m.setAttribute('role', role); m.setAttribute('aria-label', label);
   m.classList.toggle('sheet', sheet);
+  if (sheet) m.setAttribute('aria-modal', 'true'); else m.removeAttribute('aria-modal');
   $('#sheetScrim').hidden = !sheet;
   if (sheet) {
     m.style.left = m.style.top = '';
@@ -2376,13 +2638,15 @@ function openMenu(anchor, html, { label = '菜单', role = 'menu' } = {}) {
   }
   anchor.setAttribute('aria-expanded', 'true');
   menuAnchor = anchor;
-  (m.querySelector('.mi') ?? m).focus?.();
+  syncInert();
+  (m.querySelector('.mi,.btn') ?? m).focus?.();
 }
 function closeMenu(refocus = false) {
   const m = $('#menu');
   if (m.hidden) return;
   m.hidden = true; m.innerHTML = ''; m.style.transform = '';
   $('#sheetScrim').hidden = true;
+  syncInert();
   if (menuAnchor) { menuAnchor.setAttribute('aria-expanded', 'false'); if (refocus && menuAnchor.isConnected) menuAnchor.focus(); }
   menuAnchor = null;
 }
@@ -2390,11 +2654,11 @@ const mi = (action, title, { sub, ic, data = '', tick, danger, role = 'menuitem'
   `<button class="mi ${danger ? 'danger' : ''}" role="${role}" data-action="${action}" ${data} ${tick !== undefined ? `aria-checked="${!!tick}"` : ''}>${ic ? icon(ic) : ''}<span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span>${tick ? `<span class="tick">✓</span>` : ''}</button>`;
 const modelItems = () => Object.entries(MODELS).map(([id, m]) => {
   const missing = !isRemote() && !state.installed.has(id);
-  return mi(missing ? 'open-settings' : 'ask-model', m.name, { sub: missing ? '未下载，去设置里下载' : `${m.kind} · ${capsText(m)}`, data: missing ? 'data-tab="models"' : `data-id="${id}" data-keep`, tick: id === state.model, role: 'menuitemradio' });
+  return mi(missing ? 'open-settings' : 'ask-model', m.name, { sub: missing ? '未下载，去设置里下载' : `${m.kind}${isRemote() ? '' : ` · ${specText(id)}`} · ${capsText(m)}`, data: missing ? 'data-tab="models"' : `data-id="${id}" data-keep`, tick: id === state.model, role: 'menuitemradio' });
 }).join('');
 const modelTitle = () => `<div class="ttl">${isRemote() ? '模型 · 所有对话共用' : '模型 · 一次只运行一个，所有对话共用'}</div>`;
 const placeItems = () => `<div class="ttl">运行位置</div>
-  ${mi('use-local', '这台设备', { sub: state.proto.runtime === 'nogpu' ? '这个浏览器跑不了' : inBrowser() ? '在这个浏览器里运行，内容不离开本机' : '内容不离开本机', tick: !isRemote(), role: 'menuitemradio' })}
+  ${mi('use-local', '这台设备', { sub: state.proto.runtime === 'nogpu' ? '这个浏览器跑不了' : inBrowser() ? `在这个浏览器里运行，${localClaim()}` : localClaim(), tick: !isRemote(), role: 'menuitemradio' })}
   ${mi('use-remote', '远程服务', { sub: state.remote.url ? `内容会发送到 ${remoteHost()}` : '还没设置，去填写地址', tick: isRemote(), role: 'menuitemradio' })}`;
 /* Compact form: everything the desktop header and composer show at once lives here. */
 function titleSheet(anchor) {
@@ -2420,7 +2684,8 @@ function liveMoreSheet(anchor) {
   const L = state.live, video = L.source !== 'voice';
   openMenu(anchor, `${video ? mi('live-freeze', '定格提问', { sub: '结束实时，带上这一帧打字问', ic: 'freeze' }) : ''}
     ${mi('live-to-text', '转文字', { sub: '结束实时，用文字接着聊', ic: 'keyboard' })}
-    ${video ? mi('live-log', '查看记录', { sub: '展开这次实时的完整转写', ic: 'file' }) : ''}
+    ${video || L.far ? mi('live-log', '查看记录', { sub: '展开这次实时的完整转写', ic: 'file' }) : ''}
+    ${video ? '' : mi('live-far', L.far ? '退出远看模式' : '远看模式', { sub: '字更大，画面更暗，放远了也看得清', ic: 'wave' })}
     ${mi('live-route', '声音输出', { sub: ROUTES[L.route], ic: 'speaker' })}
     ${mi('live-stats', '运行状态与主动提醒', { sub: '响应速度和提醒频率', ic: 'wave' })}
     ${mi('proto-menu', '原型状态', { sub: '来电、断线、发热等打断' })}`, { label: '更多实时操作', role: 'dialog' });
@@ -2438,6 +2703,39 @@ function sourceMenu(anchor) {
   const keys = here ? ['camera', 'screen'] : ['voice', 'camera', 'screen'];
   const notice = isRemote() ? `<div class="ttl">声音和画面会发送到 ${esc(remoteHost())}</div>` : '';
   openMenu(anchor, notice + keys.map(k => mi('start-live', SOURCES[k].label, { sub: SOURCES[k].sub, ic: SOURCES[k].icon, data: `data-source="${k}"`, tick: here && state.live.source === k ? true : undefined })).join(''), { label: '选择实时来源' });
+}
+
+/* ================= After a crash =================
+ * A live session never restarts by itself, and a model that took the app down
+ * while loading is not loaded again on open, or a too-big model would crash every launch. */
+const LADDER_NOW = ['现在：正常', '现在：放慢看画面', '现在：只用声音', '现在：暂停'];
+function breakLink(link) {
+  const L = state.live;
+  if (L.hold) return;
+  L.link = { t: 0, tries: 1, ...link };
+  renderDock(); syncPresence();
+}
+// The setting decides: ask once in the banner, send and log it, or do nothing.
+function reportCrash() {
+  if (state.prefs.crash === 'ask') state.crashAsk = true;
+  if (state.prefs.crash === 'auto') state.crashSent = '刚刚';
+  renderBanner();
+}
+function afterCrash(kind) {
+  if (kind === 'sent') { state.crashSent = '今天 08:40'; return; }
+  if (kind === 'live') {
+    const t = task('camera'), it = t.items.find(i => i.type === 'live');
+    it.endNote = `上次实时会话意外结束，保留到 ${clock(it.duration)} 的转写。`;
+    state.crashed = { kind, taskId: t.id, source: it.source, at: it.duration };
+    state.current = t.id;
+  }
+  if (kind === 'reply') {
+    const t = task('notes'), it = t.items.find(i => i.type === 'ai');
+    Object.assign(it, { text: it.text.slice(0, 24), rest: it.text.slice(24), cut: 'crash' });
+    state.current = t.id;
+  }
+  if (kind === 'load') { state.crashed = { kind }; state.loaded = null; }
+  reportCrash();
 }
 
 /* ================= Toast / announce ================= */
@@ -2460,10 +2758,20 @@ function renderAll(opts) {
 }
 /* ================= First run, app lock, model download ================= */
 const MARK = '<svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path class="a" d="M4 10.500V9M8 10.500V6M12 10.500V3.500M16 10.500V7.500M20 10.500V9.500"/><path class="b" d="M4 13.500V15M8 13.500V16.500M12 13.500V16M16 13.500V20.500M20 13.500V17"/></svg>';
-const sizeOf = id => (MODELS[id].mem.weights + MODELS[id].mem.media).toFixed(1);
+const deviceMemory = () => ({ low: 6, ok: 12, high: 32 })[state.proto.device];
+// The smallest spec is always on offer; the rest need the memory to run at all.
+const specAllowed = (id, s) => s === 'q4' || MODELS[id].specs[s].memory <= deviceMemory();
+const bestSpec = id => Object.keys(SPECS).filter(s => specAllowed(id, s)).at(-1);
+const specOf = id => state.specs[id] ?? bestSpec(id);
+const specText = (id, s = specOf(id)) => `${SPECS[s].label} ${SPECS[s].tag}`;
+const sizeOf = (id, s = specOf(id)) => MODELS[id].specs[s].size.toFixed(1);
+const specCards = (id, picked, action) => Object.entries(SPECS).map(([s, p]) => {
+  const c = MODELS[id].specs[s], ok = specAllowed(id, s);
+  return `<button class="voice" role="radio" aria-checked="${s === picked}" data-action="${action}" data-id="${s}" ${ok ? '' : 'disabled'}><span><b>${p.label} <span class="spec-tag">${p.tag}</span>${s === bestSpec(id) ? pill('推荐', 'ok') : ''}</b><small>${ok ? p.sub : `需要约 ${c.memory} GB 内存，${inBrowser() ? '这个浏览器' : '这台设备'}不够`}</small><small>${c.size.toFixed(1)} GB</small></span></button>`;
+}).join('');
 const loadSeconds = id => Math.round(sizeOf(id) * 2);   // placeholder until measured on devices
 function dlText(d) {
-  const pct = Math.round(d.pct), left = (sizeOf(d.id) * (100 - d.pct) / 100).toFixed(1);
+  const pct = Math.round(d.pct), left = (sizeOf(d.id, d.spec) * (100 - d.pct) / 100).toFixed(1);
   return { running: `${pct}% · 还需约 ${Math.max(1, Math.ceil((100 - d.pct) / 9))} 分钟`, paused: `已暂停 · ${pct}%`, wifi: `等待 Wi-Fi · ${pct}%，还差 ${left} GB`,
     failed: `下载中断 · ${pct}%，已下载的部分还在`, verifying: '正在检查文件…' }[d.status];
 }
@@ -2474,8 +2782,9 @@ function dlActs(d) {
 }
 const dlHTML = d => `<div class="dl" data-status="${d.status}"><div class="dl-bar"><i data-dl-bar style="width:${d.pct}%"></i></div><small data-dl-text>${dlText(d)}</small><div class="acts">${dlActs(d)}</div></div>`;
 let dlTimer = 0;
-function startDownload(id) {
-  state.dl = { id, pct: 0, status: 'running' };
+function startDownload(id, spec = specOf(id)) {
+  if (state.prefs.offlineMode) return showToast('离线模式开着，下载不了模型', '关闭离线模式', () => { actions['offline-off'](); startDownload(id, spec); });
+  state.dl = { id, spec, pct: 0, status: 'running' };
   runDownload();
   paintGates();
 }
@@ -2495,45 +2804,53 @@ function runDownload() {
   }, 120);
 }
 function finishDownload() {
-  const { id } = state.dl;
-  state.installed.add(id); state.dl = null;
+  const { id, spec } = state.dl, swapped = state.installed.has(id) && state.specs[id] !== spec;
+  state.installed.add(id); state.specs[id] = spec; state.dl = null;
   if (state.onboard) state.onboard = null;
   usage.ready = false;
+  if (swapped && state.loaded === id && !state.live) state.loaded = null;
   renderAll();
-  showToast(`${MODELS[id].name} 准备好了`);
+  showToast(swapped ? `${MODELS[id].name} 已换成${specText(id)}` : `${MODELS[id].name} 准备好了`);
+  if (swapped) loadModel();
 }
 function paintGates() { renderGate(); renderBanner(); renderSettings(); syncComposer(); }
 function onboardHTML(step) {
   if (step === 'welcome') return `${MARK}<h1>在你自己的设备上运行</h1><p>MiniCPM 能看、能听、能说，全部在这台设备上完成。</p>
     <ul class="ob-list">
-      <li>${icon('shield')}<span><b>内容不离开这台设备</b><small>声音、画面和文件都在本机处理。</small></span></li>
+      <li>${icon('shield')}<span><b>内容不离开这台设备</b><small>声音、画面和文件都在本机处理。只有你同意时，搜索词或备份才会离开。</small></span></li>
       <li>${icon('offline')}<span><b>断网也能用</b><small>模型下载好之后就不需要网络了。</small></span></li>
       <li>${icon('file')}<span><b>都由你决定</b><small>记住了什么、联网做了什么，都能看到和删除。</small></span></li>
     </ul><div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-next">继续</button></div>`;
+  if (step === 'restore') return `<h1>找到了 iCloud 里的备份</h1><p>上次备份：11 月 3 日 · 42 个对话。恢复后对话回到这台设备，模型要重新下载。</p>
+    <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-restore">恢复对话</button>
+    <button class="link ob-alt" data-action="ob-next">不恢复，重新开始</button></div>`;
   if (step === 'model') {
-    const low = state.proto.device === 'low', noRoom = state.proto.storage === 'low';
-    const best = low ? 'minicpm-v-4.6' : OMNI, size = sizeOf(state.obModel);
+    const low = state.proto.device === 'low', storageLow = state.proto.storage === 'low', free = storageLow ? 4.5 : 38;
+    const best = low ? 'minicpm-v-4.6' : OMNI, spec = state.obSpec ?? bestSpec(state.obModel), size = sizeOf(state.obModel, spec);
+    const noRoom = +size + .5 > free, small = 'minicpm-v-4.6', smallFits = +sizeOf(small, 'q4') + .5 <= free;
     if (state.proto.runtime === 'nogpu') return `<h1>这个浏览器跑不了本机模型</h1><p>换一个浏览器就能在这台设备上运行。也可以连接你自己的服务器，内容会发送到那台服务器。</p>
       <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-remote">连接远程服务</button></div>`;
     return `<h1>选一个模型</h1><p>${inBrowser() ? '模型要下载到这个浏览器里，之后就不再需要网络。清除网站数据时会一起删除。' : '模型要下载到这台设备上，之后就不再需要网络。'}</p>
-      <p class="ob-device">${inBrowser() ? `这个浏览器：可用空间约 ${noRoom ? '3.9' : '38'} GB` : `这台设备：内存 ${low ? '6' : '12'} GB · 可用空间 ${noRoom ? '3.9' : '38'} GB`}</p>
+      <p class="ob-device">${inBrowser() ? `这个浏览器：可用空间约 ${free} GB` : `这台设备：内存 ${deviceMemory()} GB · 可用空间 ${free} GB`}</p>
       <div class="ob-models" role="radiogroup" aria-label="模型">${FIRST_MODELS.map(([key, name, sub]) => {
         const id = key ?? OMNI, warn = low && id === OMNI;
-        return `<button class="voice" role="radio" aria-checked="${state.obModel === id}" data-action="ob-pick" data-id="${id}">${icon(id === OMNI ? 'duplex' : 'image')}<span><b>${name}${id === best ? pill('推荐', 'ok') : ''}</b><small>${sub}</small><small>${warn ? '这台设备内存偏小，运行时可能被系统关闭' : `${MODELS[id].name} · ${sizeOf(id)} GB`}</small></span></button>`;
+        return `<button class="voice" role="radio" aria-checked="${state.obModel === id}" data-action="ob-pick" data-id="${id}">${icon(id === OMNI ? 'duplex' : 'image')}<span><b>${name}${id === best ? pill('推荐', 'ok') : ''}</b><small>${sub}</small><small>${warn ? '这台设备内存偏小，运行时可能被系统关闭' : MODELS[id].name}</small></span></button>`;
       }).join('')}</div>
-      ${noRoom ? `<div class="note">${icon('alert')}<div class="grow"><strong>还差 ${(size - 3.9 + .5).toFixed(1)} GB 空间</strong><p>清理后回到这里继续，或者选一个更小的模型。</p></div></div>` : ''}
-      <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-download" ${noRoom && size > 3.4 ? 'disabled' : ''}>下载 ${size} GB</button>
+      <p class="ob-sub">规格</p>
+      <div class="ob-models specs" role="radiogroup" aria-label="规格">${specCards(state.obModel, spec, 'ob-spec')}</div>
+      ${noRoom ? `<div class="note">${icon('alert')}<div class="grow"><strong>还差 ${(+size + .5 - free).toFixed(1)} GB 空间</strong><p>清理后回到这里继续${state.obModel !== small && smallFits ? '，或者改下载小一些的看图模型。' : '。'}</p>${state.obModel !== small && smallFits ? `<div class="acts"><button class="btn" data-action="ob-pick" data-id="${small}">改下载看图 ${sizeOf(small, 'q4')} GB</button></div>` : ''}</div></div>` : ''}
+      <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-download" ${noRoom ? 'disabled' : ''}>下载 ${size} GB</button>
       <button class="link ob-alt" data-action="ob-remote">我有自己的服务器</button></div>`;
   }
   const d = state.dl;
   if (!d) return '';
-  return `<h1>${d.status === 'verifying' ? '马上就好' : `正在下载 ${esc(MODELS[d.id].name)}`}</h1><p>下载在后台继续，可以先离开这个页面。</p>${dlHTML(d)}
+  return `<h1>${d.status === 'verifying' ? '马上就好' : `正在下载 ${esc(MODELS[d.id].name)}`}</h1><p>${esc(specText(d.id, d.spec))} · ${sizeOf(d.id, d.spec)} GB。下载在后台继续，可以先离开这个页面。</p>${dlHTML(d)}
     <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-leave">先进去看看</button></div>`;
 }
 function renderGate() {
   const o = $('#onboard'), k = $('#lock');
   o.hidden = !state.onboard; k.hidden = !state.locked && !state.cover;
-  $('#app').inert = !!state.onboard || !k.hidden;
+  syncInert();
   if (state.onboard) o.innerHTML = `<div class="gate-in">${onboardHTML(state.onboard)}</div>`;
   if (!k.hidden) k.innerHTML = `<div class="gate-in">${MARK}${state.cover ? '' : `<h1>MiniCPM 已锁定</h1><p>${isCompact() ? '用面容、指纹或设备密码打开。' : '用 Touch ID 或系统密码打开。'}</p><button class="btn primary ob-cta" data-action="unlock">解锁</button>`}</div>`;
 }
@@ -2578,6 +2895,35 @@ function deleteTask(id) {
 /* ================= Actions ================= */
 /* Place is global and only ever changes here, by hand. Nothing has left the device
  * at this point, so the switch is undoable instead of asking first. */
+// Upload runs while the app is open or the system allows it; it needs no model, so it stays off the GPU.
+let backupTimer = 0;
+function runBackup() {
+  const b = state.backup;
+  if (state.prefs.offlineMode) return showToast('离线模式开着，备份已暂停');
+  b.status = 'running'; b.pct = 0; renderSettings();
+  clearInterval(backupTimer);
+  backupTimer = setInterval(() => {
+    b.pct = Math.min(100, b.pct + 6);
+    if (b.pct >= 100) { clearInterval(backupTimer); b.status = 'idle'; b.last = '刚刚'; renderAll(); return showToast('已备份到 iCloud'); }
+    if (state.settingsTab === 'privacy') renderSettings();
+  }, 120);
+}
+function addImported(text) {
+  const t = { id: uid('task'), title: '比较两份装修报价', scene: 'life', group: '今天', meta: '导入',
+    items: [{ type: 'user', text: '帮我比较这两份装修报价。' }, { type: 'ai', text: '第二份的人工费更低，但没有含垃圾清运。', stat: '40 tok/s · 1.1 s' }],
+    ctx: { agents: [['Core Agent', '主会话']], skills: [], sources: [], outputs: [] } };
+  tasks.unshift(t); renderNav();
+  showToast(text, '撤销', () => { tasks.splice(tasks.indexOf(t), 1); if (state.current === t.id) selectTask(tasks[0].id); else renderNav(); });
+}
+function showSource(el) {
+  const ref = el.dataset.ref, r = SOURCE_REFS[ref];
+  const paper = Object.entries(SOURCE_REFS).map(([k, x]) => `<div class="${k === ref ? 'hit' : ''}"><span>${x.item}</span><span>${x.value}</span><span>${x.range}</span></div>`).join('');
+  const stat = (k, v) => `<div class="stat"><span>${k}</span><span>${v}</span></div>`;
+  openMenu(el, `<div class="source-view"><b>对照原图</b><div class="paper ${r.doubt ? 'blur' : ''}" aria-hidden="true">${paper}</div>
+    ${stat('读到的原文', `${r.item} ${r.value} ${r.unit}`)}${stat('参考范围', r.range)}${stat('位置', '体检报告.jpg 第 1 页')}
+    ${r.doubt ? `<p class="hint">${r.doubt}</p>` : ''}
+    <div class="acts"><button class="btn" data-action="source-full">看完整原图</button><button class="btn" data-action="source-fix" data-ref="${ref}">这里读错了</button></div></div>`, { label: '对照原图', role: 'dialog' });
+}
 function setBackend(id) {
   if (state.backend === id) return;
   if (state.live) return showToast('实时会话进行中，结束后才能切换');
@@ -2593,12 +2939,19 @@ const actions = {
   'select-task': el => selectTask(el.dataset.id),
   'new-task': newTask,
   'toggle-nav': () => {
-    if (isCompact()) $('#app').classList.toggle('nav-open');
-    else $('#app').classList.toggle('nav-collapsed');
+    if (!isCompact()) return $('#app').classList.toggle('nav-collapsed');
+    $('#app').classList.toggle('nav-open');
+    // The drawer stays visibility:hidden until its transition starts, and hidden things take no focus.
+    if ($('#app').classList.contains('nav-open')) setTimeout(() => $('.nav-new').focus(), 30);
   },
   'title-sheet': el => titleSheet(el),
-  'close-drawers': () => { $('#app').classList.remove('nav-open', 'log-open'); state.inspector = false; renderInspector(); renderHead(); },
-  'toggle-inspector': () => { state.inspector = !state.inspector; renderInspector(); renderHead(); },
+  'close-drawers': () => { $('#app').classList.remove('nav-open', 'log-open'); state.inspector = false; renderInspector(); renderHead(); syncInert(); $('#head .icon-btn')?.focus(); },
+  'toggle-inspector': () => {
+    state.inspector = !state.inspector; renderInspector(); renderHead();
+    if (innerWidth > 1180) return;
+    syncInert();
+    (state.inspector ? $('#inspector .icon-btn') : $('#head .icon-btn'))?.focus();
+  },
   rename: () => startRename(),
   'task-menu': el => openMenu(el, mi('rename-id', '重命名', { data: `data-id="${el.dataset.id}"` }) + mi('proto-note', '导出', { data: 'data-msg="原型中不导出"' }) + mi('delete-task', '删除', { data: `data-id="${el.dataset.id}"`, danger: true }), { label: '对话操作' }),
   'rename-id': el => startRename(el.dataset.id),
@@ -2615,17 +2968,22 @@ const actions = {
     ${state.live ? `<div class="sep"></div><div class="ttl">打断实时会话</div>
     ${mi('proto-hold', '来电', { data: 'data-reason="call"' })}
     ${mi('proto-hold', '切到后台再回来', { data: 'data-reason="background"' })}
+    ${mi('proto-hold', '按了电源键', { data: 'data-reason="lock"' })}
     ${mi('proto-hold', '耳机断开', { data: 'data-reason="route"' })}
     ${mi('proto-link', '连接中断后恢复')}
+    ${isRemote() ? '' : `${mi('proto-crash', '模型中断后恢复')}${mi('proto-crash-fail', '模型中断，重启失败')}`}
     ${mi('proto-idle', '长时间没说话（30 秒倒计时）')}
     ${mi('proto-hold', '长时间没说话后暂停', { data: 'data-reason="idle"' })}
-    ${mi('proto-heat', '设备发热', { sub: ['现在：正常', '现在：放慢看画面', '现在：只用声音', '现在：暂停'][state.proto.heat] })}` : ''}
+    ${mi('proto-heat', '设备发热', { sub: LADDER_NOW[state.proto.heat] })}
+    ${mi('proto-battery', '电量变低', { sub: LADDER_NOW[state.proto.battery] })}
+    ${mi('proto-remember', '写入一条记忆')}` : ''}
     ${state.live ? '' : `<div class="sep"></div><div class="ttl">运行环境</div>
     ${mi('proto-runtime', '原生应用', { data: 'data-runtime="app"', tick: state.proto.runtime === 'app', role: 'menuitemradio' })}
     ${mi('proto-runtime', '浏览器', { sub: 'Web，包括 Windows 和 Linux', data: 'data-runtime="browser"', tick: state.proto.runtime === 'browser', role: 'menuitemradio' })}
     ${mi('proto-runtime', '浏览器跑不了本机模型', { data: 'data-runtime="nogpu"', tick: state.proto.runtime === 'nogpu', role: 'menuitemradio' })}`}
     ${isRemote() ? mi('proto-weak', '网络不稳（实时降帧）', { tick: state.proto.weak, role: 'menuitemcheckbox' }) : `
     <div class="sep"></div><div class="ttl">设备</div>
+    ${mi('proto-release', '模型不在内存里（下次使用先准备）', { tick: !state.loaded, role: 'menuitemcheckbox' })}
     ${mi('proto-oom', '下次换模型时内存不够', { tick: state.proto.oom, role: 'menuitemcheckbox' })}
     ${mi('proto-tight', '显存紧张', { tick: state.proto.tight, role: 'menuitemcheckbox' })}
     ${mi('proto-hw', '独立显卡', { data: 'data-hw="discrete"', tick: state.proto.hw === 'discrete', role: 'menuitemradio' })}
@@ -2641,11 +2999,22 @@ const actions = {
   'proto-first': () => { location.search = `?onboard=welcome&runtime=${state.proto.runtime}`; },
   'proto-runtime': el => { state.proto.runtime = el.dataset.runtime; state.proto.hw = inBrowser() ? 'none' : 'discrete'; usage.ready = false; renderAll(); },
   'proto-hold': el => holdLive(el.dataset.reason),
-  'proto-link': () => { const L = state.live; if (!L.hold) { L.link = { t: 0, tries: 1, recover: 5 }; renderDock(); syncPresence(); } },
+  'proto-link': () => breakLink({ kind: 'net', recover: 5 }),
+  'proto-crash': () => breakLink({ kind: 'model', recover: 5 }),
+  'proto-crash-fail': () => breakLink({ kind: 'model', recover: Infinity, giveUp: 3 }),
   'proto-idle': () => { const L = state.live; if (!L.hold) { L.idle = 30; renderDockNote(); } },
-  'proto-heat': () => { state.proto.heat = (state.proto.heat + 1) % 4; applyHeat(); },
+  'proto-heat': () => { state.proto.heat = (state.proto.heat + 1) % 4; applyStrain('heat'); },
+  'proto-battery': () => { state.proto.battery = (state.proto.battery + 1) % 4; applyStrain('battery'); },
+  'proto-remember': () => {
+    const L = state.live, text = '你更喜欢先听结论', t = task(L.taskId);
+    if (!canRemember(t)) return showToast(t.temp ? '临时对话不写入记忆' : '记忆关着，不会写入');
+    keepMemory(text);
+    L.item.turns.push({ gap: true, memory: true, text, id: uid('turn') });
+    renderThread({ stick: true });
+  },
   'proto-perm': () => { state.proto.perm = state.proto.perm === 'denied' ? 'granted' : 'denied'; state.permError = null; renderBanner(); },
   'proto-oom': () => { state.proto.oom = !state.proto.oom; },
+  'proto-release': () => { if (state.loading) return; state.loaded = state.loaded ? null : state.model; usage.ready = false; renderAll(); },
   'proto-tight': () => { state.proto.tight = !state.proto.tight; stepUsage(); renderEngine(); },
   'proto-hw': el => { state.proto.hw = el.dataset.hw; renderEngine(); },
   'proto-weak': () => { state.proto.weak = !state.proto.weak; stepUsage(); paintUsage(); renderStage(); syncPresence(); },
@@ -2654,16 +3023,70 @@ const actions = {
   'settings-tab': el => { state.settingsTab = el.dataset.tab; renderSettings(); $('.set-body').scrollTop = 0; $('.set-nav [aria-current]')?.focus(); },
   'settings-back': () => { state.settingsTab = parentOf(state.settingsTab) ?? 'index'; renderSettings(); },
   'close-settings': () => { state.settingsTab = null; renderSettings(); },
-  pref: el => { const k = el.dataset.key; state.prefs[k] = !state.prefs[k]; el.setAttribute('aria-checked', state.prefs[k]); if (k === 'tech') renderAll(); },
+  pref: el => {
+    const k = el.dataset.key;
+    state.prefs[k] = !state.prefs[k]; el.setAttribute('aria-checked', state.prefs[k]);
+    if (k === 'tech' || k === 'offlineMode') { renderAll(); $(`[data-action=pref][data-key=${k}]`)?.focus(); }
+    if (k === 'lowPower' && state.live) { renderStage(); renderDock(); syncPresence(); }
+  },
+  'offline-off': () => { state.prefs.offlineMode = false; usage.ready = false; renderAll(); },
+  'show-source': el => showSource(el),
+  'source-full': () => showToast('原型中不打开原图'),
+  'source-fix': el => { const r = SOURCE_REFS[el.dataset.ref]; $('#prompt').value = `${r.item}读错了，原图上是 `; syncComposer(); $('#prompt').focus(); },
+  'act-yes': el => {
+    const t = cur(), it = t.items.find(x => x.id === el.dataset.id), notify = it.kind === 'notify', timer = notify && !inBrowser() ? { id: uid('tm'), when: it.when, text: it.text, taskId: t.id } : null;
+    it.state = 'added';
+    if (timer) state.timers.push(timer);
+    renderThread({ stick: true }); renderNav();
+    showToast(notify ? '到点会发通知' : '已写好', '撤销', () => { it.state = null; state.timers = state.timers.filter(x => x !== timer); renderThread(); renderNav(); });
+  },
+  'act-no': el => { cur().items.find(x => x.id === el.dataset.id).state = 'declined'; renderThread(); },
+  'timer-open': el => selectTask(state.timers.find(x => x.id === el.dataset.id).taskId),
+  'timer-del': el => {
+    const i = state.timers.findIndex(x => x.id === el.dataset.id), [x] = state.timers.splice(i, 1);
+    renderSettings(); renderNav();
+    showToast('已删除', '撤销', () => { state.timers.splice(i, 0, x); renderSettings(); renderNav(); });
+  },
+  'backup-toggle': () => {
+    const b = state.backup;
+    if (!b.on) { b.ask = 'on'; return renderSettings(); }
+    b.on = false; b.ask = null; renderAll();
+    showToast('备份已关闭，iCloud 里的副本还在', '撤销', () => { b.on = true; renderAll(); });
+  },
+  'backup-on': () => { const b = state.backup; b.on = b.hasCloud = true; b.ask = null; renderAll(); runBackup(); },
+  'backup-ask-close': () => { state.backup.ask = null; renderSettings(); },
+  'backup-now': runBackup,
+  'backup-restore': () => addImported('已从 iCloud 取回 1 个对话'),
+  'backup-delete-ask': () => { state.backup.ask = 'delete'; renderSettings(); },
+  'backup-delete': () => { const b = state.backup; b.on = b.hasCloud = false; b.ask = null; renderAll(); showToast('iCloud 里的备份已删除'); },
+  'export-all': () => showToast(`已导出 ${tasks.filter(t => !t.temp && !isBlank(t)).length} 个对话`),
+  'import-all': () => addImported('导入了 1 个对话，跳过 2 个重复'),
+  'dismiss-import': () => { state.importFail = false; renderSettings(); },
   'set-preset': el => { state.preset = el.dataset.id; state.params = { ...PRESETS[el.dataset.id].params }; renderSettings(); $(`[data-action=set-preset][data-id=${state.preset}]`)?.focus(); },
   'reset-params': () => { state.preset = 'balanced'; state.params = { ...PRESETS.balanced.params }; renderSettings(); showToast('已恢复默认'); },
   'clear-all': () => showToast('原型中不清除数据'),
   'proto-note': el => showToast(el.dataset.msg),
   forget: el => {
     const i = +el.dataset.id, [m] = state.memories.splice(i, 1);
-    renderSettings();
-    showToast('已删除', '撤销', () => { state.memories.splice(i, 0, m); renderSettings(); });
+    renderSettings(); renderThread();
+    showToast('已删除', '撤销', () => { state.memories.splice(i, 0, m); renderSettings(); renderThread(); });
   },
+  'memory-undo': el => {
+    const it = memoryItem(el.dataset.id);
+    state.memories = state.memories.filter(m => m !== it.text);
+    renderThread(); say('已忘掉这条');
+    $(`[data-action=memory-redo][data-id="${it.id}"]`)?.focus();
+  },
+  'memory-redo': el => {
+    const it = memoryItem(el.dataset.id);
+    keepMemory(it.text); renderThread();
+    $(`[data-action=memory-undo][data-id="${it.id}"]`)?.focus();
+  },
+  'crash-restart': () => startLive(state.crashed.source),
+  'crash-dismiss': () => { state.crashed = null; renderBanner(); },
+  'crash-load': () => loadModel(),
+  'crash-send': () => { state.crashAsk = false; state.crashSent = '刚刚'; renderBanner(); showToast('已发送，联网记录里能看到'); },
+  'crash-skip': () => { state.crashAsk = false; renderBanner(); },
   'toggle-scene': el => {
     const id = el.dataset.id, off = state.sceneOff;
     if (off.has(id)) off.delete(id); else off.add(id);
@@ -2684,13 +3107,24 @@ const actions = {
   'swap-live': el => setModel(OMNI, () => startLive(el.dataset.source)),
   'cancel-load': cancelLoad,
   'dismiss-swap': () => { state.swapFail = null; renderBanner(); },
+  'load-retry': () => { state.swapFail = null; loadModel(); },
+  'live-wait-cancel': () => { state.liveQueued = null; renderBanner(); syncComposer(); },
+  'ask-spec': el => {
+    if (state.dl) return showToast('等这个下载结束后再换');
+    state.askSpec = el.dataset.id === specOf(state.model) ? null : el.dataset.id;
+    renderSettings();
+  },
+  'spec-go': () => { const s = state.askSpec; state.askSpec = null; startDownload(state.model, s); },
+  'spec-cancel': () => { state.askSpec = null; renderSettings(); },
   'download-model': el => startDownload(el.dataset.id),
   'dl-pause': () => { state.dl.status = 'paused'; paintGates(); },
   'dl-resume': () => { state.dl.status = 'running'; paintGates(); },
   'dl-cancel': () => { state.dl = null; paintGates(); },
   'ob-next': () => { state.onboard = 'model'; renderGate(); },
-  'ob-pick': el => { state.obModel = el.dataset.id; renderGate(); },
-  'ob-download': () => { state.model = state.loaded = state.obModel; startDownload(state.obModel); state.onboard = 'download'; renderAll(); },
+  'ob-pick': el => { state.obModel = el.dataset.id; state.obSpec = null; renderGate(); },
+  'ob-spec': el => { state.obSpec = el.dataset.id; renderGate(); },
+  'ob-restore': () => { state.onboard = 'model'; renderGate(); showToast('正在恢复 42 个对话，可以继续'); },
+  'ob-download': () => { const spec = state.obSpec ?? bestSpec(state.obModel); state.model = state.loaded = state.obModel; state.specs[state.obModel] = spec; startDownload(state.obModel, spec); state.onboard = 'download'; renderAll(); },
   'ob-leave': () => { state.onboard = null; renderAll(); },
   'ob-remote': () => { state.onboard = null; state.backend = 'remote'; state.placeOpen = true; state.settingsTab = 'models'; renderAll(); },
   unlock: () => { state.locked = false; renderGate(); },
@@ -2700,7 +3134,8 @@ const actions = {
   'copy-code': () => showToast('已复制'),
   'continue-reply': el => {
     const it = cur().items.find(x => x.id === el.dataset.id);
-    it.cut = null; it.html += '搭下午的航班回程。</p>';
+    it.cut = null;
+    if (it.rest) { it.text += it.rest; it.rest = null; } else it.html += '搭下午的航班回程。</p>';
     renderThread();
   },
   'carry-new': () => { newTask(); showToast('已带上上一个对话的摘要'); },
@@ -2790,8 +3225,10 @@ const actions = {
   'live-keep': () => { state.live.idle = null; renderDockNote(); },
   'live-route': () => openMenu($('.dock-status'), `<div class="ttl">声音输出</div>${Object.entries(ROUTES).map(([k, v]) => mi('set-route', v, { data: `data-route="${k}"`, tick: state.live.route === k, role: 'menuitemradio' })).join('')}`, { label: '声音输出' }),
   'set-route': el => { state.live.route = el.dataset.route; showToast(`声音从${ROUTES[el.dataset.route]}输出`); },
-  'live-mute': () => { const L = state.live; L.muted = !L.muted; renderDock(); say(L.muted ? '麦克风已关闭' : '麦克风已打开'); },
-  'live-video': () => { const L = state.live; L.videoOff = !L.videoOff; renderStage(); renderDock(); say(L.videoOff ? '画面已暂停' : '画面已恢复'); },
+  'live-far': () => setFar(!state.live.far),
+  'far-off': () => setFar(false),
+  'live-mute': () => { const L = state.live; L.muted = !L.muted; renderStage(); renderDock(); renderNav(); renderLivebar(); say(L.muted ? '麦克风已关闭' : '麦克风已打开'); },
+  'live-video': () => { const L = state.live; L.videoOff = !L.videoOff; renderStage(); renderDock(); renderNav(); renderLivebar(); say(L.videoOff ? '画面已暂停' : '画面已恢复'); },
   'live-hush': () => {
     const L = state.live;
     L.hush = !L.hush;
@@ -2886,7 +3323,14 @@ $('#menu').addEventListener('keydown', e => {
   if (e.key === 'ArrowUp') go(i - 1);
   if (e.key === 'Home') go(0);
   if (e.key === 'End') go(items.length - 1);
-  if (e.key === 'Tab') closeMenu();
+  if (e.key !== 'Tab') return;
+  const m = $('#menu');
+  if (m.getAttribute('role') !== 'dialog' && !m.classList.contains('sheet')) return closeMenu();
+  // A sheet or dialog keeps Tab inside until it is dismissed.
+  const stops = [...m.querySelectorAll('button:not(:disabled),select,input')];
+  const at = stops.indexOf(document.activeElement);
+  e.preventDefault();
+  stops[(at + (e.shiftKey ? -1 : 1) + stops.length) % stops.length]?.focus();
 });
 document.addEventListener('keydown', e => {
   if (e.isComposing) return;
@@ -2911,7 +3355,20 @@ document.addEventListener('keydown', e => {
     if (map[e.code]) { e.preventDefault(); actions[map[e.code]](); }
   }
 });
-addEventListener('resize', () => { if (!isCompact()) closeMenu(); });
+addEventListener('resize', () => { if (!isCompact()) closeMenu(); syncInert(); });
+// Whatever sits on top owns the keyboard and the screen reader; everything under it goes inert.
+function syncInert() {
+  const app = $('#app'), gate = !!state.onboard || !$('#lock').hidden, m = $('#menu');
+  const sheet = !m.hidden && m.classList.contains('sheet');
+  const drawer = app.classList.contains('nav-open'), log = app.classList.contains('log-open');
+  const panel = state.inspector && innerWidth <= 1180;
+  app.inert = gate || sheet;
+  $('.work').inert = drawer || panel;
+  $('.nav').inert = panel;
+  $('#stage').inert = $('#bottom').inert = log;
+  if (drawer) { $('.nav').setAttribute('role', 'dialog'); $('.nav').setAttribute('aria-modal', 'true'); } else { $('.nav').removeAttribute('role'); $('.nav').removeAttribute('aria-modal'); }
+}
+new MutationObserver(syncInert).observe($('#app'), { attributes: true, attributeFilter: ['class'] });
 
 /* Compact form: long press, sheet drag, keyboard-aware height */
 (function initTouch() {
@@ -2987,7 +3444,15 @@ COMPACT_QUERY.addEventListener('change', () => { closeMenu(); syncForm(); render
  * ?swap=ask|loading|failed  (&model=... picks the current model)  ?omni=none
  * ?onboard=welcome|model|download  ?device=low  ?storage=low
  * ?dl=62&dlstate=running|paused|wifi|failed|verifying  ?perm=ask
- * ?lock=1  ?cover=1  ?temp=1 */
+ * ?lock=1  ?cover=1  ?temp=1
+ * ?still=1 (hold live and download where they are)
+ * ?prep=1 (nothing in memory yet)  ?far=1 (with live=voice, compact)  ?mute=1  ?hold=lock
+ * ?source=glucose|chol|bp (with task=report)  ?device=high  ?onboard=restore
+ * ?backup=on|running|full|signedout|none  ?import=failed  ?offline=1  ?notify=denied
+ * ?task=memo  ?settings=reminders
+ * ?task=allergy (&forgot=1)  ?remember=1 (with live)  ?memory=off
+ * ?battery=1|2  ?hold=battery (&ready=1)
+ * ?crash=model (&fail=1, with live)  ?crash=live|reply|load|report|sent */
 document.querySelectorAll('kbd[data-mod]').forEach(k => { k.textContent = MOD + k.dataset.mod; });
 syncForm();
 {
@@ -2998,8 +3463,21 @@ syncForm();
   if (q.get('runtime')) { state.proto.runtime = q.get('runtime'); if (inBrowser()) state.proto.hw = 'none'; }
   if (q.get('perm')) state.proto.perm = q.get('perm');
   if (q.get('device') === 'low') { state.proto.device = 'low'; state.obModel = 'minicpm-v-4.6'; }
+  if (q.get('device') === 'high') state.proto.device = 'high';
+  if (q.get('offline')) state.prefs.offlineMode = true;
+  if (q.get('notify')) state.proto.notify = q.get('notify');
+  if (q.get('import') === 'failed') state.importFail = true;
+  if (q.get('backup') === 'none') state.proto.icloud = false;
+  else if (q.get('backup')) {
+    Object.assign(state.backup, { on: true, hasCloud: true });
+    if (q.get('backup') !== 'on') state.backup.status = q.get('backup');
+    if (q.get('backup') === 'running') state.backup.pct = 42;
+  }
   if (q.get('storage') === 'low') state.proto.storage = 'low';
   if (q.get('heat')) state.proto.heat = +q.get('heat');
+  if (q.get('battery')) state.proto.battery = +q.get('battery');
+  if (q.get('memory') === 'off') state.prefs.memory = false;
+  if (q.get('forgot')) state.memories = state.memories.filter(m => m !== '你对青霉素过敏');
   if (q.get('lock')) state.locked = true;
   if (q.get('cover')) state.cover = true;
   if (q.get('dl') || q.get('onboard')) {
@@ -3007,7 +3485,7 @@ syncForm();
     state.installed.delete(state.model);
     if (q.get('onboard')) { state.installed.clear(); const t = blankTask(); tasks.splice(0, tasks.length, t); state.current = t.id; state.onboard = q.get('onboard'); }
     if (q.get('dl') || q.get('onboard') === 'download') {
-      state.dl = { id: state.obModel, pct: +(q.get('dl') ?? 34), status: q.get('dlstate') ?? 'running' };
+      state.dl = { id: state.obModel, spec: specOf(state.obModel), pct: +(q.get('dl') ?? 34), status: q.get('dlstate') ?? 'running' };
       runDownload();
     }
   }
@@ -3024,12 +3502,14 @@ syncForm();
     if (q.get('swap') === 'failed') state.swapFail = { id: other };
     if (q.get('swap') === 'loading') { state.model = other; state.loading = other; }
   }
+  if (q.get('prep')) { state.loading = state.model; state.loaded = null; }
   if (q.get('mem') === 'tight') state.proto.tight = true;
   if (PROACTIVE[q.get('proactive')]) state.prefs.proactiveDefault = q.get('proactive');
   if (q.get('inspector')) state.inspector = true;
   else if (innerWidth >= 1560) state.inspector = true;
   if (task(q.get('task'))) state.current = q.get('task');
   if (q.get('settings')) state.settingsTab = q.get('settings');
+  if (q.get('crash') && q.get('crash') !== 'model') afterCrash(q.get('crash'));
   renderAll({ stick: true });
   if (q.get('view') === 'empty' || q.get('temp')) newTask();
   if (q.get('temp')) actions['toggle-temp']();
@@ -3041,7 +3521,17 @@ syncForm();
     if (state.live && q.get('hold')) { holdLive(q.get('hold')); if (q.get('ready')) { state.live.hold.ready = true; renderAll({ stick: true }); } }
     if (state.live && q.get('link')) actions['proto-link']();
     if (state.live && q.get('idle')) actions['proto-idle']();
-  }
+    if (state.live && q.get('far')) { state.live.far = true; renderAll({ stick: true }); }
+    if (state.live && q.get('mute')) actions['live-mute']();
+    if (state.live && q.get('remember')) actions['proto-remember']();
+    if (state.live && q.get('crash') === 'model') { actions['proto-crash'](); if (q.get('fail')) failLink(); }
+  } else if (q.get('perm') === 'denied') {
+    state.permError = { source: 'voice', title: '没有麦克风权限' }; renderBanner();
+  } else if (q.get('perm') === 'ask' && !state.onboard) permPrimer('voice');
+  if (q.get('source')) showSource($(`[data-ref="${q.get('source')}"]`));
+  // Review pages hold the frame; otherwise a turn that lasts a second is gone before it is seen.
+  if (q.get('still')) { cancelAnimationFrame(raf); clearInterval(dlTimer); }
+  if (q.get('settings') === 'privacy' && (q.get('backup') || q.get('import'))) $('#backupSec').scrollIntoView();
   if (q.get('swap') === 'ask') {
     if (isCompact()) titleSheet($('.head-title')); else actions['model-menu']($('#modelBtn'));
     const id = state.model === OMNI ? 'minicpm-v-4.6' : OMNI;

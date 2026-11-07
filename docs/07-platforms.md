@@ -78,11 +78,30 @@
 | | 事实 | 设计 |
 |---|---|---|
 | iOS | 后台提交 Metal 任务会报错，相机后台不可用。`BGContinuedProcessingTask` 的 GPU 能力要用户发起并检查设备支持，不能作为 iPhone 基线 **[推断]** | 离开即暂停 |
-| Android | 麦克风和相机前台服务要在应用可见时启动，之后可以继续。Android 17 对不可见进程有内存上限，后台音频要有 while-in-use 能力的前台服务 | 第一版离开即暂停，与 iOS 一致。语音在后台继续留作后续选项 |
+| Android | 麦克风和相机前台服务要在应用可见时启动，之后可以继续。Android 17 对不可见进程有内存上限，后台音频要有 while-in-use 能力的前台服务 | 离开即暂停，与 iOS 一致 |
 | macOS | 没有这类限制 **[推断]**。要防止 App Nap，用 `beginActivity` | 继续运行，菜单栏显示状态 |
 | Web | 页面可见性决定资源 | 继续运行；手机浏览器切走时按暂停处理 |
 
-为什么 Android 第一版也暂停：隐私规则统一，模型驻留在后台时被内存上限杀掉的风险未知。
+用户决定不做后台 GPU 能力：需要算力的功能都在前台工作，各平台只提供系统级的定时通知和备忘录。这样隐私规则统一，也避开模型驻留后台时被内存上限杀掉的风险。
+
+这里的“前台”指应用开着并由用户发起。macOS 和桌面 Web 上，窗口不在最前面时会话继续，否则“一起看屏幕”做不到。
+
+### 屏幕常亮
+
+实时期间不让系统自动息屏，否则息屏等于离开应用。行为规格见 [实时会话](04-live-session.md#屏幕)。下表的接口名未逐条核对官方文档，开发前确认。
+
+| | 保持常亮 | 按电源键 |
+|---|---|---|
+| iOS | `isIdleTimerDisabled` | 应用离开前台，走暂停 **[待实测]** |
+| Android | `FLAG_KEEP_SCREEN_ON` | `ON_STOP`，走暂停 **[待实测]** |
+| macOS | `beginActivity` 加 `.idleDisplaySleepDisabled` | 不适用 |
+| Web | Screen Wake Lock API，不支持时提示屏幕可能熄灭 | 手机浏览器走 `visibilitychange` |
+
+远看模式靠深色界面省电，不改系统亮度，Web 也改不了。
+
+### 车机
+
+第一版不做。iOS 26.4 起 CarPlay 有语音对话应用类别，要申请 entitlement，只能用指定模板，没有唤醒词（来自二手报道，未读 CarPlay 开发指南）。手机锁屏时 CarPlay 里能不能跑本机模型 **[待实测]**，这决定以后要不要做。
 
 ### 系统活动
 
@@ -104,9 +123,22 @@
 | 来电 | `AVAudioSession.interruptionNotification`。iOS 27 新代码用 `didBecomeInactiveNotification` 和 `resumptionRecommendationNotification`，因为结束事件可能不到 | 失去音频焦点，通话状态 | 输入设备被占 | `track` 的 `mute` 事件 |
 | 离开应用 | `scenePhase` | 生命周期 `ON_STOP` | 不适用 | `visibilitychange` |
 | 耳机断开 | `routeChangeNotification`，`oldDeviceUnavailable` | `ACTION_AUDIO_BECOMING_NOISY` | 默认设备变化 | `devicechange` |
-| 被系统回收 | 下次启动恢复 | `ApplicationExitInfo` | 同左 | 不适用 |
+| 被系统回收 | 下次启动恢复 | `ApplicationExitInfo` | 同左 | 下次打开恢复 |
 
 iOS 和 Android 上用户撤销权限时系统会结束进程 **[待实测]**，走“被系统回收”路径，所以没有单独的暂停状态。
+
+### 崩溃和意外退出
+
+| | 模型中断，应用还在 | 下次打开时判断 |
+|---|---|---|
+| iOS | 模型和应用同进程时没有这一层，直接走下次打开 | 本地标记，`MetricKit` 给诊断 |
+| Android | 模型放在独立进程时能重启 | 本地标记，`ApplicationExitInfo` 给原因 |
+| macOS | 模型放在子进程时能重启 | 本地标记，`MetricKit` 给诊断 |
+| Web | `GPUDevice.lost` 或 Worker 报错后重新申请设备，模型要重新载入 | 本地标记 |
+
+本地标记：开始实时、开始回答、开始载入前写一个标记，正常结束时清掉。下次打开还在就是意外退出。这样不依赖系统给的原因，四端相同 **[待实测]**。
+
+iOS 和 Android 上内存超限时，系统可能直接结束应用，应用来不及处理 **[待实测]**。“载入时退出”就是防这种情况。
 
 ### 发热和电量
 
@@ -119,7 +151,12 @@ iOS 和 Android 上用户撤销权限时系统会结束进程 **[待实测]**，
 
 阈值是起点，要用实机数据调 **[待实测]**。Android 的 headroom 最多 10 秒查一次，部分设备状态可能一直是 NONE，要配合响应延迟判断。
 
-低电量模式：iOS `isLowPowerModeEnabled`，Android `PowerManager.isPowerSaveMode`。
+| 电量等级的信号 | iOS | Android | macOS | Web |
+|---|---|---|---|---|
+| 低电量模式 | `isLowPowerModeEnabled` | `PowerManager.isPowerSaveMode` | `isLowPowerModeEnabled`（macOS 12 起） | 没有 |
+| 电量和充电 | `UIDevice.batteryLevel` | `BatteryManager` | IOKit 电源信息 | Battery Status API |
+
+Battery Status API 不是所有主流浏览器都支持，也不能在 Worker 里用。读不到电量时，Web 不走电量阶梯，只看发热和响应延迟 **[待实测]**。
 
 ### 屏幕共享
 
@@ -127,7 +164,7 @@ iOS 和 Android 上用户撤销权限时系统会结束进程 **[待实测]**，
 |---|---|---|
 | macOS | `SCContentSharingPicker`（14+） | 提供，用系统选择器 |
 | Web 桌面 | `getDisplayMedia` | 提供 |
-| Android | `MediaProjection`，每次重新同意，可选单个应用，状态栏有提示，锁屏时自动停止 | 不提供。之后评估，风险是模型在后台的内存 |
+| Android | `MediaProjection`，每次重新同意，可选单个应用，状态栏有提示，锁屏时自动停止 | 不提供。共享别的应用时模型在后台，不做 |
 | iOS | iOS 27 起 ScreenCaptureKit 取代 ReplayKit 选择器，不再需要广播扩展，后台全屏要 `screen-capture` 和 `audio` 模式 | 不提供 |
 | Web 手机 | Chrome 和 Firefox Android 不支持 | 不提供 |
 
@@ -158,9 +195,19 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 
 内存：iOS 有 `increased-memory-limit` 权限（部分机型），用 `os_proc_available_memory` 判断余量，不要缓存这个值。Android 17 按设备内存设上限，超限退出原因含 `MemoryLimiter:AnonSwap`。
 
+### 规格
+
+下载时让用户选规格，交互见 [信息架构](03-structure.md#规格)。
+
+公开的 `openbmb/MiniCPM-o-4_5-gguf` 里，语言模型 Q4_K_M 5.03 GB，F16 16.4 GB。llama.cpp-omni 还要视觉、音频、TTS 等模块：一份部署指南写 Q4_K_M 全部约 8.3 GB，项目说明写 F16 约 15–18 GB，占用约 19–20 GB，建议 32GB 以上的 Mac。**这比原型里的 6.0 GB 大**，原型的大小都是占位，换成实际发布包的数字。
+
+按这些数字，手机基本只能跑轻量，完整主要给桌面。之后按机型选规格时，只需要替换推荐逻辑，见原型的 `bestSpec()`。Q8 这样的中间规格是数据里加一行的事。
+
+### 内存
+
 这是最大的技术风险：6GB 级模型能否在 8GB 手机上和全双工一起运行。**最便宜的验证**是在目标机型上加载模型跑 10 分钟实时，记录是否被杀和发热曲线。结果决定“全能”模型在手机上的推荐条件。这项验证已延后。
 
-浏览器有同样的问题：WebGPU 下全能模型和全双工能跑到什么程度 **[待实测]**。跑不动时，浏览器只提供轻量模型，这和“视觉模型没有实时”是同一个状态，不需要新设计。
+浏览器有同样的问题：WebGPU 下全能模型和全双工能跑到什么程度 **[待实测]**。跑不动时，浏览器只提供看图模型，这和“视觉模型没有实时”是同一个状态，不需要新设计。
 
 ## 系统入口
 
@@ -170,10 +217,45 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 |---|---|---|---|---|
 | 分享进来 | Share Extension | `ACTION_SEND` | Share Extension | Web Share Target |
 | 快速开始 | App Intents，Action Button，控制中心 | 快捷方式，快捷设置磁贴 | 全局快捷键，菜单栏 | 不适用 |
-| 通知 | 见隐私设计 | 同左 | 同左 | 不适用 |
+| 通知 | 定时通知，见下 | 同左 | 同左 | 不适用 |
 | 小组件 | 开始语音、看东西 | 同左 | 不做 | 不适用 |
 
 分享进来的流程：选图 → 打开新对话，附件已就位，光标在输入框。不用在分享面板里完成对话。
+
+## 定时通知和备忘录
+
+这是应用不在前台时唯一发生的事，由系统完成，模型不运行。流程见 [信息架构](03-structure.md#定时通知和备忘录)。
+
+| | iOS | Android | macOS | Web |
+|---|---|---|---|---|
+| 定时通知 | `UNUserNotificationCenter` 本地通知 | `AlarmManager.setAndAllowWhileIdle()` | 同 iOS | 页面关掉后发不了，存成日历文件 |
+| 通知权限 | 第一次添加时问 | Android 13 起第一次添加时问 | 同 iOS | 不需要 |
+| 写备忘录 | 系统分享面板 | `ACTION_SEND` | 系统分享面板 | 复制文字 |
+
+- **Android 时间有偏差**：`setAndAllowWhileIdle()` 不用精确闹钟权限，Android 12 起在触发时间后一小时内发出，省电限制下可能更晚。精确闹钟权限 `SCHEDULE_EXACT_ALARM` 在 Android 14 默认拒绝，这个功能不值得申请。文案写“早上 9 点左右”还是“9 点”待定 **[待实测]**。
+- **Web**：Notification Triggers API 已停止开发，页面关掉后没有本地定时通知。服务器推送不符合本机定位。
+- **为什么备忘录走分享面板**：写入提醒事项要 `requestFullAccessToReminders`，一起拿到读取全部提醒的权限，和“用到什么要什么”不符。系统备忘录没有查到公开写入接口 **[推断]**。分享面板不用权限，代价是多一步，用户自己选目标应用。
+- iOS 待处理的本地通知有数量上限，定时通知不多时不受影响 **[待实测]**。
+
+## 备份
+
+规则见 [隐私设计](08-privacy.md#备份与导出)。
+
+| | iOS / iPadOS | macOS | Android | Web |
+|---|---|---|---|---|
+| 云备份 | iCloud，用户开启 | iCloud，用户开启 | 目标待定 | 目标待定 |
+| 导出导入 | 有 | 有 | 有 | 有 |
+| 系统自动备份 | 排除 | 排除 | 排除 | 不适用 |
+
+**iCloud 用应用自己的备份，不用系统的设备备份。** 系统的 iCloud 云备份面向 iPhone 和 iPad，Mac 上是时间机器 **[推断]**，一套方案覆盖不了两端，而且用户开关不在我们这里。建议用 CloudKit 私有数据库，敏感字段放进 `CKRecord.encryptedValues`。Apple 的安全指南说，端到端加密的服务密钥不会提供给 Apple 服务器，靠 iCloud 钥匙串在设备间同步，钥匙串丢失时这些数据也恢复不了。第三方应用能否得到同样的保证、失败时怎么提示 **[待实测]**，确认后才能写“加密”，现在的文案不写。
+
+**默认要排除系统备份**，否则对话会在用户不知情时进入设备备份，第一条承诺就不成立：
+
+- iOS：`isExcludedFromBackup`。文档说它适合缓存和支持文件，文档目录里的常见操作可能把它重置，所以数据放 Application Support，在目录上设置 **[待实测]**。
+- macOS：同一属性是否让时间机器跳过 **[待实测]**。备份盘在用户手里，影响较小。
+- Android：`android:allowBackup="false"`，Android 12 起用 `android:dataExtractionRules` 排除，更早的版本单独写规则文件。
+
+模型文件不进任何备份。
 
 ## macOS 特有
 
@@ -205,6 +287,11 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 | 开机时启动 | 无 | 无 | `SMAppService` | 无 |
 | 只在 Wi-Fi 下载 | 有 | 有 | 无 | 无 |
 | 触感反馈 | 有 | 有 | 无 | 无 |
+| 保持屏幕亮着 | 有 | 有 | 有 | 有 |
+| 远看模式 | 有 | 有 | 窄窗口 | 手机浏览器 |
+| 定时通知 | 有 | 有 | 有 | 无 |
+| 备份到 iCloud | 有 | 无 | 有 | 无 |
+| 导出和导入对话 | 有 | 有 | 有 | 有 |
 
 ## 多语言
 
@@ -235,7 +322,9 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 
 ## 参考
 
-- Apple：[Materials](https://developer.apple.com/design/human-interface-guidelines/materials)、[Color](https://developer.apple.com/design/human-interface-guidelines/color)、[Handling audio interruptions](https://developer.apple.com/documentation/avfaudio/handling-audio-interruptions)、[Running Metal in the background](https://developer.apple.com/documentation/metal/preparing-your-metal-app-to-run-in-the-background)、[Capturing screen content on iOS](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-on-ios)、[Background Assets](https://developer.apple.com/documentation/backgroundassets/downloading-apple-hosted-asset-packs)、[App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
-- Android：[Window size classes](https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes)、[Choosing a color scheme](https://m3.material.io/styles/color/choosing-a-scheme)、[Foreground service restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)、[Android 17 behavior changes](https://developer.android.com/about/versions/17/behavior-changes-all)、[Live updates](https://developer.android.com/develop/ui/views/notifications/live-update)、[MediaProjection](https://developer.android.com/media/grow/media-projection)、[Thermal API](https://developer.android.com/games/optimize/adpf/thermal)、[On-device AI delivery](https://developer.android.com/google/play/on-device-ai)
-- Web：[Media Session](https://w3c.github.io/mediasession/)、[Compute Pressure](https://developer.mozilla.org/en-US/docs/Web/API/Compute_Pressure_API)
+- Apple：[iCloud encryption](https://support.apple.com/guide/security/icloud-encryption-sec3cac31735/web)、[encryptedValues](https://developer.apple.com/documentation/cloudkit/ckrecord/encryptedvalues)、[isExcludedFromBackup](https://developer.apple.com/documentation/foundation/urlresourcevalues/isexcludedfrombackup)、[requestFullAccessToReminders](https://developer.apple.com/documentation/eventkit/ekeventstore/4162273-requestfullaccesstoreminders)、[isLowPowerModeEnabled](https://developer.apple.com/documentation/foundation/processinfo/islowpowermodeenabled)、[Materials](https://developer.apple.com/design/human-interface-guidelines/materials)、[Color](https://developer.apple.com/design/human-interface-guidelines/color)、[Handling audio interruptions](https://developer.apple.com/documentation/avfaudio/handling-audio-interruptions)、[Running Metal in the background](https://developer.apple.com/documentation/metal/preparing-your-metal-app-to-run-in-the-background)、[Capturing screen content on iOS](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-on-ios)、[Background Assets](https://developer.apple.com/documentation/backgroundassets/downloading-apple-hosted-asset-packs)、[App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- Android：[Schedule alarms](https://developer.android.com/develop/background-work/services/alarms)、[Exact alarms denied by default](https://developer.android.com/about/versions/14/changes/schedule-exact-alarms)、[Auto Backup](https://developer.android.com/identity/data/autobackup)、[Window size classes](https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes)、[Choosing a color scheme](https://m3.material.io/styles/color/choosing-a-scheme)、[Foreground service restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)、[Android 17 behavior changes](https://developer.android.com/about/versions/17/behavior-changes-all)、[Live updates](https://developer.android.com/develop/ui/views/notifications/live-update)、[MediaProjection](https://developer.android.com/media/grow/media-projection)、[Thermal API](https://developer.android.com/games/optimize/adpf/thermal)、[On-device AI delivery](https://developer.android.com/google/play/on-device-ai)
+- Web：[Notification Triggers](https://developer.chrome.com/docs/web-platform/notification-triggers)、[Battery Status API](https://developer.mozilla.org/en-US/docs/Web/API/Battery_Status_API)、[GPUDevice.lost](https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/lost)、[Media Session](https://w3c.github.io/mediasession/)、[Compute Pressure](https://developer.mozilla.org/en-US/docs/Web/API/Compute_Pressure_API)
+- 模型：[MiniCPM-o 4.5 GGUF](https://huggingface.co/openbmb/MiniCPM-o-4_5-gguf/tree/main)、[llama.cpp-omni](https://github.com/tc-mb/llama.cpp-omni)、[部署指南](https://datawhalechina.github.io/hello-rocm/01-deploy/minicpm-o/minicpm-o-model)
+- 车机（二手报道）：[MacRumors](https://www.macrumors.com/2026/02/18/ios-26-4-carplay-support/)、[AppleInsider](https://appleinsider.com/articles/26/02/18/ai-agents-are-coming-to-carplay-but-theyre-not-getting-the-keys)
 - Token：[DTCG 2025.10](https://www.designtokens.org/tr/2025.10/format/)、[Style Dictionary DTCG](https://styledictionary.com/info/dtcg/)
