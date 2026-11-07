@@ -67,7 +67,7 @@ Web 没有系统控件，所以向原生端的操作靠：紧凑形态的历史�
 | `jade` | 使用 | App accent | `primary` |
 | `jade-wave` `you-wave` `overlap` `cinnabar` `amber` 及其浅色 | 使用 | Asset Catalog 自定义色 | 扩展色，`CompositionLocal` 提供 |
 
-**iOS / macOS**：内容偏单色时可以用品牌色作 accent。着色只给主操作和状态，不给多个控件上色，少用自定义工具栏背景。玻璃上只有实时主按钮和结束按钮带色。
+**iOS / macOS**：内容偏单色时可以用品牌色作 accent。着色只给主操作和状态，不给多个控件上色，少用自定义工具栏背景。玻璃上只有实时主按钮和结束按钮带色。第一阶段没有实时，同一位置的发送和拍照按钮带色。
 
 **Android**：Material 区分品牌一致的静态方案和个性化的动态方案，语义色可以固定。建议第一版用 token 生成静态方案。动态配色可能把 `primary` 变成接近朱砂的颜色，破坏“朱砂等于采集”的含义。以后可以只让中性色跟随壁纸。
 
@@ -284,6 +284,18 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 - 关闭窗口默认留在菜单栏，设置里可改。
 - 拖放文件到窗口和 Dock 图标。
 
+## iOS 27 要点
+
+iOS 客户端最低版本是 27。来自 WWDC26 的 What's new in SwiftUI（session 269），其余是第三方整理的发布说明，都没有在 Xcode 里验证 **[待实测]**。
+
+- Xcode 27 要 macOS 26.6 以上和 Apple 芯片，带 Swift 6.4。用它构建就得到新版 Liquid Glass，不用改代码，还会响应系统新增的玻璃着色滑块。
+- iPhone 应用在 iOS 27 可以调整大小。按尺寸类判断形态，不按设备类型。这和“形态由窗口尺寸决定”一致。
+- 工具栏空间不够时：`visibilityPriority`、`ToolbarOverflowMenu`、`topBarPinnedTrailing`。
+- 确认和警告支持 `item:` 绑定，和 `.sheet` 写法相同。
+- `@State` 变成宏。声明时有默认值又在 `init` 里赋值会报错。
+- `toolbarMinimizeBehavior` 在 session 里出现，发布说明写已改名为 `toolbarMinimizationBehavior`，两个来源不一致，现在不用。
+- iOS 27 要求场景生命周期。纯 SwiftUI 应用已经满足。
+
 ## Web 特有
 
 - 原型就是实现参考，token 直接用。
@@ -328,7 +340,7 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 
 `tokens/` 使用 Design Tokens 社区组（DTCG）的结构。颜色值保留十六进制字符串，方便手改，也是 Style Dictionary 能读的写法。
 
-开发开始时用 Style Dictionary 生成代码，内置 `ios-swift/class.swift` 和 `compose/object` 格式。它对 DTCG 2025.10 的支持还不完整，所以先不用新版的颜色对象写法。
+`tools/tokens.mjs` 生成 `apps/web/src/styles/tokens.css` 和 iOS 的 Asset Catalog 颜色，见 [决策记录](10-decisions.md)。Android 开工时再看要不要换成 Style Dictionary，它内置 `compose/object` 格式，对 DTCG 2025.10 的支持还不完整，所以先不用新版的颜色对象写法。
 
 ## 交接方式
 
@@ -343,9 +355,10 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 
 ## 参考
 
-- Apple：[iCloud encryption](https://support.apple.com/guide/security/icloud-encryption-sec3cac31735/web)、[encryptedValues](https://developer.apple.com/documentation/cloudkit/ckrecord/encryptedvalues)、[isExcludedFromBackup](https://developer.apple.com/documentation/foundation/urlresourcevalues/isexcludedfrombackup)、[requestFullAccessToReminders](https://developer.apple.com/documentation/eventkit/ekeventstore/4162273-requestfullaccesstoreminders)、[isLowPowerModeEnabled](https://developer.apple.com/documentation/foundation/processinfo/islowpowermodeenabled)、[Materials](https://developer.apple.com/design/human-interface-guidelines/materials)、[Color](https://developer.apple.com/design/human-interface-guidelines/color)、[Handling audio interruptions](https://developer.apple.com/documentation/avfaudio/handling-audio-interruptions)、[Running Metal in the background](https://developer.apple.com/documentation/metal/preparing-your-metal-app-to-run-in-the-background)、[Capturing screen content on iOS](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-on-ios)、[Background Assets](https://developer.apple.com/documentation/backgroundassets/downloading-apple-hosted-asset-packs)、[App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- Apple：[What's new in SwiftUI（WWDC26）](https://developer.apple.com/videos/play/wwdc2026/269/)、[iCloud encryption](https://support.apple.com/guide/security/icloud-encryption-sec3cac31735/web)、[encryptedValues](https://developer.apple.com/documentation/cloudkit/ckrecord/encryptedvalues)、[isExcludedFromBackup](https://developer.apple.com/documentation/foundation/urlresourcevalues/isexcludedfrombackup)、[requestFullAccessToReminders](https://developer.apple.com/documentation/eventkit/ekeventstore/4162273-requestfullaccesstoreminders)、[isLowPowerModeEnabled](https://developer.apple.com/documentation/foundation/processinfo/islowpowermodeenabled)、[Materials](https://developer.apple.com/design/human-interface-guidelines/materials)、[Color](https://developer.apple.com/design/human-interface-guidelines/color)、[Handling audio interruptions](https://developer.apple.com/documentation/avfaudio/handling-audio-interruptions)、[Running Metal in the background](https://developer.apple.com/documentation/metal/preparing-your-metal-app-to-run-in-the-background)、[Capturing screen content on iOS](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-on-ios)、[Background Assets](https://developer.apple.com/documentation/backgroundassets/downloading-apple-hosted-asset-packs)、[App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 - Android：[Schedule alarms](https://developer.android.com/develop/background-work/services/alarms)、[Exact alarms denied by default](https://developer.android.com/about/versions/14/changes/schedule-exact-alarms)、[Auto Backup](https://developer.android.com/identity/data/autobackup)、[Window size classes](https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes)、[Choosing a color scheme](https://m3.material.io/styles/color/choosing-a-scheme)、[Foreground service restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)、[Android 17 behavior changes](https://developer.android.com/about/versions/17/behavior-changes-all)、[Live updates](https://developer.android.com/develop/ui/views/notifications/live-update)、[MediaProjection](https://developer.android.com/media/grow/media-projection)、[Thermal API](https://developer.android.com/games/optimize/adpf/thermal)、[On-device AI delivery](https://developer.android.com/google/play/on-device-ai)
 - Web：[Notification Triggers](https://developer.chrome.com/docs/web-platform/notification-triggers)、[Battery Status API](https://developer.mozilla.org/en-US/docs/Web/API/Battery_Status_API)、[GPUDevice.lost](https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/lost)、[Media Session](https://w3c.github.io/mediasession/)、[Compute Pressure](https://developer.mozilla.org/en-US/docs/Web/API/Compute_Pressure_API)
 - 模型：[MiniCPM-o 4.5 GGUF](https://huggingface.co/openbmb/MiniCPM-o-4_5-gguf/tree/main)、[llama.cpp-omni](https://github.com/tc-mb/llama.cpp-omni)、[部署指南](https://datawhalechina.github.io/hello-rocm/01-deploy/minicpm-o/minicpm-o-model)
 - 车机（二手报道）：[MacRumors](https://www.macrumors.com/2026/02/18/ios-26-4-carplay-support/)、[AppleInsider](https://appleinsider.com/articles/26/02/18/ai-agents-are-coming-to-carplay-but-theyre-not-getting-the-keys)
+- iOS 27 第三方整理：[Xcode 27](https://blakecrosley.com/blog/xcode-27-release)、[iOS 27 release notes](https://blakecrosley.com/blog/ios-27-release-notes)、[SwiftUI iOS 27](https://blakecrosley.com/blog/whats-new-swiftui-ios-27)
 - Token：[DTCG 2025.10](https://www.designtokens.org/tr/2025.10/format/)、[Style Dictionary DTCG](https://styledictionary.com/info/dtcg/)

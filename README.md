@@ -1,6 +1,6 @@
 # MiniCPM 设计
 
-MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计文档和 token。最终会转成 Android、iOS、macOS 和 Web 的原生 UI。
+MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计文档和 token。最终会转成 Android、iOS、macOS 和 Web 的原生 UI。真实客户端的初版在 [`apps/`](apps/)。
 
 现阶段是草案，文案都未定，主要用网页验证大致的交互逻辑，先不做真机测试。
 
@@ -15,6 +15,9 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | 交给开发 | [平台落地](docs/07-platforms.md#交接方式) |
 | 看还有什么没定 | [决策记录](docs/10-decisions.md) |
 | 对照现有客户端怎么写界面 | [`refs/`](refs/README.md) |
+| 运行真实 Web 客户端 | [`apps/web`](apps/web/README.md) |
+| 在 Mac 上继续 iOS 客户端 | [`apps/ios`](apps/ios/README.md) |
+| 接入推理后端 | [客户端架构](docs/11-client-architecture.md#推理接口) |
 
 用浏览器直接打开 HTML 文件，不需要服务器。
 
@@ -32,6 +35,7 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | [08 隐私设计](docs/08-privacy.md) | 承诺、信号、规则 |
 | [09 文案与多语言](docs/09-i18n-copy.md) | 语气、四语术语表、长度预算 |
 | [10 决策记录](docs/10-decisions.md) | 已定、待确认、待定 |
+| [11 客户端架构](docs/11-client-architecture.md) | `apps/` 的结构、推理接口、空实现 |
 
 ## 原型怎么用
 
@@ -56,6 +60,7 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | `index.html` | 当前原型 |
 | `states.html` | 状态总览 |
 | `tokens/` | 颜色、尺寸、动效、实时常量 |
-| `tools/tokens.mjs` | 同步 token，检查对比度 |
+| `tools/tokens.mjs` | 同步 token 到原型和 `apps/`，检查对比度 |
 | `docs/` | 设计文档 |
+| `apps/` | 真实客户端：Web 和 iOS |
 | `refs/` | 上游参考仓库（submodule），只读，说明见 [`refs/README.md`](refs/README.md) |
