@@ -41,16 +41,20 @@ const GROUPS = [
   ['首次启动', '第一次打开到可以开口。docs/05-states.md', [
     ['欢迎', '?onboard=welcome'], ['恢复备份', '?onboard=restore'], ['选模型', '?onboard=model'], ['内存偏小', '?onboard=model&device=low'], ['内存充足', '?onboard=model&device=high'], ['空间不足', '?onboard=model&storage=low'],
     ['下载中', '?onboard=download&dl=62'], ['等待 Wi-Fi', '?onboard=download&dl=34&dlstate=wifi', 'phone'], ['下载中断', '?onboard=download&dl=71&dlstate=failed'],
-    ['下载时使用', '?view=empty&dl=62'], ['正在准备模型', '?view=empty&prep=1'], ['第一次开麦', '?view=empty&perm=ask'],
+    ['下载时使用', '?view=empty&dl=62'], ['正在准备模型', '?view=empty&prep=1'], ['第一次开麦', '?view=empty&perm=ask', 'phone'], ['文件不完整', '?onboard=download&dl=100&dlstate=badfile'],
   ]],
   ['对话', '根页面和文字对话。', [
     ['新对话', '?view=empty'], ['临时对话', '?temp=1'], ['看图回答', '?task=report'], ['普通对话', '?task=notes'], ['对照原图', '?task=report&source=glucose'], ['对照原图·看不太清', '?task=report&source=chol'],
     ['定时通知', '?task=community'], ['定时通知·没有权限', '?task=community&notify=denied'], ['定时通知·浏览器', '?task=community&runtime=browser'], ['写备忘录', '?task=memo'],
     ['写入记忆', '?task=allergy'], ['写入记忆·已忘掉', '?task=allergy&forgot=1'], ['写入记忆·记忆关着', '?task=allergy&forgot=1&memory=off'],
-    ['对话详情', '?task=report&inspector=1'], ['视觉模型（可换到实时）', '?view=empty&model=minicpm-v-4.6'], ['视觉模型（没有实时）', '?view=empty&model=minicpm-v-4.6&omni=none'],
+    ['对话详情', '?task=report&inspector=1'], ['历史页', '?view=empty&nav=1', 'phone'], ['说话输入', '?view=empty&rec=1'], ['没有说话输入', '?view=empty&dictate=off'], ['浏览器·没有说话输入', '?view=empty&runtime=browser'], ['图片处理中', '?view=empty&att=busy'],
   ]],
   ['消息内容', '回答可能出现的所有内容形态。', [
     ['标题、列表、引用、链接', '?task=repot'], ['代码块与产物', '?task=script'], ['宽表、截断、对话快满', '?task=trip'], ['联网前询问', '?task=camping'],
+  ]],
+  ['下阶段·全能模型', '第一阶段只有看图模型。这一组和下面所有实时状态都是预留设计，加 stage=2 或 live 参数打开。docs/03-structure.md', [
+    ['新对话', '?view=empty&stage=2'], ['选模型', '?onboard=model&stage=2'], ['内存偏小', '?onboard=model&device=low&stage=2'], ['内存充足', '?onboard=model&device=high&stage=2'],
+    ['看图模型（可换到实时）', '?view=empty&model=minicpm-v-4.6&stage=2'], ['看图模型（没有实时）', '?view=empty&model=minicpm-v-4.6&omni=none&stage=2'], ['第一次开麦', '?view=empty&perm=ask&stage=2'],
   ]],
   ['实时会话', '话轮和通道。', [
     ['聆听', '?view=empty&live=voice&t=0.3'], ['你在说', '?view=empty&live=voice&t=2.5'], ['回应', '?view=empty&live=voice&t=6'], ['重叠', '?view=empty&live=voice&t=9.6'], ['麦克风已关', '?view=empty&live=voice&t=0.3&mute=1'],
@@ -90,7 +94,7 @@ const GROUPS = [
     ['浏览器·只有导出', '?settings=privacy&runtime=browser&import=none'], ['导入失败', '?settings=privacy&import=failed'], ['新对话·备份开启', '?view=empty&backup=on'],
   ]],
   ['设置', '手机是列表进详情，桌面是两栏。', [
-    ['设置首页', '?settings=index', 'phone'], ['通用', '?settings=general'], ['定时通知', '?settings=reminders'], ['声音与人设', '?settings=voice'], ['实时会话', '?settings=live'], ['模型', '?settings=models'],
+    ['设置首页', '?settings=index', 'phone'], ['通用', '?settings=general'], ['定时通知', '?settings=reminders'], ['回答与人设', '?settings=voice'], ['声音与人设（下阶段）', '?settings=voice&stage=2'], ['实时会话（下阶段）', '?settings=live&stage=2'], ['模型', '?settings=models'],
     ['模型下载中', '?settings=models&dl=40'], ['应用场景', '?settings=applications'], ['高级', '?settings=advanced'],
   ]],
 ];

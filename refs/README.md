@@ -51,7 +51,7 @@ git -C refs/minicpm-v-apps fetch --unshallow
 | `MiniCPM-V-demo-HarmonyOS/entry/src/main/ets/` | ArkTS 实现：`pages/{Index,ModelManager,TtsPage}`、`components/{WelcomeCard,ChatMessageList,AiMessageItem,UserMessageItem,ImageSliceDialog}` |
 | `PRIVACY.md`、`DOWNLOAD_zh.md` | 隐私表述与模型下载说明的现成文案 |
 
-覆盖了聊天、图片切片确认、模型管理、TTS、首次引导、双语。**没有** macOS 客户端，也**没有**端侧/云端切换的界面表达。
+覆盖了聊天、图片切片设置、模型管理、TTS、首次引导、双语。**没有** macOS 客户端，也**没有**端侧/云端切换的界面表达。
 
 `llama.cpp-omni/` 是嵌套子模块（上游 `tc-mb/llama.cpp-omni`，分支 `ios-omni`），默认没拉，要看实现再 `git submodule update --init --recursive`。
 

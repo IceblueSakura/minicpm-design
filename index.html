@@ -73,6 +73,7 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .app.nav-collapsed .nav{visibility:hidden}
 .nav{grid-column:1;grid-row:1}.work{grid-column:2;grid-row:1}.inspector{grid-column:3;grid-row:1}
 .scrim{display:none}
+.nav-back{display:none}
 
 /* ---------- Task navigation ---------- */
 .nav{position:relative;display:flex;flex-direction:column;min-width:0;background:var(--chrome);border-right:1px solid var(--line);padding:0 10px 8px;-webkit-app-region:no-drag}
@@ -303,6 +304,8 @@ details[open]>.live-head svg.chev{transform:rotate(90deg)}
 .send-btn:disabled{background:var(--sunken);color:var(--ink-3);opacity:1}
 .c-rec{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 6px 0 10px}
 .c-rec .lamp{width:9px;height:9px;border-radius:50%;background:var(--cinnabar);animation:lamp 1.2s ease-in-out infinite}
+.c-rec .rec-note{flex:1;min-width:0;font-size:13px;color:var(--ink-3);white-space:nowrap}
+.c-rec .rec-note~.meter{display:none}
 .c-rec .meter{flex:1;display:flex;align-items:center;gap:2px;height:26px;overflow:hidden;justify-content:flex-end;min-width:0}
 .c-rec .meter i{flex:none;width:2px;border-radius:1px;background:var(--ink-2)}
 .drop{position:absolute;inset:6px;display:grid;place-items:center;border:2px dashed var(--jade);border-radius:12px;background:color-mix(in srgb,var(--surface) 86%,transparent);color:var(--jade);font-weight:600;font-size:16px;z-index:8;pointer-events:none}
@@ -596,7 +599,7 @@ button.tag:hover{background:#0B0F0DF0}
 /* ---------- Compact form ----------
  * Phones, small windows and landscape phones. Same DOM, state and tokens as the
  * desktop form; only the shell changes. Conversation is the root page, the task
- * list becomes a secondary drawer, and menus become bottom sheets.
+ * list is a full page one level up, and menus become bottom sheets.
  * The query is duplicated in COMPACT_QUERY in the script. */
 @media (max-width:820px),(max-height:480px) and (pointer:coarse){
   html,body{overscroll-behavior:none}
@@ -618,10 +621,10 @@ button.tag:hover{background:#0B0F0DF0}
   .head-title svg{width:14px;height:14px;color:var(--ink-3)}
   .head-rename{flex:1;width:auto;height:38px;font-size:16px;text-align:center}
 
-  /* Drawer: recent conversations, deliberately plain */
-  .app .nav{position:fixed;top:0;bottom:0;left:0;width:min(320px,86vw);z-index:22;padding:var(--safe-t) 12px calc(8px + var(--safe-b)) calc(12px + var(--safe-l));box-shadow:var(--shadow);transform:translateX(-102%);visibility:hidden;transition:transform .22s var(--ease),visibility .22s}
+  /* History: the page above the conversation, same level as the native list. Deliberately plain */
+  .app .nav{position:fixed;top:0;bottom:0;left:0;width:100%;z-index:22;padding:var(--safe-t) calc(12px + var(--safe-r)) calc(8px + var(--safe-b)) calc(12px + var(--safe-l));transform:translateX(-102%);visibility:hidden;transition:transform .22s var(--ease),visibility .22s}
   .app.nav-open .nav{transform:none;visibility:visible}
-  .app.nav-open .scrim{display:block;position:fixed;inset:0;z-index:21;background:#0006}
+  .nav-back{display:inline-grid;width:44px;height:44px;margin-left:-6px;border-radius:12px}
   .nav-new{min-height:48px;padding:0 8px;border:0;background:none;font-size:15px}
   .nav-search{min-height:44px;margin-top:4px;padding:0 12px;border-radius:12px;background:var(--sunken)}
   .nav-search input{font-size:16px}
@@ -686,7 +689,7 @@ button.tag:hover{background:#0B0F0DF0}
   #cRow{display:contents}
   #cRow>*{grid-row:3}
   #cRow>[data-action=attach]{grid-column:1}
-  #recBtn{grid-column:3}#liveBtn{grid-column:4}#sendBtn{grid-column:5}
+  #recBtn{grid-column:3}#liveBtn,#shotBtn{grid-column:4}#sendBtn{grid-column:5}
   #voiceReply,#thinking,#modelBtn,.c-gap{display:none}
   .composer .icon-btn{width:44px;height:44px;border-radius:50%}
   .composer textarea{min-height:44px;max-height:168px;padding:10px 4px;font-size:16px}
@@ -854,6 +857,7 @@ button.tag:hover{background:#0B0F0DF0}
 <div class="app" id="app">
   <aside class="nav" aria-label="对话">
     <div class="nav-top">
+      <button class="icon-btn nav-back" data-action="toggle-nav" aria-label="回到对话"><svg class="i back"><use href="#i-chev"/></svg></button>
       <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="a" d="M4 10.500V9M8 10.500V6M12 10.500V3.500M16 10.500V7.500M20 10.500V9.500"/><path class="b" d="M4 13.500V15M8 13.500V16.500M12 13.500V16M16 13.500V20.500M20 13.500V17"/></svg>MiniCPM</div>
       <button class="icon-btn only-wide" data-action="toggle-nav" aria-label="收起侧栏" title="收起侧栏"><svg class="i"><use href="#i-panel-l"/></svg></button>
     </div>
@@ -888,13 +892,14 @@ button.tag:hover{background:#0B0F0DF0}
           </div>
           <div class="c-rec" id="recBox" hidden></div>
           <div class="c-row" id="cRow">
-            <button type="button" class="icon-btn" data-action="attach" aria-label="添加附件" title="添加图片、音频、视频或文件"><svg class="i"><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn" data-action="attach" aria-label="添加附件" title="添加图片、视频或文件"><svg class="i"><use href="#i-plus"/></svg></button>
             <button type="button" class="icon-btn" id="recBtn" data-action="record" aria-label="录一段语音" title="录一段语音，作为这条消息发送"><svg class="i"><use href="#i-mic"/></svg></button>
             <button type="button" class="toggle" id="voiceReply" data-action="toggle-voice-reply" aria-pressed="false" title="让回答同时朗读出来"><svg class="i"><use href="#i-speaker"/></svg><span>语音回复</span></button>
             <button type="button" class="toggle" id="thinking" data-action="toggle-thinking" aria-pressed="false" title="先思考再回答，适合复杂问题"><svg class="i"><use href="#i-bulb"/></svg><span>深度思考</span></button>
             <span class="c-gap"></span>
             <button type="button" class="model-btn" id="modelBtn" data-action="model-menu" aria-haspopup="menu" aria-expanded="false" title="切换这个对话使用的模型"></button>
             <button type="button" class="live-btn" id="liveBtn" data-action="live-menu" aria-haspopup="menu" aria-expanded="false" aria-label="实时" title="边看边听边说的实时会话"><svg class="i"><use href="#i-duplex"/></svg><span>实时</span></button>
+            <button type="button" class="live-btn" id="shotBtn" data-action="take-photo" aria-label="拍照提问" title="拍照提问" hidden><svg class="i"><use href="#i-camera"/></svg><span>拍照</span></button>
             <button type="submit" class="send-btn" id="sendBtn" aria-label="发送" hidden><svg class="i"><use href="#i-up"/></svg></button>
           </div>
           <input type="file" id="file" multiple hidden accept="image/*,audio/*,video/*,.txt,.md,.pdf,.pptx,.docx">
@@ -927,6 +932,10 @@ const uid = (() => { let n = 0; return p => `${p}${++n}`; })();
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 const MOD = IS_MAC ? '⌘' : 'Ctrl+';
 // One query decides the form everywhere; the CSS block "Compact form" mirrors it.
+// Delivery stage. Stage 1 ships vision models with no live sessions on any client.
+// Stage 2 is the reserved omni design: it stays complete here and opens with ?stage=2 or any ?live=.
+const BOOT = new URLSearchParams(location.search);
+const STAGE = BOOT.get('stage') ? +BOOT.get('stage') : BOOT.has('live') || BOOT.get('crash') === 'live' ? 2 : 1;
 const COMPACT_QUERY = matchMedia('(max-width:820px),(max-height:480px) and (pointer:coarse)');
 const isCompact = () => COMPACT_QUERY.matches;
 const store = {
@@ -962,8 +971,13 @@ const MODELS = {
   'minicpm-v-4.5': { name: 'MiniCPM-V 4.5', short: 'V 4.5', kind: '看图', caps: ['image', 'video'], mem: { media: .5 }, specs: { q4: { size: 5.1, memory: 7 }, f16: { size: 16, memory: 18 } } },
 };
 const OMNI = 'minicpm-o-4.5';
+if (STAGE < 2) delete MODELS[OMNI];
+const FIRST_MODEL = Object.keys(MODELS)[0];
+// What the catalog can do decides the words, so no sentence promises a voice the release does not have.
+const SPEAKS = Object.values(MODELS).some(m => m.caps.includes('speech'));
+const MEDIA = SPEAKS ? '声音、画面' : '图片';
 // The word is what people choose by; the tag is the precision, kept small for those who know it.
-// Sizes and memory are placeholders. A per-device table replaces bestSpec() later.
+// Sizes and memory are placeholders. At run time the backend reads the hardware and lists what can be chosen; see obOptions().
 const SPECS = {
   q4: { label: '轻量', tag: 'Q4', sub: '占用小，响应快' },
   f16: { label: '完整', tag: 'F16', sub: '回答最接近原版，占用大' },
@@ -1001,7 +1015,7 @@ const LINK = {
   model: { word: '正在重启', title: '模型停止响应，正在重启', gap: '模型中断', end: '模型中断，已保留到此为止的转写。' },
 };
 const ROUTES = { speaker: '扬声器', earpiece: '听筒', buds: 'AirPods Pro' };
-const FIRST_MODELS = [[null, '全能', '能听、能说、能看，可以实时对话'], ['minicpm-v-4.6', '看图', '看图、读文档，用文字回答']];
+const KIND_SUB = { 全能: '能听、能说、能看，可以实时对话', 看图: '看图、读文档，用文字回答' };
 const REPLY_WINDOW = 4;                    // seconds after you stop talking that count as a reply
 const SOURCES = {
   voice: { label: '语音', icon: 'duplex', sub: '只用麦克风，随时打断' },
@@ -1174,8 +1188,9 @@ const LIVE_SCRIPT = {
   ],
 };
 // Everyday settings first. Parameters and architecture pages sit behind one quiet entry.
+const VOICE_TAB = SPEAKS ? '声音与人设' : '回答与人设';
 const SETTINGS_NAV = [
-  ['常用', [['general', '通用', 'gear'], ['voice', '声音与人设', 'speaker'], ['live', '实时会话', 'duplex'], ['models', '模型', 'cpu'], ['privacy', '隐私与数据', 'shield'], ['applications', '应用场景', 'grid']]],
+  ['常用', [['general', '通用', 'gear'], ['voice', VOICE_TAB, 'speaker'], ...(STAGE > 1 ? [['live', '实时会话', 'duplex']] : []), ['models', '模型', 'cpu'], ['privacy', '隐私与数据', 'shield'], ['applications', '应用场景', 'grid']]],
   ['', [['advanced', '高级', 'more']]],
 ];
 // Pages reached from another settings page rather than from the list.
@@ -1200,23 +1215,23 @@ const state = {
   engine: 'ready',               // ready | offline
   address: '127.0.0.1:9060',
   onboard: null,                 // welcome | model | download
-  obModel: OMNI,
+  obModel: FIRST_MODEL,
   obSpec: null,                  // null follows bestSpec()
   locked: false,
   cover: false,
-  dl: null,                      // { id, spec, pct, status: running | paused | wifi | failed | verifying }
+  dl: null,                      // { id, spec, pct, status: running | paused | wifi | failed | verifying | badfile }
   netLog: [],
   crashed: null,                 // what the last run left behind: { kind: 'live', taskId, source, at } or { kind: 'load' }
   crashAsk: false,               // a crash report is waiting for an answer
   crashSent: null,               // when one went out; it stays in the network log
-  model: OMNI,                   // the app's one current model
-  loaded: OMNI,                  // what the on-device engine holds in memory; null before the first load or after idle release
+  model: FIRST_MODEL,            // the app's one current model
+  loaded: FIRST_MODEL,                  // what the on-device engine holds in memory; null before the first load or after idle release
   loading: null,
   liveQueued: null,              // a live source waiting for the model; nothing is captured until it starts
   loadThen: [],                  // what waits for the load: a sent message, a live start
   swapFail: null,                // { id } a model that would not fit
-  installed: new Set(['minicpm-o-4.5', 'minicpm-v-4.6']),
-  specs: { 'minicpm-o-4.5': 'q4', 'minicpm-v-4.6': 'q4' },   // one spec per model stays on disk
+  installed: new Set(Object.keys(MODELS).slice(0, 2)),
+  specs: Object.fromEntries(Object.keys(MODELS).slice(0, 2).map(id => [id, 'q4'])),   // one spec per model stays on disk
   askSpec: null,
   backend: store.get('backend', 'local'),   // local | remote
   remote: { url: store.get('remoteUrl', ''), hasToken: false },   // the token itself is never kept here
@@ -1250,8 +1265,9 @@ const state = {
   reply: null,                   // { taskId, item, timer }
   live: null,
   permError: null,
-  proto: { perm: 'granted', notify: 'granted', icloud: true, weak: false, hw: 'discrete', tight: false, heat: 0, battery: 0, device: 'ok', storage: 'ok', runtime: 'app', oom: false },   // runtime: app | browser | nogpu
+  proto: { dictate: true, perm: 'granted', notify: 'granted', icloud: true, weak: false, hw: 'discrete', tight: false, heat: 0, battery: 0, device: 'ok', storage: 'ok', runtime: 'app', oom: false },   // runtime: app | browser | nogpu
 };
+if (STAGE < 2) tasks.splice(0, tasks.length, ...tasks.filter(t => !t.items?.some(i => i.type === 'live')));
 const task = id => tasks.find(t => t.id === id);
 const activeScenes = t => Object.keys(SCENES).filter(id => !state.sceneOff.has(id) || id === t?.scene);
 const cur = () => task(state.current);
@@ -1323,10 +1339,10 @@ function privacyLine() {
   return backupOn() ? '只在这台设备上处理，记录备份到你的 iCloud' : '只在这台设备上处理，内容不会离开';
 }
 function privacySummary() {
-  if (sendingOut()) return [`内容正发送到 ${remoteHost()}`, `处理时声音、画面和文字会离开本机，对话记录仍保存在这里${backupOn() ? '，并备份到你的 iCloud' : ''}。`];
+  if (sendingOut()) return [`内容正发送到 ${remoteHost()}`, `处理时${MEDIA}和文字会离开本机，对话记录仍保存在这里${backupOn() ? '，并备份到你的 iCloud' : ''}。`];
   if (isRemote()) return ['内容现在不会发送', state.remote.url ? '离线模式开着，关闭后才会发送到远程服务。' : '运行位置选了远程服务，填好地址后才会发送到那里。'];
-  if (backupOn()) return ['对话记录备份到你的 iCloud', '声音、画面和文件在本机处理，断网也能用。备份时对话记录会离开这台设备。'];
-  return ['你的内容留在这台设备上', '声音、画面、文件和对话都在本机处理，断网也能用。'];
+  if (backupOn()) return ['对话记录备份到你的 iCloud', `${MEDIA}和文件在本机处理，断网也能用。备份时对话记录会离开这台设备。`];
+  return ['你的内容留在这台设备上', `${MEDIA}、文件和对话都在本机处理，断网也能用。`];
 }
 const weakLink = () => isRemote() && state.proto.weak;
 const usage = { gpu: 0, cpu: 0, temp: 0, parts: null, ram: 0, rtt: 0, jitter: 0, loss: 0, ready: false };
@@ -1422,7 +1438,7 @@ function resourceDetail() {
     const L = state.live, video = L && L.source !== 'voice' && !L.videoOff;
     return `${head}${stat('服务', esc(remoteHost()))}${stat('模型', esc(footerModel().name))}${stat('延迟', `${Math.round(usage.rtt)} ms`)}${stat('抖动', `${Math.round(usage.jitter)} ms`)}${stat('丢包', `${usage.loss.toFixed(1)}%`)}
       ${stat('上行', L ? (video ? '1.4 Mbps' : '256 kbps') : '—')}${stat('下行', L ? '190 kbps' : '—')}
-      <div class="hint">${perf?.kind ? '网络较差，实时画面会自动降帧。' : '声音、画面和文字会发送到这台服务器处理。'}</div>`;
+      <div class="hint">${perf?.kind && STAGE > 1 ? '网络较差，实时画面会自动降帧。' : `${MEDIA}和文字会发送到这台服务器处理。`}</div>`;
   }
   if (state.proto.hw === 'none') return '<div class="hint">浏览器无法直接读取显卡和内存。用桌面客户端打开后，这里会显示系统负载。</div>';
   const hw = HARDWARE[state.proto.hw], p = usage.parts, mem = memoryRows();
@@ -1430,7 +1446,7 @@ function resourceDetail() {
     ${stat(mem[0].name, mem[0].val, 'top')}
     ${state.prefs.tech ? `${stat('模型权重', `${p.weights.toFixed(1)} GB`, 'sub')}${stat('音视频模块', `${p.media.toFixed(1)} GB`, 'sub')}${stat('上下文缓存', `${p.kv.toFixed(1)} GB`, 'sub')}${stat('其他程序', `${p.other.toFixed(1)} GB`, 'sub')}` : ''}
     ${mem[1] ? stat(mem[1].name, mem[1].val, 'top') : ''}${stat('CPU', `${Math.round(usage.cpu)}%`, 'top')}
-    ${perf?.kind ? `<div class="hint">${perf.kind === 'bad' ? '资源快用完了，实时会话可能中断' : '响应可能变慢'}。关掉其他占用显卡的程序，或在设置里关闭“高清细节”。</div>` : ''}`;
+    ${perf?.kind ? `<div class="hint">${perf.kind === 'bad' ? `资源快用完了，${STAGE > 1 ? '实时会话' : '回答'}可能中断` : '响应可能变慢'}。关掉其他占用显卡的程序，或在设置里关闭“高清细节”。</div>` : ''}`;
 }
 setInterval(() => { stepUsage(); paintUsage(); }, 1000);
 
@@ -1575,15 +1591,15 @@ function renderThread({ stick = false } = {}) {
   if (blank) {
     // Mobile browsers have no screen capture, so the compact form leaves those starters out.
     const fit = SCENES[t.scene].starters.filter(s => (!s.live || canLive()) && !(s.live === 'screen' && isCompact()));
-    const extra = [{ icon: 'file', title: '看一张图', sub: '上传图片，问它细节', prompt: '帮我看看这张图' }, { icon: 'file', title: '读一份文档', sub: '提取要点和数字', prompt: '帮我提取这份文档的要点' }];
-    $('#starters').innerHTML = [...fit, ...extra].slice(0, 3).map(s => `<button class="starter" ${s.live ? `data-action="start-live" data-source="${s.live}"` : `data-action="use-prompt" data-prompt="${esc(s.prompt)}"`}>${icon(s.icon)}<b>${esc(s.title)}</b><small>${esc(s.sub)}</small></button>`).join('');
+    const extra = [...(canLive() ? [] : [{ icon: 'camera', title: '拍一张问问', sub: '拍下面前的东西', action: 'take-photo' }]), { icon: 'file', title: '看一张图', sub: '上传图片，问它细节', prompt: '帮我看看这张图' }, { icon: 'file', title: '读一份文档', sub: '提取要点和数字', prompt: '帮我提取这份文档的要点' }];
+    $('#starters').innerHTML = [...fit, ...extra].slice(0, 3).map(s => `<button class="starter" ${s.action ? `data-action="${s.action}"` : s.live ? `data-action="start-live" data-source="${s.live}"` : `data-action="use-prompt" data-prompt="${esc(s.prompt)}"`}>${icon(s.icon)}<b>${esc(s.title)}</b><small>${esc(s.sub)}</small></button>`).join('');
   }
   if (stick) scrollToEnd();
   syncScrollUI();
 }
 function heroHTML() {
   const t = cur();
-  return `<div class="hero">${MARK}<h1>${t.temp ? '这段对话不会留下' : '想一起做点什么？'}</h1><p>${t.temp ? '离开后不保存记录，也不写入记忆。' : can('live') ? '打字、说话，或者直接给它看。' : '打字，或者把图片和文档给它看。'}</p>
+  return `<div class="hero">${MARK}<h1>${t.temp ? '这段对话不会留下' : '想一起做点什么？'}</h1><p>${t.temp ? '离开后不保存记录，也不写入记忆。' : can('live') ? '打字、说话，或者直接给它看。' : canDictate() ? '打字、说话，或者拍给它看。' : '打字，或者把图片和文档给它看。'}</p>
     <p class="privacy">${icon('shield')}${esc(privacyLine())}</p>
     <div class="scene-row" role="radiogroup" aria-label="应用场景">${activeScenes(t).map(s => `<button class="scene-opt" role="radio" aria-checked="${s === t.scene}" data-action="set-scene" data-scene="${s}" title="${SCENES[s].hint}">${sceneName(s)}</button>`).join('')}</div></div>`;
 }
@@ -1653,8 +1669,10 @@ function askSwap(el, id) {
   document.querySelector('.swap-ask .btn').focus();
 }
 // Live needs the omni model. If one is within reach, the entry stays and offers the switch.
-const liveReachable = () => isRemote() || state.installed.has(OMNI);
+const liveReachable = () => STAGE > 1 && (isRemote() || state.installed.has(OMNI));
 const canLive = () => can('live') || liveReachable();
+// Dictation is the system's, and only counts when it stays on this device. Browsers hand the audio to a server, so they go without.
+const canDictate = () => !inBrowser() && state.proto.dictate;
 function swapPrimer(source) {
   const from = curModel().name, to = MODELS[OMNI].name;
   openMenu($('#liveBtn'), `<div class="primer">${icon('duplex')}<b>实时要用 ${to}</b><p>${from} 不能实时对话。换用要等约 ${loadSeconds(OMNI)} 秒，所有对话都会改用它。</p><div class="acts"><button class="btn primary" data-action="swap-live" data-source="${source}">换用并开始</button><button class="btn" data-action="close-menu">现在不用</button></div></div>`, { label: '换模型', role: 'dialog' });
@@ -1665,7 +1683,7 @@ function renderBanner() {
   if (state.permError) {
     bad = true;
     html = `${icon('alert')}<span class="txt"><b>${esc(state.permError.title)}</b> <span>在系统设置里允许后重试，或者先用文字继续。</span></span>
-      <button class="btn" data-action="start-live" data-source="${state.permError.source}">重试</button><button class="btn" data-action="dismiss-perm">用文字</button>`;
+      <button class="btn" ${state.permError.source === 'dictate' ? 'data-action="record"' : `data-action="start-live" data-source="${state.permError.source}"`}>重试</button><button class="btn" data-action="dismiss-perm">用文字</button>`;
   } else if (backendState() === 'unset') {
     bad = true;
     html = `${icon('alert')}<span class="txt"><b>还没配置远程服务</b> <span>填好服务地址后才能发送。你写的内容会留在这里。</span></span>
@@ -1728,7 +1746,10 @@ function syncComposer() {
   form.classList.toggle('temp', !!cur().temp);
   const send = $('#sendBtn');
   const unreadable = state.atts.some(a => !attOk(a));
-  send.hidden = !(has || busy || !canLive()) || !!state.recording;
+  // Empty, the main button is the fastest way to show it something. On a phone without live that is the camera.
+  const shot = !canLive() && isCompact() && !has && !busy && !state.recording;
+  $('#shotBtn').hidden = !shot;
+  send.hidden = !(has || busy || (!canLive() && !shot)) || !!state.recording;
   send.disabled = !busy && (engineTaken || !has || unreadable || cannotSend());
   send.innerHTML = icon(busy ? 'stop' : 'up');
   send.setAttribute('aria-label', busy ? '停止生成' : '发送');
@@ -1736,7 +1757,10 @@ function syncComposer() {
   const live = $('#liveBtn');
   live.disabled = !backendReady() || engineTaken || !!state.liveQueued || (!!state.loading && !!state.loaded);
   live.hidden = !!state.recording || !canLive();
-  $('#recBtn').hidden = !can('audio');
+  const rec = $('#recBtn'), dictates = !can('audio');
+  rec.hidden = (dictates && !canDictate()) || !!state.recording;
+  rec.setAttribute('aria-label', dictates ? '说话输入' : '录一段语音');
+  rec.title = dictates ? '说话，在这台设备上转成文字' : '录一段语音，作为这条消息发送';
   $('#voiceReply').hidden = !can('speech');
   const m = curModel(), btn = $('#modelBtn');
   btn.hidden = !!state.recording;
@@ -1749,20 +1773,27 @@ function syncComposer() {
   $('#modes').innerHTML = modes.map(([action, ic, name]) => `<button type="button" class="mode" data-action="${action}" aria-label="关闭${name}">${icon(ic)}${name}${icon('close')}</button>`).join('');
   $('#file').accept = `image/*,${can('audio') ? 'audio/*,' : ''}video/*,.txt,.md,.pdf,.pptx,.docx`;
   $('#chips').hidden = !state.atts.length;
-  $('#chips').innerHTML = state.atts.map(a => attHTML(a, `${attOk(a) ? '' : '<span class="sub">这个模型读不了</span>'}<button type="button" data-action="remove-att" data-id="${a.id}" aria-label="移除 ${esc(a.name)}">${icon('close')}</button>`).replace('class="att"', `class="att ${attOk(a) ? '' : 'bad'}"`)).join('');
+  $('#chips').innerHTML = state.atts.map(a => attHTML(a, `${attOk(a) ? '' : '<span class="sub">这个模型读不了</span>'}${a.busy ? '<span class="sub">正在处理</span>' : ''}<button type="button" data-action="remove-att" data-id="${a.id}" aria-label="移除 ${esc(a.name)}">${icon('close')}</button>`).replace('class="att"', `class="att ${attOk(a) ? '' : 'bad'}"`)).join('');
   $('#voiceReply').setAttribute('aria-pressed', state.voiceReply);
   $('#thinking').setAttribute('aria-pressed', state.thinking);
   const p = $('#prompt');
   p.style.height = 'auto'; p.style.height = Math.min(p.scrollHeight, 220) + 'px';
 }
+// An image is encoded as soon as it is added, so the wait passes while you type. Sending early just queues behind it.
+function addAtt(a) {
+  a.busy = a.kind === 'image';
+  state.atts.push(a);
+  if (a.busy) setTimeout(() => { a.busy = false; syncComposer(); }, 1200);
+}
 function addFiles(files) {
   for (const f of files) {
     const kind = f.type.startsWith('image/') ? 'image' : f.type.startsWith('audio/') ? 'audio' : f.type.startsWith('video/') ? 'video' : 'file';
     if (!attOk({ kind })) {
-      showToast(`${curModel().name} 读不了音频`, `换成 ${MODELS[OMNI].name}`, () => { setModel(OMNI); addFiles([f]); });
+      if (MODELS[OMNI]) showToast(`${curModel().name} 读不了音频`, `换成 ${MODELS[OMNI].name}`, () => { setModel(OMNI); addFiles([f]); });
+      else showToast(`${curModel().name} 读不了音频`);
       continue;
     }
-    state.atts.push({ id: uid('a'), kind, name: f.name, sub: `${Math.max(1, Math.round(f.size / 1024))} KB`, url: kind === 'image' ? URL.createObjectURL(f) : null });
+    addAtt({ id: uid('a'), kind, name: f.name, sub: `${Math.max(1, Math.round(f.size / 1024))} KB`, url: kind === 'image' ? URL.createObjectURL(f) : null });
   }
   syncComposer();
 }
@@ -1861,9 +1892,9 @@ function stopReply() {
 
 /* Voice note in text mode: recording strip replaces the text box */
 function startRecord() {
-  const r = state.recording = { t: 0, timer: 0 };
+  const r = state.recording = { t: 0, timer: 0, dictate: !can('audio') };
   $('#textBox').hidden = true; $('#cRow').hidden = true; $('#recBox').hidden = false;
-  $('#recBox').innerHTML = `<span class="c-rec lamp" style="padding:0;min-height:0"></span><span class="mono" id="recT" aria-live="off">00:00</span><span class="meter" id="recM" aria-hidden="true"></span>
+  $('#recBox').innerHTML = `<span class="c-rec lamp" style="padding:0;min-height:0"></span><span class="mono" id="recT" aria-live="off">00:00</span>${r.dictate ? '<span class="rec-note">本机转成文字</span>' : ''}<span class="meter" id="recM" aria-hidden="true"></span>
     <button type="button" class="btn" data-action="record-cancel">取消</button><button type="button" class="btn primary" data-action="record-done">完成</button>`;
   r.timer = setInterval(() => {
     r.t += .1;
@@ -1879,7 +1910,8 @@ function stopRecord(keep) {
   const r = state.recording; if (!r) return;
   clearInterval(r.timer); state.recording = null;
   $('#recBox').hidden = true; $('#textBox').hidden = false; $('#cRow').hidden = false;
-  if (keep) state.atts.push({ id: uid('a'), kind: 'audio', name: '语音消息', sub: clock(r.t) });
+  if (keep && r.dictate) { const p = $('#prompt'); p.value += `${p.value ? ' ' : ''}这张单据上的金额对吗`; }
+  else if (keep) state.atts.push({ id: uid('a'), kind: 'audio', name: '语音消息', sub: clock(r.t) });
   syncComposer(); $('#prompt').focus();
 }
 
@@ -1967,9 +1999,10 @@ function endLive({ note = null, toast = true } = {}) {
 function permPrimer(source) {
   const where = isRemote() ? `内容会发送到 ${esc(remoteHost())} 处理。` : '只在这台设备上处理。';
   const [ic, title, body] = { voice: ['mic', '让它听见你', `需要用麦克风。声音${where}不保存录音。`],
+    dictate: ['mic', '说话输入', '需要用麦克风。声音在这台设备上转成文字，不保存录音。'],
     camera: ['camera', '让它看见你面前的东西', `需要用摄像头和麦克风。画面${where}不保存画面。`],
     screen: ['screen', '让它看你的屏幕', `需要屏幕录制权限。由你选择窗口，${where}`] }[source];
-  openMenu($('#liveBtn'), `<div class="primer">${icon(ic)}<b>${title}</b><p>${body}</p><div class="acts"><button class="btn primary" data-action="perm-go" data-source="${source}">继续</button><button class="btn" data-action="close-menu">现在不用</button></div></div>`, { label: title, role: 'dialog' });
+  openMenu($(source === 'dictate' ? '#recBtn' : '#liveBtn'), `<div class="primer">${icon(ic)}<b>${title}</b><p>${body}</p><div class="acts"><button class="btn primary" data-action="perm-go" data-source="${source}">继续</button><button class="btn" data-action="close-menu">现在不用</button></div></div>`, { label: title, role: 'dialog' });
 }
 function pushGap(L, text) {
   L.item.turns.push({ gap: true, text });
@@ -2401,7 +2434,7 @@ function renderSettings() {
   el.hidden = !tab;
   el.classList.toggle('at-root', root);
   renderLivebar();
-  if (!tab) { el.innerHTML = ''; return; }
+  if (!tab) { el.innerHTML = ''; syncBack(); return; }
   const scrollTop = el.querySelector('.set-body')?.scrollTop ?? 0;
   const nav = SETTINGS_NAV.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([id, n, ic]) => `<button data-action="settings-tab" data-tab="${id}" ${id === tab || id === parentOf(tab) ? 'aria-current="page"' : ''}>${icon(ic)}${n}</button>`).join('')}`).join('');
   const page = [...SETTINGS_NAV.flatMap(([, items]) => items), ...DEVELOPER_PAGES, ...PRIVACY_PAGES, ...GENERAL_PAGES].find(([id]) => id === tab)?.[1];
@@ -2410,6 +2443,7 @@ function renderSettings() {
   el.innerHTML = `<div class="set-head">${head}</div>
     <nav class="set-nav" aria-label="设置分类">${nav}</nav><div class="set-body"><div class="set-in">${root ? '' : settingsBody(tab)}</div></div>`;
   el.querySelector('.set-body').scrollTop = scrollTop;
+  syncBack();
 }
 const row = (name, desc, ctrl) => `<div class="row"><div><b>${name}</b>${desc ? `<small>${desc}</small>` : ''}</div><div class="ctrl">${ctrl}</div></div>`;
 const sw = (key, label) => `<button class="sw" role="switch" aria-checked="${state.prefs[key]}" aria-label="${label}" data-action="pref" data-key="${key}"></button>`;
@@ -2455,18 +2489,18 @@ function settingsBody(tab) {
     ${row('新对话的场景', '', pick('defaultScene', Object.keys(SCENES).map(id => [id, sceneName(id)]), '新对话的场景'))}
     ${inBrowser() ? '' : `<h3>通知</h3>
     ${row('定时通知', `${state.timers.length} 条`, '<button class="btn" data-action="settings-tab" data-tab="reminders">管理</button>')}`}
-    <h3>反馈</h3>
-    ${row('提示音', '开始、结束实时会话时播放。', sw('sounds', '提示音'))}
+    ${STAGE > 1 || isCompact() ? '<h3>反馈</h3>' : ''}
+    ${STAGE > 1 ? row('提示音', '开始、结束实时会话时播放。', sw('sounds', '提示音')) : ''}
     ${isCompact() ? row('触感反馈', '操作时轻微震动。', sw('haptics', '触感反馈')) : inBrowser() ? '' : `<h3>桌面</h3>
     ${row('开机时启动', '在后台待命，随时可用。', sw('autostart', '开机时启动'))}
     ${row('关闭窗口时', '', pick('closeAction', [['tray', '收起到托盘'], ['quit', '退出']], '关闭窗口时'))}`}`;
   if (tab === 'voice') {
     const voices = [['qing', '清亮', '默认，语速适中'], ['chen', '沉稳', '偏低，适合长时间收听'], ['ref', '我的参考音频', '上传 5–20 秒清晰人声']];
-    return `<h2>声音与人设</h2><p>下一次实时会话开始时生效。</p>
-      <h3>声音</h3><div class="voices" role="radiogroup" aria-label="声音">${voices.map(([id, n, s]) => `<button class="voice" role="radio" aria-checked="${state.voice === id}" data-action="set-voice" data-id="${id}"><span>${n === '我的参考音频' ? icon('clip') : icon('speaker')}</span><span><b>${n}</b><small>${s}</small></span></button>`).join('')}</div>
+    return `<h2>${VOICE_TAB}</h2><p>${SPEAKS ? '下一次实时会话开始时生效。' : '下一条消息生效。'}</p>
+      ${SPEAKS ? `      <h3>声音</h3><div class="voices" role="radiogroup" aria-label="声音">${voices.map(([id, n, s]) => `<button class="voice" role="radio" aria-checked="${state.voice === id}" data-action="set-voice" data-id="${id}"><span>${n === '我的参考音频' ? icon('clip') : icon('speaker')}</span><span><b>${n}</b><small>${s}</small></span></button>`).join('')}</div>
       <p class="res-note">${sendingOut() ? `参考音频保存在这台设备上，生成声音时会发送到 ${esc(remoteHost())}，可以随时删除。` : '参考音频只保存在这台设备上，可以随时删除。'}</p>
       ${row('试听当前声音', '', later('试听', '原型中不播放声音'))}
-      ${row('语速', '', pick('speed', [['.85', '慢'], ['1', '标准'], ['1.15', '快']], '语速'))}
+      ${row('语速', '', pick('speed', [['.85', '慢'], ['1', '标准'], ['1.15', '快']], '语速'))}` : ''}
       <h3>回答</h3>
       ${row('回答语言', '', pick('replyLang', [['ui', '跟随界面语言'], ['speech', '跟随我说的语言'], ['zh-CN', '简体中文'], ['zh-TW', '繁體中文（台灣）'], ['zh-HK', '繁體中文（香港）'], ['en', 'English']], '回答语言'))}
       ${row('回答长度', '', pick('replyLength', [['short', '简短'], ['normal', '适中'], ['long', '详细']], '回答长度'))}
@@ -2477,7 +2511,6 @@ function settingsBody(tab) {
     <h3>行为</h3>
     ${row('主动提醒', '你没说话时它能否先开口。通话中随时可调，立刻生效。', sel('setProactive', [['scene', '跟随场景'], ...Object.entries(PROACTIVE).map(([k, v]) => [k, `${v.label}（${v.sub}）`])], state.prefs.proactiveDefault, '主动提醒'))}
     ${row('开场先听', '开始后的头几秒只听不说。', sw('listenFirst', '开场先听'))}
-    ${row('高清细节', '看清小字和细节，响应会变慢。', sw('hd', '高清细节'))}
     ${row('打断灵敏度', '你开口后，它多快停下来听你说。', pick('interrupt', [['low', '低'], ['mid', '中'], ['high', '高']], '打断灵敏度'))}
     ${row('长时间没说话时', '自动暂停可以避免忘记关闭摄像头和麦克风，点继续才会恢复。', pick('idlePause', [['5', '5 分钟后暂停'], ['10', '10 分钟后暂停'], ['30', '30 分钟后暂停'], ['never', '不自动暂停']], '长时间没说话时'))}
     <h3>屏幕</h3>
@@ -2501,7 +2534,7 @@ function settingsBody(tab) {
   if (tab === 'network') return `<h2>联网记录</h2><p>列出最近 7 天这台设备发出的所有请求。</p>
     <div class="assure">${icon('shield')}<div><b>${sendingOut() ? `内容正发送到 ${esc(remoteHost())}` : backupOn() ? '对话记录备份到你的 iCloud' : state.netLog.length ? `只有 ${state.netLog.length} 句搜索词离开过这台设备` : '没有内容离开这台设备'}</b><small>${sendingOut() || backupOn() ? '下面写明了发送什么、发到哪里。' : state.netLog.length ? '除了这些搜索词，下面的请求不包含你的对话、声音、画面或文件。' : '下面的请求不包含你的对话、声音、画面或文件。'}</small></div></div>
     <h3>最近 7 天</h3>
-    ${sendingOut() ? row('远程服务', `每次使用 · 声音、画面和文字发送到 ${esc(remoteHost())}`, pill('进行中', 'warn')) : ''}
+    ${sendingOut() ? row('远程服务', `每次使用 · ${MEDIA}和文字发送到 ${esc(remoteHost())}`, pill('进行中', 'warn')) : ''}
     ${backupOn() ? row('iCloud 备份', `${esc(state.backup.last)} · 对话记录上传到你的 iCloud`, pill('1 次', 'warn')) : ''}
     ${state.netLog.map(n => row('联网搜索', `${n.when} · 只发送“${esc(n.query)}”`, pill('1 次', 'warn'))).join('')}
     ${row('检查更新', '今天 09:12 · 只发送版本号', pill('1 次'))}
@@ -2526,15 +2559,15 @@ function settingsBody(tab) {
     <h3>记忆</h3>
     ${row('记住我的偏好', '从对话里记下习惯和常用信息。', sw('memory', '记住我的偏好'))}
     ${row('已记住的内容', `${state.memories.length} 条`, '<button class="btn" data-action="settings-tab" data-tab="memories">管理</button>')}
-    <h3>实时会话</h3>
+    ${STAGE > 1 ? `<h3>实时会话</h3>
     ${row('保存实时转写', '结束后把说过的话留在对话里。', sw('keepTranscript', '保存实时转写'))}
     ${row('保存画面', '默认不保存摄像头和屏幕画面。', sw('keepFrames', '保存画面'))}
     ${row('实时中暂停通知', '避免通知内容被看到。', sw('muteNotify', '实时中暂停通知'))}
-    ${row('模糊画面里的人脸', '保存定格画面时自动处理。', sw('blurFaces', '模糊画面里的人脸'))}
+    ${row('模糊画面里的人脸', '保存定格画面时自动处理。', sw('blurFaces', '模糊画面里的人脸'))}` : ''}
     <h3>设备权限</h3>
-    ${perm('麦克风', '语音和实时会话', denied ? '已拒绝' : '已允许', denied ? 'bad' : 'ok')}
-    ${perm('摄像头', '拍照和实时看', denied ? '已拒绝' : '已允许', denied ? 'bad' : 'ok')}
-    ${isCompact() ? '' : perm('屏幕录制', '一起看屏幕', denied ? '已拒绝' : '未决定', denied ? 'bad' : '')}
+    ${perm('麦克风', STAGE > 1 ? '语音和实时会话' : '说话输入', denied ? '已拒绝' : '已允许', denied ? 'bad' : 'ok')}
+    ${perm('摄像头', STAGE > 1 ? '拍照和实时看' : '拍照提问', denied ? '已拒绝' : '已允许', denied ? 'bad' : 'ok')}
+    ${isCompact() || STAGE < 2 ? '' : perm('屏幕录制', '一起看屏幕', denied ? '已拒绝' : '未决定', denied ? 'bad' : '')}
     ${perm('通知', '定时通知', state.proto.notify === 'denied' ? '已拒绝' : '未决定', state.proto.notify === 'denied' ? 'bad' : '')}
     <h3>访问</h3>
     ${inBrowser() ? '' : `${row('打开时验证', '用面容、指纹或系统密码打开。', sw('appLock', '打开时验证'))}
@@ -2570,12 +2603,12 @@ function settingsBody(tab) {
       <h3>开发者</h3>
       ${DEVELOPER_PAGES.map(([id, name, desc]) => row(name, desc, `<button class="btn" data-action="settings-tab" data-tab="${id}">查看</button>`)).join('')}`;
   }
-  if (tab === 'applications') return `<h2>应用场景</h2><p>不同场景下，建议和主动提醒的频率不一样。</p>
+  if (tab === 'applications') return `<h2>应用场景</h2><p>不同场景下，${STAGE > 1 ? '建议和主动提醒的频率' : '建议'}不一样。</p>
     <h3>场景</h3>
     ${Object.entries(SCENES).map(([id, sc]) => row(esc(sc.name), `${esc(sc.hint)} · ${esc(sc.source)}`, `<button class="sw" role="switch" aria-checked="${!state.sceneOff.has(id)}" aria-label="显示${esc(sc.name)}" data-action="toggle-scene" data-id="${id}" ${id === state.prefs.defaultScene ? 'disabled' : ''}></button>`)).join('')}
     <p class="res-note">关闭后不再出现在新对话里，已有对话不受影响。默认场景不能关闭。</p>
-    <h3>主动提醒</h3>
-    ${Object.entries(SCENES).map(([id, sc]) => row(esc(sc.name), '', `<select data-scene-level="${id}" aria-label="${esc(sc.name)}的主动提醒">${Object.entries(PROACTIVE).map(([k, v]) => `<option value="${k}" ${k === SCENE_PROACTIVE[id] ? 'selected' : ''}>${v.label}</option>`).join('')}</select>`)).join('')}`;
+    ${STAGE > 1 ? `<h3>主动提醒</h3>
+    ${Object.entries(SCENES).map(([id, sc]) => row(esc(sc.name), '', `<select data-scene-level="${id}" aria-label="${esc(sc.name)}的主动提醒">${Object.entries(PROACTIVE).map(([k, v]) => `<option value="${k}" ${k === SCENE_PROACTIVE[id] ? 'selected' : ''}>${v.label}</option>`).join('')}</select>`)).join('')}` : ''}`;
   if (tab === 'models') {
   const st = backendState();
   const status = st === 'ready' ? pill('已连接', 'ok') : st === 'unset' ? pill('未配置', 'warn') : pill('未连接', 'bad');
@@ -2594,11 +2627,13 @@ function settingsBody(tab) {
     }).join('')}
     ${!isRemote() && state.installed.has(state.model) ? specPicker() : ''}
     ${inBrowser() && !isRemote() ? '<p class="res-note">模型保存在这个浏览器里，清除网站数据时会一起删除。</p>' : ''}
+    <h3>看图</h3>
+    ${row('高清细节', '看清小字和细节，响应会变慢。', sw('hd', '高清细节'))}
     <h3>运行方式</h3><div class="voices" role="radiogroup" aria-label="运行方式">${Object.entries(PRESETS).map(([id, p]) => preset(id, p)).join('')}</div>
     ${state.preset === 'custom' ? '<p class="res-note">当前使用自定义参数。<button class="link" data-action="settings-tab" data-tab="advanced">查看</button></p>' : ''}
     <h3>电量与发热</h3>
     ${row('空闲后释放内存', '让出内存给其他应用，下次使用时要重新载入。', pick('idleRelease', [['5', '5 分钟后'], ['15', '15 分钟后'], ['60', '1 小时后'], ['never', '不释放']], '空闲后释放内存'))}
-    ${row('低电量时自动省电', '实时时先放慢看画面，再只用声音。', sw('lowPower', '低电量时自动省电'))}
+    ${STAGE > 1 ? row('低电量时自动省电', '实时时先放慢看画面，再只用声音。', sw('lowPower', '低电量时自动省电')) : ''}
     ${row('发热时降低负载', '响应会变慢，设备会更凉快。', sw('thermal', '发热时降低负载'))}
     ${isCompact() ? row('只在 Wi-Fi 下下载', '', sw('wifiOnly', '只在 Wi-Fi 下下载')) : ''}
     <details class="disclose" ${isRemote() || state.placeOpen ? 'open' : ''}><summary>${icon('chev')}运行位置<span>${isRemote() ? '远程服务' : '这台设备'}</span></summary>
@@ -2654,7 +2689,7 @@ const mi = (action, title, { sub, ic, data = '', tick, danger, role = 'menuitem'
   `<button class="mi ${danger ? 'danger' : ''}" role="${role}" data-action="${action}" ${data} ${tick !== undefined ? `aria-checked="${!!tick}"` : ''}>${ic ? icon(ic) : ''}<span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span>${tick ? `<span class="tick">✓</span>` : ''}</button>`;
 const modelItems = () => Object.entries(MODELS).map(([id, m]) => {
   const missing = !isRemote() && !state.installed.has(id);
-  return mi(missing ? 'open-settings' : 'ask-model', m.name, { sub: missing ? '未下载，去设置里下载' : `${m.kind}${isRemote() ? '' : ` · ${specText(id)}`} · ${capsText(m)}`, data: missing ? 'data-tab="models"' : `data-id="${id}" data-keep`, tick: id === state.model, role: 'menuitemradio' });
+  return mi(missing ? 'open-settings' : 'ask-model', m.name, { sub: missing ? '未下载，去设置里下载' : [...new Set([m.kind, ...(isRemote() ? [] : [specText(id)]), ...m.caps.map(c => CAPS[c])])].join(' · '), data: missing ? 'data-tab="models"' : `data-id="${id}" data-keep`, tick: id === state.model, role: 'menuitemradio' });
 }).join('');
 const modelTitle = () => `<div class="ttl">${isRemote() ? '模型 · 所有对话共用' : '模型 · 一次只运行一个，所有对话共用'}</div>`;
 const placeItems = () => `<div class="ttl">运行位置</div>
@@ -2773,12 +2808,12 @@ const loadSeconds = id => Math.round(sizeOf(id) * 2);   // placeholder until mea
 function dlText(d) {
   const pct = Math.round(d.pct), left = (sizeOf(d.id, d.spec) * (100 - d.pct) / 100).toFixed(1);
   return { running: `${pct}% · 还需约 ${Math.max(1, Math.ceil((100 - d.pct) / 9))} 分钟`, paused: `已暂停 · ${pct}%`, wifi: `等待 Wi-Fi · ${pct}%，还差 ${left} GB`,
-    failed: `下载中断 · ${pct}%，已下载的部分还在`, verifying: '正在检查文件…' }[d.status];
+    failed: `下载中断 · ${pct}%，已下载的部分还在`, verifying: '正在检查文件…', badfile: '文件不完整，要重新下载' }[d.status];
 }
 function dlActs(d) {
   const b = (action, label, kind = '') => `<button class="btn ${kind}" data-action="${action}">${label}</button>`;
   return { running: b('dl-pause', '暂停'), paused: b('dl-resume', '继续') + b('dl-cancel', '取消下载'), wifi: b('dl-resume', '用移动网络继续') + b('dl-cancel', '取消下载'),
-    failed: b('dl-resume', '重试') + b('dl-cancel', '取消下载'), verifying: '' }[d.status];
+    failed: b('dl-resume', '重试') + b('dl-cancel', '取消下载'), verifying: '', badfile: b('dl-again', '重新下载', 'primary') + b('dl-cancel', '取消下载') }[d.status];
 }
 const dlHTML = d => `<div class="dl" data-status="${d.status}"><div class="dl-bar"><i data-dl-bar style="width:${d.pct}%"></i></div><small data-dl-text>${dlText(d)}</small><div class="acts">${dlActs(d)}</div></div>`;
 let dlTimer = 0;
@@ -2813,11 +2848,13 @@ function finishDownload() {
   showToast(swapped ? `${MODELS[id].name} 已换成${specText(id)}` : `${MODELS[id].name} 准备好了`);
   if (swapped) loadModel();
 }
+// Stands in for the backend: it reads the hardware and returns what this device can run right now.
+const obOptions = () => Object.keys(MODELS).flatMap(id => Object.keys(SPECS).filter(s => specAllowed(id, s)).map(spec => ({ id, spec })));
 function paintGates() { renderGate(); renderBanner(); renderSettings(); syncComposer(); }
 function onboardHTML(step) {
-  if (step === 'welcome') return `${MARK}<h1>在你自己的设备上运行</h1><p>MiniCPM 能看、能听、能说，全部在这台设备上完成。</p>
+  if (step === 'welcome') return `${MARK}<h1>在你自己的设备上运行</h1><p>MiniCPM ${SPEAKS ? '能看、能听、能说' : '能看图、读文档'}，全部在这台设备上完成。</p>
     <ul class="ob-list">
-      <li>${icon('shield')}<span><b>内容不离开这台设备</b><small>声音、画面和文件都在本机处理。只有你同意时，搜索词或备份才会离开。</small></span></li>
+      <li>${icon('shield')}<span><b>内容不离开这台设备</b><small>${MEDIA}和文件都在本机处理。只有你同意时，搜索词或备份才会离开。</small></span></li>
       <li>${icon('offline')}<span><b>断网也能用</b><small>模型下载好之后就不需要网络了。</small></span></li>
       <li>${icon('file')}<span><b>都由你决定</b><small>记住了什么、联网做了什么，都能看到和删除。</small></span></li>
     </ul><div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-next">继续</button></div>`;
@@ -2826,19 +2863,17 @@ function onboardHTML(step) {
     <button class="link ob-alt" data-action="ob-next">不恢复，重新开始</button></div>`;
   if (step === 'model') {
     const low = state.proto.device === 'low', storageLow = state.proto.storage === 'low', free = storageLow ? 4.5 : 38;
-    const best = low ? 'minicpm-v-4.6' : OMNI, spec = state.obSpec ?? bestSpec(state.obModel), size = sizeOf(state.obModel, spec);
+    const best = low ? 'minicpm-v-4.6' : FIRST_MODEL, spec = state.obSpec ?? bestSpec(state.obModel), size = sizeOf(state.obModel, spec);
     const noRoom = +size + .5 > free, small = 'minicpm-v-4.6', smallFits = +sizeOf(small, 'q4') + .5 <= free;
     if (state.proto.runtime === 'nogpu') return `<h1>这个浏览器跑不了本机模型</h1><p>换一个浏览器就能在这台设备上运行。也可以连接你自己的服务器，内容会发送到那台服务器。</p>
       <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-remote">连接远程服务</button></div>`;
-    return `<h1>选一个模型</h1><p>${inBrowser() ? '模型要下载到这个浏览器里，之后就不再需要网络。清除网站数据时会一起删除。' : '模型要下载到这台设备上，之后就不再需要网络。'}</p>
+    return `<h1>选一个模型</h1><p>${inBrowser() ? '这是这个浏览器能用的模型。下载后不再需要网络，清除网站数据时会一起删除。' : '这是这台设备能用的模型。下载后不再需要网络。'}</p>
       <p class="ob-device">${inBrowser() ? `这个浏览器：可用空间约 ${free} GB` : `这台设备：内存 ${deviceMemory()} GB · 可用空间 ${free} GB`}</p>
-      <div class="ob-models" role="radiogroup" aria-label="模型">${FIRST_MODELS.map(([key, name, sub]) => {
-        const id = key ?? OMNI, warn = low && id === OMNI;
-        return `<button class="voice" role="radio" aria-checked="${state.obModel === id}" data-action="ob-pick" data-id="${id}">${icon(id === OMNI ? 'duplex' : 'image')}<span><b>${name}${id === best ? pill('推荐', 'ok') : ''}</b><small>${sub}</small><small>${warn ? '这台设备内存偏小，运行时可能被系统关闭' : MODELS[id].name}</small></span></button>`;
+      <div class="ob-models" role="radiogroup" aria-label="模型">${obOptions().map(({ id, spec: sp }) => {
+        const m = MODELS[id], warn = low && id === OMNI, top = id === best && sp === bestSpec(id);
+        return `<button class="voice" role="radio" aria-checked="${state.obModel === id && spec === sp}" data-action="ob-pick" data-id="${id}" data-spec="${sp}">${icon(m.caps.includes('live') ? 'duplex' : 'image')}<span><b>${esc(m.name)}${top ? pill('推荐', 'ok') : ''}</b><small>${KIND_SUB[m.kind]}</small><small>${warn ? '这台设备内存偏小，运行时可能被系统关闭' : `${esc(specText(id, sp))} · ${sizeOf(id, sp)} GB`}</small></span></button>`;
       }).join('')}</div>
-      <p class="ob-sub">规格</p>
-      <div class="ob-models specs" role="radiogroup" aria-label="规格">${specCards(state.obModel, spec, 'ob-spec')}</div>
-      ${noRoom ? `<div class="note">${icon('alert')}<div class="grow"><strong>还差 ${(+size + .5 - free).toFixed(1)} GB 空间</strong><p>清理后回到这里继续${state.obModel !== small && smallFits ? '，或者改下载小一些的看图模型。' : '。'}</p>${state.obModel !== small && smallFits ? `<div class="acts"><button class="btn" data-action="ob-pick" data-id="${small}">改下载看图 ${sizeOf(small, 'q4')} GB</button></div>` : ''}</div></div>` : ''}
+      ${noRoom ? `<div class="note">${icon('alert')}<div class="grow"><strong>还差 ${(+size + .5 - free).toFixed(1)} GB 空间</strong><p>清理后回到这里继续${state.obModel !== small && smallFits ? '，或者改下载小一些的模型。' : '。'}</p>${state.obModel !== small && smallFits ? `<div class="acts"><button class="btn" data-action="ob-pick" data-id="${small}">改下载 ${esc(MODELS[small].name)}，${sizeOf(small, 'q4')} GB</button></div>` : ''}</div></div>` : ''}
       <div class="ob-foot"><button class="btn primary ob-cta" data-action="ob-download" ${noRoom ? 'disabled' : ''}>下载 ${size} GB</button>
       <button class="link ob-alt" data-action="ob-remote">我有自己的服务器</button></div>`;
   }
@@ -2981,14 +3016,18 @@ const actions = {
     ${mi('proto-runtime', '原生应用', { data: 'data-runtime="app"', tick: state.proto.runtime === 'app', role: 'menuitemradio' })}
     ${mi('proto-runtime', '浏览器', { sub: 'Web，包括 Windows 和 Linux', data: 'data-runtime="browser"', tick: state.proto.runtime === 'browser', role: 'menuitemradio' })}
     ${mi('proto-runtime', '浏览器跑不了本机模型', { data: 'data-runtime="nogpu"', tick: state.proto.runtime === 'nogpu', role: 'menuitemradio' })}`}
-    ${isRemote() ? mi('proto-weak', '网络不稳（实时降帧）', { tick: state.proto.weak, role: 'menuitemcheckbox' }) : `
+    ${isRemote() ? (STAGE > 1 ? mi('proto-weak', '网络不稳（实时降帧）', { tick: state.proto.weak, role: 'menuitemcheckbox' }) : '') : `
     <div class="sep"></div><div class="ttl">设备</div>
     ${mi('proto-release', '模型不在内存里（下次使用先准备）', { tick: !state.loaded, role: 'menuitemcheckbox' })}
     ${mi('proto-oom', '下次换模型时内存不够', { tick: state.proto.oom, role: 'menuitemcheckbox' })}
     ${mi('proto-tight', '显存紧张', { tick: state.proto.tight, role: 'menuitemcheckbox' })}
     ${mi('proto-hw', '独立显卡', { data: 'data-hw="discrete"', tick: state.proto.hw === 'discrete', role: 'menuitemradio' })}
     ${mi('proto-hw', '统一内存（Apple 芯片）', { data: 'data-hw="unified"', tick: state.proto.hw === 'unified', role: 'menuitemradio' })}
-    ${mi('proto-hw', '网页端读不到硬件', { data: 'data-hw="none"', tick: state.proto.hw === 'none', role: 'menuitemradio' })}`}`, { label: '原型状态' }),
+    ${mi('proto-hw', '网页端读不到硬件', { data: 'data-hw="none"', tick: state.proto.hw === 'none', role: 'menuitemradio' })}`}
+    <div class="sep"></div><div class="ttl">交付阶段</div>
+    ${mi('proto-stage', '第一阶段', { sub: '看图模型，没有实时', data: 'data-stage="1"', tick: STAGE === 1, role: 'menuitemradio' })}
+    ${mi('proto-stage', '下阶段（预留）', { sub: '全能模型和实时会话', data: 'data-stage="2"', tick: STAGE === 2, role: 'menuitemradio' })}`, { label: '原型状态' }),
+  'proto-stage': el => { location.search = `?stage=${el.dataset.stage}&view=empty&runtime=${state.proto.runtime}`; },
   'proto-engine': () => {
     state.engine = state.engine === 'offline' ? 'ready' : 'offline';
     if (state.engine === 'offline' && state.live) endLive({ note: '连接中断，已保留到此为止的转写。', toast: false });
@@ -3119,16 +3158,16 @@ const actions = {
   'download-model': el => startDownload(el.dataset.id),
   'dl-pause': () => { state.dl.status = 'paused'; paintGates(); },
   'dl-resume': () => { state.dl.status = 'running'; paintGates(); },
+  'dl-again': () => { Object.assign(state.dl, { status: 'running', pct: 0 }); runDownload(); paintGates(); },
   'dl-cancel': () => { state.dl = null; paintGates(); },
   'ob-next': () => { state.onboard = 'model'; renderGate(); },
-  'ob-pick': el => { state.obModel = el.dataset.id; state.obSpec = null; renderGate(); },
-  'ob-spec': el => { state.obSpec = el.dataset.id; renderGate(); },
+  'ob-pick': el => { state.obModel = el.dataset.id; state.obSpec = el.dataset.spec ?? null; renderGate(); },
   'ob-restore': () => { state.onboard = 'model'; renderGate(); showToast('正在恢复 42 个对话，可以继续'); },
   'ob-download': () => { const spec = state.obSpec ?? bestSpec(state.obModel); state.model = state.loaded = state.obModel; state.specs[state.obModel] = spec; startDownload(state.obModel, spec); state.onboard = 'download'; renderAll(); },
   'ob-leave': () => { state.onboard = null; renderAll(); },
   'ob-remote': () => { state.onboard = null; state.backend = 'remote'; state.placeOpen = true; state.settingsTab = 'models'; renderAll(); },
   unlock: () => { state.locked = false; renderGate(); },
-  'perm-go': el => { state.proto.perm = 'granted'; startLive(el.dataset.source); },
+  'perm-go': el => { state.proto.perm = 'granted'; closeMenu(); if (el.dataset.source === 'dictate') actions.record(); else startLive(el.dataset.source); },
   'close-menu': () => closeMenu(true),
   'toggle-temp': () => { const t = cur(); t.temp = !t.temp; renderAll(); },
   'copy-code': () => showToast('已复制'),
@@ -3173,10 +3212,17 @@ const actions = {
   },
   attach: el => (isCompact() ? attachSheet(el) : $('#file').click()),
   'pick-file': () => $('#file').click(),
-  'take-photo': () => { state.atts.push({ id: uid('a'), kind: 'image', name: '照片.jpg', sub: '刚刚拍摄' }); syncComposer(); },
+  'take-photo': () => { addAtt({ id: uid('a'), kind: 'image', name: '照片.jpg', sub: '刚刚拍摄' }); syncComposer(); },
   'press-act': el => actions[el.dataset.do](pressTarget),
   'remove-att': el => { state.atts = state.atts.filter(a => a.id !== el.dataset.id); syncComposer(); },
-  record: startRecord,
+  // Voice notes come with the model. Dictation is the system's, so it asks for the microphone on its own path.
+  record: () => {
+    if (can('audio')) return startRecord();
+    if (state.proto.perm === 'ask') return permPrimer('dictate');
+    state.permError = state.proto.perm === 'denied' ? { source: 'dictate', title: '没有麦克风权限' } : null;
+    renderBanner();
+    if (!state.permError) startRecord();
+  },
   'record-cancel': () => stopRecord(false),
   'record-done': () => stopRecord(true),
   'toggle-voice-reply': () => { state.voiceReply = !state.voiceReply; syncComposer(); },
@@ -3357,7 +3403,26 @@ document.addEventListener('keydown', e => {
 });
 addEventListener('resize', () => { if (!isCompact()) closeMenu(); syncInert(); });
 // Whatever sits on top owns the keyboard and the screen reader; everything under it goes inert.
+/* The back gesture closes the top layer in the compact form, the same way it does in the native clients. */
+let backDepth = 0, backSkip = 0;
+const openLayers = () => (isCompact() ? +!$('#menu').hidden + +$('#app').classList.contains('nav-open') + +state.inspector + (state.settingsTab ? (state.settingsTab === 'index' ? 1 : 2) : 0) : 0);
+function syncBack() {
+  if (top !== self) return;   // framed in states.html, where back belongs to the page
+  const n = openLayers();
+  for (let i = backDepth; i < n; i++) history.pushState(null, '');
+  if (n < backDepth) { backSkip++; history.go(n - backDepth); }
+  backDepth = n;
+}
+addEventListener('popstate', () => {
+  if (backSkip) { backSkip--; return; }
+  backDepth = Math.max(0, backDepth - 1);
+  if (!$('#menu').hidden) closeMenu(true);
+  else if (state.inspector) actions['close-drawers']();
+  else if ($('#app').classList.contains('nav-open')) actions['toggle-nav']();
+  else if (state.settingsTab) actions[state.settingsTab === 'index' ? 'close-settings' : 'settings-back']();
+});
 function syncInert() {
+  syncBack();
   const app = $('#app'), gate = !!state.onboard || !$('#lock').hidden, m = $('#menu');
   const sheet = !m.hidden && m.classList.contains('sheet');
   const drawer = app.classList.contains('nav-open'), log = app.classList.contains('log-open');
@@ -3452,11 +3517,13 @@ COMPACT_QUERY.addEventListener('change', () => { closeMenu(); syncForm(); render
  * ?task=memo  ?settings=reminders
  * ?task=allergy (&forgot=1)  ?remember=1 (with live)  ?memory=off
  * ?battery=1|2  ?hold=battery (&ready=1)
- * ?crash=model (&fail=1, with live)  ?crash=live|reply|load|report|sent */
+ * ?crash=model (&fail=1, with live)  ?crash=live|reply|load|report|sent
+ * ?stage=1|2 (default 1; any ?live= opens stage 2)  ?dlstate=badfile  ?att=busy  ?dictate=off  ?rec=1  ?nav=1 */
 document.querySelectorAll('kbd[data-mod]').forEach(k => { k.textContent = MOD + k.dataset.mod; });
 syncForm();
 {
-  const q = new URLSearchParams(location.search);
+  const q = BOOT;
+  if (q.get('dictate') === 'off') state.proto.dictate = false;
   if (q.get('theme')) state.theme = q.get('theme');
   applyTheme();
   if (q.get('engine') === 'offline') state.engine = 'offline';
@@ -3498,7 +3565,7 @@ syncForm();
   if (MODELS[q.get('model')]) { state.model = q.get('model'); state.loaded = q.get('model'); }
   if (q.get('omni') === 'none') state.installed.delete(OMNI);
   if (q.get('swap')) {
-    const other = state.model === OMNI ? 'minicpm-v-4.6' : OMNI;
+    const other = Object.keys(MODELS).find(id => id !== state.model);
     if (q.get('swap') === 'failed') state.swapFail = { id: other };
     if (q.get('swap') === 'loading') { state.model = other; state.loading = other; }
   }
@@ -3526,15 +3593,18 @@ syncForm();
     if (state.live && q.get('remember')) actions['proto-remember']();
     if (state.live && q.get('crash') === 'model') { actions['proto-crash'](); if (q.get('fail')) failLink(); }
   } else if (q.get('perm') === 'denied') {
-    state.permError = { source: 'voice', title: '没有麦克风权限' }; renderBanner();
-  } else if (q.get('perm') === 'ask' && !state.onboard) permPrimer('voice');
+    state.permError = { source: canLive() ? 'voice' : 'dictate', title: '没有麦克风权限' }; renderBanner();
+  } else if (q.get('perm') === 'ask' && !state.onboard) permPrimer(canLive() ? 'voice' : 'dictate');
+  if (q.get('att') === 'busy') { state.atts.push({ id: uid('a'), kind: 'image', name: '体检报告.jpg', sub: '2.1 MB', busy: true }); syncComposer(); }
+  if (q.get('rec')) startRecord();
+  if (q.get('nav') && isCompact()) $('#app').classList.add('nav-open');
   if (q.get('source')) showSource($(`[data-ref="${q.get('source')}"]`));
   // Review pages hold the frame; otherwise a turn that lasts a second is gone before it is seen.
   if (q.get('still')) { cancelAnimationFrame(raf); clearInterval(dlTimer); }
   if (q.get('settings') === 'privacy' && (q.get('backup') || q.get('import'))) $('#backupSec').scrollIntoView();
   if (q.get('swap') === 'ask') {
     if (isCompact()) titleSheet($('.head-title')); else actions['model-menu']($('#modelBtn'));
-    const id = state.model === OMNI ? 'minicpm-v-4.6' : OMNI;
+    const id = Object.keys(MODELS).find(m => m !== state.model);
     askSwap($(`#menu [data-action=ask-model][data-id="${id}"]`), id);
   }
 }
