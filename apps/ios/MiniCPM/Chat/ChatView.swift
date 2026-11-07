@@ -9,6 +9,7 @@ struct ChatView: View {
     @State private var afterTitleSheet: (@MainActor () -> Void)?
     @State private var renaming: Conversation?
     @State private var newTitle = ""
+    @State private var composerHeight: CGFloat = 0
 
     private var title: String {
         let conversation = model.current
@@ -24,7 +25,11 @@ struct ChatView: View {
                 ThreadView()
             }
         }
-        .safeAreaBar(edge: .bottom) { ComposerArea() }
+        .safeAreaBar(edge: .bottom) {
+            ComposerArea().onGeometryChange(for: CGFloat.self, of: \.size.height) { composerHeight = $0 }
+        }
+        // Outside the bar, because a view hanging out of it shows but takes no taps. The height clears a banner of any size.
+        .overlay(alignment: .bottom) { ToastView(bottomInset: composerHeight + 8) }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbar }
         .sheet(isPresented: $showsTitleSheet, onDismiss: { runAfterTitleSheet() }) {
@@ -107,24 +112,30 @@ struct EmptyConversationView: View {
 
     var body: some View {
         let temporary = model.current.isTemporary
-        ScrollView {
-            VStack(spacing: 12) {
-                BrandMark().frame(width: 48, height: 48)
-                Text(temporary ? "这段对话不会留下" : "想一起做点什么？")
-                    .font(.title2.weight(.semibold))
-                Text(temporary ? "离开后不保存记录，也不写入记忆。" : dictation.isAvailable ? "打字、说话，或者拍给它看。" : "打字，或者把图片和文档给它看。")
-                    .foregroundStyle(.secondary)
-                Label(Copy.privacyLine(model.privacy), systemImage: "checkmark.shield")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                SceneMenu()
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 12) {
+                    // The keyboard plus a banner leaves little room, and the words matter more than the mark.
+                    if proxy.size.height > 280 {
+                        BrandMark().frame(width: 48, height: 48)
+                    }
+                    Text(temporary ? "这段对话不会留下" : "想一起做点什么？")
+                        .font(.title2.weight(.semibold))
+                    Text(temporary ? "离开后不保存记录，也不写入记忆。" : dictation.isAvailable ? "打字、说话，或者拍给它看。" : "打字，或者把图片和文档给它看。")
+                        .foregroundStyle(.secondary)
+                    Label(Copy.privacyLine(model.privacy), systemImage: "checkmark.shield")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    SceneMenu()
+                }
+                .multilineTextAlignment(.center)
+                .padding(24)
+                .frame(maxWidth: .infinity)
+                // A minimum, not a fixed height: when the space is short the content has to scroll instead of sliding under the bar.
+                .frame(minHeight: proxy.size.height)
             }
-            .multilineTextAlignment(.center)
-            .padding(24)
-            .frame(maxWidth: .infinity)
-            .containerRelativeFrame(.vertical, alignment: .center)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .scrollDismissesKeyboard(.interactively)
     }
 }
 

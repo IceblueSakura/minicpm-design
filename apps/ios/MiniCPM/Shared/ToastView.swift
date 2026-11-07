@@ -6,6 +6,7 @@ struct ToastView: View {
     @Environment(AppModel.self) private var model
     /// Sheets cover the root, so they show their own copy. Only the root one speaks.
     var announces = true
+    var bottomInset: CGFloat = 24
 
     var body: some View {
         if let toast = model.toast {
@@ -20,7 +21,7 @@ struct ToastView: View {
             .padding(.vertical, 12)
             .glassEffect(.regular.interactive(), in: .capsule)
             .padding(.horizontal, 16)
-            .padding(.bottom, 92)
+            .padding(.bottom, bottomInset)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .task(id: toast.id) {
                 if announces { AccessibilityNotification.Announcement(Copy.notice(toast.notice)).post() }

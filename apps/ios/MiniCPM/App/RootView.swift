@@ -20,7 +20,9 @@ struct RootView: View {
                 PrivacyCover()
             }
         }
-        .overlay(alignment: .bottom) { ToastView() }
+        .overlay(alignment: .bottom) {
+            if model.onboarding != nil { ToastView() }
+        }
         .environment(reader)
         .sheet(item: $model.settingsRoute) { page in
             SettingsView(start: page)
@@ -50,11 +52,16 @@ private struct PrivacyCover: View {
 /// System list-detail: opening lands on the conversation, back goes to the history, wide windows get a sidebar.
 struct MainView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var column = NavigationSplitViewColumn.detail
 
     var body: some View {
         NavigationSplitView(preferredCompactColumn: $column) {
             ConversationListView(column: $column)
+                // Otherwise the composer area shows it. On a phone the history covers that.
+                .overlay(alignment: .bottom) {
+                    if sizeClass == .compact && column == .sidebar { ToastView() }
+                }
         } detail: {
             ChatView()
                 .id(model.currentID)

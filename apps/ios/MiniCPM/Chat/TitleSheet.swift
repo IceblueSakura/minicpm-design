@@ -99,10 +99,10 @@ struct TitleSheet: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(option.name).foregroundStyle(.primary)
+                    Text(option.name).foregroundStyle(Color.primary)
                     Text(missing ? String(localized: "未下载，去设置里下载") : model.isRemote ? Copy.capabilities(option) : "\(Copy.spec(option)) · \(Copy.capabilities(option))")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
                 Spacer()
                 if option.id == model.currentOptionID {
@@ -122,8 +122,8 @@ struct TitleSheet: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).foregroundStyle(.primary)
-                    Text(detail).font(.caption).foregroundStyle(.secondary)
+                    Text(title).foregroundStyle(Color.primary)
+                    Text(detail).font(.caption).foregroundStyle(Color.secondary)
                 }
                 Spacer()
                 if model.place == place {
@@ -159,7 +159,7 @@ struct SwapConfirmRow: View {
                     model.setModel(option.id)
                     close()
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 Button("先不换") { close() }.buttonStyle(.bordered)
             }
         }

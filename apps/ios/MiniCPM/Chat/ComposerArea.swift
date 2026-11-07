@@ -115,14 +115,14 @@ struct ComposerArea: View {
                 Image(systemName: "camera").frame(width: 28, height: 28)
             }
             .accessibilityLabel("拍照提问")
-            .buttonStyle(.glassProminent)
+            .prominentGlassButton()
             .buttonBorderShape(.circle)
         } else {
             Button { model.send() } label: {
                 Image(systemName: model.isReplyingHere ? "stop.fill" : "arrow.up").frame(width: 28, height: 28)
             }
             .accessibilityLabel(model.isReplyingHere ? "停止生成" : "发送")
-            .buttonStyle(.glassProminent)
+            .prominentGlassButton()
             .buttonBorderShape(.circle)
             .disabled(!model.isReplyingHere && (!hasContent || model.cannotSend || model.isQueued))
         }

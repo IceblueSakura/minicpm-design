@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ConversationListView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Binding var column: NavigationSplitViewColumn
     @State private var query = ""
     @State private var renaming: Conversation?
@@ -14,7 +15,8 @@ struct ConversationListView: View {
 
     private var selection: Binding<UUID?> {
         Binding {
-            model.currentID
+            // On a phone a selection means "showing that one": any change would push the chat over the list, even a delete.
+            sizeClass == .compact && column == .sidebar ? nil : model.currentID
         } set: { id in
             guard let id else { return }
             model.select(id)

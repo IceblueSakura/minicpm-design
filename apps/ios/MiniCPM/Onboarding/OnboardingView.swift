@@ -48,7 +48,7 @@ private struct WelcomeView: View {
                 Text(detail).font(.subheadline).foregroundStyle(.secondary)
             }
         } icon: {
-            Image(systemName: image).foregroundStyle(.tint)
+            Image(systemName: image).foregroundStyle(.tint).frame(width: 28)
         }
     }
 }
@@ -73,13 +73,13 @@ private struct ModelPickView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 6) {
-                                    Text(option.name).foregroundStyle(.primary)
+                                    Text(option.name).foregroundStyle(Color.primary)
                                     if option.isRecommended {
                                         Text("推荐").font(.caption2.weight(.semibold)).foregroundStyle(.tint)
                                     }
                                 }
-                                Text(Copy.kindSubtitle(option.kind)).font(.caption).foregroundStyle(.secondary)
-                                Text("\(Copy.spec(option)) · \(Copy.size(option.sizeGB))").font(.caption).foregroundStyle(.secondary)
+                                Text(Copy.kindSubtitle(option.kind)).font(.caption).foregroundStyle(Color.secondary)
+                                Text("\(Copy.spec(option)) · \(Copy.size(option.sizeGB))").font(.caption).foregroundStyle(Color.secondary)
                             }
                             Spacer()
                             if option == choice {
@@ -167,7 +167,7 @@ private struct PrimaryAction: View {
         } label: {
             Text(title).frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glassProminent)
+        .prominentGlassButton()
         .controlSize(.large)
         .padding(.horizontal, 24)
         .padding(.bottom, 8)

@@ -20,9 +20,13 @@ struct ThreadView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollPosition($position)
-        .defaultScrollAnchor(.bottom)
+        // A short thread reads from the top; once it fills the screen it opens on and follows the newest.
+        .defaultScrollAnchor(.top, for: .alignment)
+        .defaultScrollAnchor(.bottom, for: .initialOffset)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
         .scrollDismissesKeyboard(.interactively)
+        // The input is glass with gaps around it; a soft edge leaves text readable through them.
+        .scrollEdgeEffectStyle(.hard, for: .bottom)
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentSize.height - geometry.visibleRect.maxY < 80
         } action: { _, near in
@@ -79,7 +83,7 @@ private struct UserMessageView: View {
                 HStack(spacing: 8) {
                     Label("没有发出去", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.red)
-                    Button("重试") { model.retrySend(message.id) }
+                    Button("重试") { model.retrySend(message.id) }.inlineTarget()
                 }
                 .font(.footnote)
             }
@@ -133,7 +137,7 @@ private struct AssistantMessageView: View {
                 HStack(spacing: 8) {
                     Text(cut == .length ? "回答太长，到这里停了" : "模型中断了，回答到这里")
                         .foregroundStyle(.secondary)
-                    Button("接着写") { model.continueReply(message.id) }
+                    Button("接着写") { model.continueReply(message.id) }.inlineTarget()
                 }
                 .font(.footnote)
             }
@@ -148,17 +152,22 @@ private struct AssistantMessageView: View {
     }
 
     private var tools: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 0) {
             actions
                 .labelStyle(.iconOnly)
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
             if model.prefs.showTechInfo, let stats = message.stats {
                 Text("\(message.modelName ?? "") · \(Int(stats.tokensPerSecond)) tok/s · \(stats.seconds.formatted(.number.precision(.fractionLength(1)))) s")
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }
         }
+        // The icons line up with the text; their targets reach past it.
+        .padding(.leading, -12)
+        .padding(.vertical, -6)
     }
 
     @ViewBuilder
@@ -194,20 +203,19 @@ private struct MemoryLineView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "lightbulb").accessibilityHidden(true)
+            Image(systemName: "lightbulb").foregroundStyle(.secondary).accessibilityHidden(true)
             if model.memories.contains(line.text) {
-                Text("已记住：\(line.text)")
-                Button("撤销") { model.forget(line.text) }
-                Button("管理") { model.settingsRoute = .memories }
+                Text("已记住：\(line.text)").foregroundStyle(.secondary)
+                Button("撤销") { model.forget(line.text) }.inlineTarget()
+                Button("管理") { model.settingsRoute = .memories }.inlineTarget()
             } else {
-                Text("已忘掉这条")
+                Text("已忘掉这条").foregroundStyle(.secondary)
                 if model.prefs.memory {
-                    Button("重新记住") { model.remember(line.text) }
+                    Button("重新记住") { model.remember(line.text) }.inlineTarget()
                 }
             }
         }
         .font(.footnote)
-        .foregroundStyle(.secondary)
     }
 }
 
@@ -225,9 +233,9 @@ private struct SearchCardView: View {
         case .pending:
             AskCard(systemImage: "globe", title: "要联网查一下吗？", detail: model.prefs.offlineMode ? "离线模式开着，现在不能联网。" : "只发送下面这句话，对话内容和文件都不发。", quote: card.query) {
                 if model.prefs.offlineMode {
-                    Button("关闭离线模式") { model.prefs.offlineMode = false }.buttonStyle(.borderedProminent)
+                    Button("关闭离线模式") { model.prefs.offlineMode = false }.prominentButton()
                 } else {
-                    Button("查一下") { model.answerSearch(card.id, accept: true) }.buttonStyle(.borderedProminent)
+                    Button("查一下") { model.answerSearch(card.id, accept: true) }.prominentButton()
                 }
                 Button("不用") { model.answerSearch(card.id, accept: false) }.buttonStyle(.bordered)
             }
@@ -257,7 +265,7 @@ private struct ActionCardView: View {
                 detail: isNotification ? "到点发一条通知，点开后回到这里。它不在后台运行。" : "写到系统备忘录里，之后可以在那里修改。",
                 quote: line
             ) {
-                Button(isNotification ? "添加" : "写入") { model.answerAction(card.id, accept: true) }.buttonStyle(.borderedProminent)
+                Button(isNotification ? "添加" : "写入") { model.answerAction(card.id, accept: true) }.prominentButton()
                 Button("不用") { model.answerAction(card.id, accept: false) }.buttonStyle(.bordered)
             }
         }

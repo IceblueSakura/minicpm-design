@@ -303,13 +303,20 @@ private struct PrivacySettings: View {
 
             Section("联网") {
                 SettingToggle(title: "离线模式", detail: "关闭所有联网功能，包括更新、联网搜索、远程服务和备份。", isOn: $model.prefs.offlineMode)
-                Picker(selection: $model.prefs.webSearch) {
-                    Text("关闭").tag(WebSearch.off)
-                    Text("每次询问").tag(WebSearch.ask)
-                    Text("自动").tag(WebSearch.auto)
-                } label: {
-                    Text("联网搜索")
-                    Text("需要时让它上网查资料，搜索词会离开这台设备。")
+                // A picker or LabeledContent drops its value to a line of its own under a long label, so the text wraps beside it here.
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("联网搜索")
+                        Text("需要时让它上网查资料，搜索词会离开这台设备。").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Picker("联网搜索", selection: $model.prefs.webSearch) {
+                        Text("关闭").tag(WebSearch.off)
+                        Text("每次询问").tag(WebSearch.ask)
+                        Text("自动").tag(WebSearch.auto)
+                    }
+                    .labelsHidden()
+                    .fixedSize()
                 }
                 SettingToggle(title: "自动检查更新", detail: "只发送版本号。", isOn: $model.prefs.updates)
                 SettingToggle(title: "匿名使用统计", detail: "不包含对话和文件。", isOn: $model.prefs.analytics)
