@@ -26,7 +26,7 @@ git -C refs/minicpm-v-apps fetch --unshallow
 
 ## 三个仓库
 
-| 本地路径 | 上游 | 固定提交 | 上游最近改动 | 体积 |
+| 本地路径 | 上游 | 固定提交 | 上游最近改动 | 工作区体积 |
 |---|---|---|---|---|
 | `refs/minicpm-v-apps` | [OpenBMB/MiniCPM-V-Apps](https://github.com/OpenBMB/MiniCPM-V-Apps) | `d0dd7a6` | 2026-10-29 | 7.5 MB |
 | `refs/minicpm-o-demo` | [OpenBMB/MiniCPM-o-Demo](https://github.com/OpenBMB/MiniCPM-o-Demo) | `47709a9` | 2026-09-15 | 31 MB |
@@ -41,7 +41,7 @@ git -C refs/minicpm-v-apps fetch --unshallow
 | 入口 | 看什么 |
 |---|---|
 | `MiniCPM-V-demo/Sources/Home` | 首页/会话页：空态入口卡片、输入区、浮动按钮 |
-| `MiniCPM-V-demo/Sources/Settings/{DownloadManager,ModelConst,ModelDetail}` | 模型列表、按设备内存分档、下载与进度 |
+| `MiniCPM-V-demo/Sources/Settings/` | 设置页全家：`DownloadManager`（下载与进度）、`ModelConst`/`Model`（按设备内存分档的模型清单）、`ModelDetail`、`RealTimeVC`（实时理解的设置项）、`SubViews` |
 | `MiniCPM-V-demo/Sources/Tutorial` | 首次启动的引导页 |
 | `MiniCPM-V-demo/Sources/OCR` | OCR 结果展示 |
 | `MiniCPM-V-demo/Sources/Localization/L10n*.swift` | 中英文案表与 key 组织方式 |
@@ -55,22 +55,34 @@ git -C refs/minicpm-v-apps fetch --unshallow
 
 `llama.cpp-omni/` 是嵌套子模块（上游 `tc-mb/llama.cpp-omni`，分支 `ios-omni`），默认没拉，要看实现再 `git submodule update --init --recursive`。
 
-## refs/minicpm-o-demo —— 语音/视频双工前端，本项目的端云与实时会话参考
+## refs/minicpm-o-demo —— 实时双工与会话界面，形态最全的一处
 
-官方全模态 Web Demo。绝大部分是 Python 后端（`gateway.py`、`worker.py`、`core/`、`vad/`），界面只有 `frontend/mobile/` 一处，而它恰好是"实时双工"这件事唯一有可运行界面的实现。
+官方全模态 Web Demo。后端是 Python（`gateway.py`、`worker.py`、`core/`、`vad/`），**界面有两套**：`static/` 下的手写 HTML/CSS/JS 页面（线上实际在跑的那套，中文界面），和 `frontend/mobile/` 下的 React 重写版。`static/` 里还有一个专门画交互的 `mobile-flow-mock.html`（标题就是"移动端交互草图"），对本项目参考价值最高。
+
+手写页面（`static/`，同一套 `duplex/duplex-shared.css`）：
 
 | 入口 | 看什么 |
 |---|---|
-| `frontend/mobile/src/duplex/AudioDuplexScreen.tsx` | 语音通话全屏界面 |
-| `frontend/mobile/src/duplex/VideoDuplexScreen.tsx` | 视频通话全屏界面 |
+| `static/mobile-flow-mock.html` | **移动端交互草图**：手机外壳、双工的 live 与 soft 两屏、圆形按钮组、分页指示，自带一套 CSS 变量色板 |
+| `static/index.html` | 首页：三种交互模式卡片 + 最近会话列表 |
+| `static/turnbased.html` | 轮次对话；`lib/chat-eta-estimator.js` 是"还要等多久"的估算 |
+| `static/omni/omni.html` | 音视频全双工（摄像头/文件两种媒体源） |
+| `static/audio-duplex/audio_duplex.html`、`static/half-duplex/half_duplex.html` | 语音双工、半双工 |
+| `static/mobile-omni/` | 移动版页面 + 可嵌入设置 widget（`settings-widget.{css,js}`） |
+| `static/duplex/lib/` | 队列音效、音量（lufs）、会话录制、实时会话等交互层实现 |
+| `static/faq/{zh,en}`、`static/session-viewer.html` | 帮助页与历史会话回看 |
+
+React 版（`frontend/mobile/`，React 19 + TypeScript + Vite）：
+
+| 入口 | 看什么 |
+|---|---|
+| `frontend/mobile/src/duplex/AudioDuplexScreen.tsx`、`VideoDuplexScreen.tsx` | 语音/视频通话全屏界面 |
 | `frontend/mobile/src/duplex/{DuplexLogBubble.tsx,duplex.css,useDuplexSession.ts}` | 通话中的对话气泡、样式、会话状态机 |
 | `frontend/mobile/src/shared/OmniSettingsWidget.tsx`、`settings-widget-entry.tsx` | 可嵌入设置面板的做法 |
 | `frontend/mobile/src/i18n/{zh,en}.ts` | 双语 key 表，可与我们 [文案与多语言](../docs/09-i18n-copy.md) 对照 |
-| `docs/site/zh/frontend/{index,components,pages,audio,duplex-session}.html` | **中文前端规格**：组件、页面、音频、双工会话各一章，是少见的官方前端文档 |
+| `docs/site/zh/frontend/{index,components,pages,audio,duplex-session}.html` | **中文前端规格**：页面与路由、UI 组件、音频处理、双工会话各一章，含状态字段和协议细节 |
 
-技术栈 React 19 + TypeScript + Vite。没有模型管理页，设置只有一个 widget。
-
-注意它是 Web 端，双工界面按浏览器与麦克风/摄像头的约束设计，原生端不能照搬。
+没有模型管理页，设置只有那个 widget。页面按浏览器与麦克风/摄像头的约束设计，原生端不能照搬。
 
 ## refs/mobilecpm —— 上一代 iOS 客户端，看信息架构和早期的取舍
 
