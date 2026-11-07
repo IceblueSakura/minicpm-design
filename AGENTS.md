@@ -30,7 +30,7 @@ Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` rec
 - First stage only: vision models and text. Live and omni entries stay hidden by model capability.
 - Rules live in the UI-free layer (`apps/web/src/core`, `MiniCPMCore`) and mirror each other. Change a rule on both sides.
 - `Engine` and `ModelStore` are the only seam for inference. Failures never switch the run location.
-- Web: `npm test`, `npm run build`, and render at 1440, 390 and 360 in light and dark. iOS: `swift test` in the package; the app target builds only on a Mac.
+- Web: `npm test`, `npm run build`, and render at 1440, 390 and 360 in light and dark. iOS builds only on macOS: `swift test` in the package and `xcodebuild analyze` for the app.
 
 ## Reference repos
 

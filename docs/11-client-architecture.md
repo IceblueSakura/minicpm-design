@@ -25,7 +25,7 @@ flowchart TD
   Models -.空实现.-> Stub2[StubModelStore]
 ```
 
-规则层不依赖界面框架。Web 是 `apps/web/src/core`，iOS 是 `apps/ios/Packages/MiniCPMCore`，后者不引用 SwiftUI，所以能在 Linux 上编译和测试。
+规则层不依赖界面框架。Web 是 `apps/web/src/core`，iOS 是 `apps/ios/Packages/MiniCPMCore`，后者不引用 SwiftUI，规则用 `swift test` 单独测试。iOS 工程只在 macOS 上构建。
 
 ## 第一阶段的范围
 

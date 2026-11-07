@@ -46,13 +46,11 @@ public struct JSONFilePersistence: Persistence {
     public init(directory: URL = AppPaths.root) {
         self.directory = directory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        #if canImport(Darwin)
         // Conversations must not reach the system backup behind the user's back. iCloud backup is the app's own, opt-in.
         var url = directory
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
         try? url.setResourceValues(values)
-        #endif
     }
 
     public func load() -> Snapshot? {

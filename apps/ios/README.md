@@ -7,10 +7,12 @@
 需要 Xcode 27，它要求 macOS Tahoe 26.6 或更新、Apple 芯片。
 
 1. 打开 `apps/ios/MiniCPM.xcodeproj`。
-2. 在 Signing & Capabilities 里选开发团队。`PRODUCT_BUNDLE_IDENTIFIER` 现在是占位的 `dev.icebluesakura.minicpm`。
+2. 开发团队已设为个人团队 `6NY7CFCMUH`（Iceblue Sakura (Personal Team)），自动签名。换人开发时在 Signing & Capabilities 里改成自己的团队。`PRODUCT_BUNDLE_IDENTIFIER` 现在是占位的 `dev.icebluesakura.minicpm`。
 3. 选 iOS 27 模拟器运行。
 
 已在 Xcode 27.2、iOS 27.2 模拟器上编译运行过，iPhone 和 iPad 都走过主要流程。真机没跑过。工程是手写的，`MiniCPM/` 是同步文件夹，加文件不用改工程。在模拟器上不用选开发团队。
+
+构建设置对齐 Xcode 27.2 新建工程的模板：Swift 6 语言模式，App 目标默认隔离在 `MainActor`，打开 Approachable Concurrency 和 Member Import Visibility。`MiniCPMCore` 在 `Package.swift` 里打开同样的语言特性（`NonisolatedNonsendingByDefault`、`InferIsolatedConformances`、`MemberImportVisibility`），但不默认隔离到 `MainActor`，需要的类型自己标。
 
 状态用启动参数打开：在 Scheme 的 Arguments 里写 `-stub`，后面跟逗号分隔的名字，比如 `-stub offline,oom`。
 
@@ -29,7 +31,7 @@
 
 | 路径 | 内容 |
 |---|---|
-| `Packages/MiniCPMCore/` | 状态和规则，不依赖 SwiftUI，能在 Linux 上编译和测试 |
+| `Packages/MiniCPMCore/` | 状态和规则，不依赖 SwiftUI，用 `swift test` 测试 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/AppModel.swift` | 全部产品规则：运行位置、当前模型、发送、下载、隐私声明 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/Engine.swift` | `Engine`、`ModelStore` 协议，和 Web 的 `apps/web/src/engine/types.ts` 同义 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/Services.swift` | 其余系统服务的协议、未接入实现和演示实现 |
@@ -64,17 +66,17 @@
 
 联网搜索的结果现在不进回答：接真实引擎时把它加进 `GenerateRequest`。
 
-## 在 Linux 上验证 Core
+## 验证
 
-nixpkgs 的 Swift 编译清单时找不到运行库，要给出库路径。swift-testing 捕获错误回溯时在这个工具链上会段错误，和代码无关，所以关掉：
+只在 macOS 上构建，需要 Xcode 27。
 
 ```sh
-cd apps/ios/Packages/MiniCPMCore
-nix shell nixpkgs#swift nixpkgs#swiftpm -c bash -c '
-  S=$(nix eval --raw nixpkgs#swift.outPath)
-  export LIBRARY_PATH=$S/lib NIX_LDFLAGS="-L$S/lib" LD_LIBRARY_PATH=$S/lib
-  SWT_SWIFT_ERROR_BACKTRACING_ENABLED=0 swift test --scratch-path /tmp/minicpm-core-build'
+cd apps/ios
+(cd Packages/MiniCPMCore && swift test)
+xcodebuild -scheme MiniCPM -destination 'platform=iOS Simulator,name=iPhone 18 Pro' analyze
 ```
+
+通过 SSH 构建真机版本时，登录钥匙串是锁着的，签名会报 `errSecInternalComponent`。在 Mac 本机构建，或者先 `security unlock-keychain`。
 
 ## 模拟器上看过的
 
