@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" id="themeColor" content="#FAFBF8">
+<title>MiniCPM</title>
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<script>
+  // Resolve the theme before first paint so dark mode never flashes light.
+  (() => {
+    let t = new URLSearchParams(location.search).get('theme');
+    try { t ||= JSON.parse(localStorage.getItem('minicpm.state.v1'))?.theme; } catch {}
+    if (!t || t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
