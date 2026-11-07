@@ -48,7 +48,7 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 ## 怎么继续调整
 
 1. 改之前先看这个改动属于产品层还是表现层，见 [设计语言](docs/02-design-language.md)。
-2. 原型只保留一份，直接改 `index.html`，回退用 git 历史。推送到 `main` 后，[线上页面](https://icebluesakura.github.io/minicpm-design/)会自动更新。
+2. 原型只保留一份，直接改 `index.html`，回退用 git 历史。推送到 `main` 后，在 Actions 里手动运行 Pages 发布（`gh workflow run pages.yml --ref main`），[线上页面](https://icebluesakura.github.io/minicpm-design/)才会更新。
 3. 颜色改 `tokens/*.json`，运行 `node tools/tokens.mjs` 同步到原型并检查对比度。
 4. 新增状态时，同时加参数、加到 `states.html`、加到状态矩阵。
 5. 决定了什么就记到决策记录。

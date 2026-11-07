@@ -1,0 +1,76 @@
+# Publishes the web prototype to GitHub Pages.
+#
+# Requires Settings → Pages → Source = "GitHub Actions". The legacy
+# "Deploy from a branch" builder uploads the whole checkout, including the
+# refs/ submodules (about 6,000 files, 73 MB), and pins actions that still
+# target Node.js 20.
+#
+# Runs only on demand, so small commits do not each publish:
+#   gh workflow run pages.yml --ref main
+# or Actions → Pages → Run workflow.
+#
+# Only the prototype pages are published. Add a path to SITE_FILES when a new
+# page has to be reachable online.
+
+name: Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time. A running deployment is never cancelled, because
+# cancelling it mid-sync leaves Pages refusing the next one for a while.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  SITE_FILES: index.html states.html
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # refs/ is read-only reference material and is not published.
+          submodules: false
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Stage site
+        run: |
+          mkdir _site
+          for f in $SITE_FILES; do
+            install -D -m 0644 "$f" "_site/$f"
+          done
+          ls -la _site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Pages has been slow in "syncing_files"; leave room above the step timeout.
+    timeout-minutes: 40
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        with:
+          timeout: 1800000 # 30 minutes; the default 10 cancels slow but healthy syncs
