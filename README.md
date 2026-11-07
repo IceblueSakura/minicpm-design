@@ -14,6 +14,7 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | 改颜色 | [`tokens/`](tokens/)，然后运行 `node tools/tokens.mjs` |
 | 交给开发 | [平台落地](docs/07-platforms.md#交接方式) |
 | 看还有什么没定 | [决策记录](docs/10-decisions.md) |
+| 对照现有客户端怎么写界面 | [`refs/`](refs/README.md) |
 
 用浏览器直接打开 HTML 文件，不需要服务器。
 
@@ -56,3 +57,4 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | `tokens/` | 颜色、尺寸、动效、实时常量 |
 | `tools/tokens.mjs` | 同步 token，检查对比度 |
 | `docs/` | 设计文档 |
+| `refs/` | 上游参考仓库（submodule），只读，说明见 [`refs/README.md`](refs/README.md) |

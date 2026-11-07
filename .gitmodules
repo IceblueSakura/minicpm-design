@@ -1,0 +1,12 @@
+[submodule "refs/minicpm-v-apps"]
+	path = refs/minicpm-v-apps
+	url = https://github.com/OpenBMB/MiniCPM-V-Apps.git
+	shallow = true
+[submodule "refs/minicpm-o-demo"]
+	path = refs/minicpm-o-demo
+	url = https://github.com/OpenBMB/MiniCPM-o-Demo.git
+	shallow = true
+[submodule "refs/mobilecpm"]
+	path = refs/mobilecpm
+	url = https://github.com/OpenBMB/MobileCPM.git
+	shallow = true

@@ -23,6 +23,10 @@ Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` rec
 - Every state must open from a query parameter. When adding one, update the boot comment, `states.html` and `docs/05-states.md`.
 - Check changes by rendering at 1440, 390 and 360 wide, in light and dark.
 
+## Reference repos
+
+- `refs/` holds upstream client implementations as read-only submodules (`refs/README.md`). Read them for structure, states and copy; never edit or commit inside them, and never treat their styling as final.
+
 ## Docs
 
 Write docs in Simplified Chinese. Mark platform claims that need device testing with **[待实测]**.
