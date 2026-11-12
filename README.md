@@ -2,7 +2,7 @@
 
 MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计文档和 token。最终会转成 Android、iOS、macOS 和 Web 的原生 UI。真实客户端的初版在 [`apps/`](apps/)。
 
-现阶段是草案，文案都未定，主要用网页验证大致的交互逻辑，先不做真机测试。
+现阶段是草案，文案都未定，主要用网页验证大致的交互逻辑。客户端若装到真机，只用个人设备的免费签名，不注册付费开发者计划，不用 TestFlight。见 [开发期合规](docs/12-compliance.md)。
 
 ## 从这里开始
 
@@ -14,6 +14,7 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | 改颜色 | [`tokens/`](tokens/)，然后运行 `node tools/tokens.mjs` |
 | 交给开发 | [平台落地](docs/07-platforms.md#交接方式) |
 | 看还有什么没定 | [决策记录](docs/10-decisions.md) |
+| 看合规和上架 | [开发期合规](docs/12-compliance.md) |
 | 对照现有客户端怎么写界面 | [`refs/`](refs/README.md) |
 | 运行真实 Web 客户端 | [`apps/web`](apps/web/README.md) |
 | 在 Mac 上继续 iOS 客户端 | [`apps/ios`](apps/ios/README.md) |
@@ -32,10 +33,12 @@ MiniCPM 客户端的设计资料：一个可操作的网页原型，加上设计
 | [05 状态矩阵](docs/05-states.md) | 所有状态和打开它们的参数 |
 | [06 组件清单](docs/06-components.md) | 系统、组合、自绘三类组件，图标对照 |
 | [07 平台落地](docs/07-platforms.md) | 四端的控件映射和平台限制 |
-| [08 隐私设计](docs/08-privacy.md) | 承诺、信号、规则 |
-| [09 文案与多语言](docs/09-i18n-copy.md) | 语气、四语术语表、长度预算 |
+| [08 隐私设计](docs/08-privacy.md) | 承诺、信号、在线备用的同意 |
+| [09 文案与多语言](docs/09-i18n-copy.md) | 语气、四语术语表、AI 告知与法律页 |
 | [10 决策记录](docs/10-decisions.md) | 已定、待确认、待定 |
 | [11 客户端架构](docs/11-client-architecture.md) | `apps/` 的结构、推理接口、空实现 |
+| [12 开发期合规](docs/12-compliance.md) | 按全球发布设计的要求、在线备用同意、个人设备测试限制 |
+| [13 首次发布与商店政策](docs/13-release-and-store-policy.md) | 发布前清单、个人与组织账号、国区（待扩展调研 / 待定） |
 
 ## 原型怎么用
 
