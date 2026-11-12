@@ -2,7 +2,7 @@
 
 Design source for the MiniCPM client: a single-file web prototype, design docs in Chinese, and design tokens. The final product is native UI on Android, iOS, macOS and Web. First real clients live in `apps/`.
 
-Current stage: draft. Copy is not final, the web prototype is the main test bed, and device testing is deferred.
+Current stage: draft. Copy is not final, and the web prototype is the main test bed. A client install during development uses free signing on personal devices only. Paid enrollment, TestFlight, and submission wait until the first release. See `docs/12-compliance.md` and `docs/13-release-and-store-policy.md`.
 
 Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` records settled and open decisions; do not reverse a settled one without the user.
 
@@ -13,6 +13,7 @@ Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` rec
 - Keep features and settings unless the user removes them; trimming happens after team discussion.
 - Default UI uses plain language. Technical terms stay behind advanced settings and the "show technical info" switch.
 - Privacy copy must stay true: when `isRemote()`, every on-device claim changes to name the destination.
+- No paid features and no tracking. On-device inference is primary. The online fallback stays off until the user consents. Privacy, terms, and support URLs stay in one placeholder config until release. Mainland China is out of scope until the open questions in `docs/13-release-and-store-policy.md` are resolved.
 - Scene ids (`life`, `work`, `game`, `community`) are stable; display names are separate.
 
 ## Working in the prototype

@@ -1,6 +1,8 @@
 # 文案与多语言
 
-第一阶段支持 English、简体中文、繁體中文（台灣）、繁體中文（香港）。现在原型只有简体中文。字符串等界面稳定后一次抽取。
+第一阶段支持 English、简体中文、繁體中文（台灣）、繁體中文（香港）。现在原型只有简体中文。全球发布不能只有简体中文：iOS 的 String Catalog 和 Web 的界面先补 English，台湾和香港两列仍按下面的术语表做，需要母语审校。政策页每种语言各一份。
+
+字符串不必等全部界面定稿才抽。隐私、法律、AI 身份告知和在线备用的说明现在就要进消息表，见 [开发期合规](12-compliance.md)。其余字符串可以等界面稳定后一次补齐。
 
 ## 文案原则
 
@@ -61,6 +63,9 @@ Apple 上 `zh-HK` 缺失时会回落到 `zh-Hant`，所以台湾和香港要分�
 | 已记住的内容 | 已记住的内容 | 已記住的內容 | 已記住的內容 | Saved memories |
 | 主动提醒 | 主动提醒 | 主動提醒 | 主動提示 | Nudges |
 | 这台设备 | 这台设备 | 這部裝置 | 此裝置 | This device |
+| 在线备用 | 在线备用 | 線上備用 | 線上備用 | Online fallback |
+| 隐私政策 | 隐私政策 | 隱私權政策 | 私隱政策 | Privacy Policy |
+| 使用条款 | 使用条款 | 使用條款 | 使用條款 | Terms of Use |
 | 本机处理 | 本机处理 | 在裝置上處理 | 在裝置上處理 | On device |
 | 规格 | 规格 | 規格 | 規格 | Size |
 | 轻量（规格） | 轻量 | 輕量 | 輕量 | Lite |
@@ -168,6 +173,33 @@ Apple 上 `zh-HK` 缺失时会回落到 `zh-Hant`，所以台湾和香港要分�
 | 复数 | 英文用 ICU 或平台复数规则，比如 `1 time` 和 `2 times` |
 | 日期 | 相对时间用系统格式化，比如“周三”不写死 |
 | 排序 | 语言列表固定顺序，其他列表按系统规则 |
+
+## 全球发布要先有的文案
+
+这些句子是草案，和别的文案一样还没定稿。中文占位符用 `{host}`、`{运营方}`，英文用 `{host}`、`{operator}`。不要拆开拼接。
+
+| 位置 | 简体中文 | English |
+|---|---|---|
+| 欢迎页和新对话空状态 | 你在和 AI 模型对话，它可能出错，重要信息请核实。 | You are talking to an AI model. It can be wrong. Check anything important. |
+| AI 回答的无障碍标签 | 以“AI 回答”开头 | Starts with “AI answer” |
+| 体检等场景 | 仅帮助理解，不能替代医生。 | This only helps you read it. It is not a substitute for a doctor. |
+| 在线备用说明 | 开启后，当这台设备跑不了时，你发出的文字、图片和文件会发送到 {host} 处理。{host} 由 {运营方} 运营，处理方式见其隐私政策。端侧对话不受影响。 | When this device cannot run the model, the text, images, and files you send go to {host}. {host} is operated by {operator}. See their privacy policy. On-device chats stay on this device. |
+| 同意 / 拒绝 | 开启并同意 / 暂不开启 | Turn on and agree / Not now |
+| 发送前 | 将发送到 {host} | Will be sent to {host} |
+| 回答下方 | 经 {host} 处理 | Processed by {host} |
+| 欢迎页底部 | 隐私政策 · 使用条款 | Privacy Policy · Terms of Use |
+| iCloud 备份 | 存在你自己的 iCloud，开发者看不到。 | Stored in your iCloud. The developer cannot see it. |
+
+“关于与法律”页要有：版本号、隐私政策、使用条款、开源许可（含 MiniCPM 模型许可）、联系与反馈、无障碍说明。链接从同一处配置读取，现在是 `https://example.com/privacy`、`/terms`、`/support`、`/accessibility`，邮箱 `support@example.com`。
+
+### iOS 的目录
+
+- `apps/ios/MiniCPM/Localizable.xcstrings` 源语言是 `zh-Hans`，460 条键，没有 English。先加 English。
+- 相机、麦克风、相册、语音识别的用途说明现在写在 `MiniCPM.xcodeproj/project.pbxproj` 的 `INFOPLIST_KEY_*`，只有中文。移到新建的 `InfoPlist.xcstrings`，和界面文案一起翻译。用途说明和应用内的权限说明保持一致。
+
+### Web 的消息表
+
+中文现在写在 `apps/web/src/ui/` 的组件里。抽到新建的 `apps/web/src/i18n/`，界面只读消息表。`apps/web/index.html` 的 `lang="zh-Hans"` 和 `selectors.ts` 里的 `toLocaleDateString('zh-Hans')` 改成跟随当前语言。设置里已有四语列表，它还不切换文案。
 
 ## 字符串结构
 

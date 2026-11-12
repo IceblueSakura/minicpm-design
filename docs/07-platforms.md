@@ -190,14 +190,16 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 
 | | iOS | Android | Web |
 |---|---|---|---|
-| 渠道 | Background Assets，Apple 托管上限 200GB | Play AI pack 单包 ≤ 1.5GB，累计上限文档有出入，6GB 模型大概率走自有 CDN | 自有 CDN，存进浏览器的站点存储（OPFS） |
+| 渠道 | 发布时用 Background Assets，Apple 托管上限 200GB。开发期免费签名不可用，先用 URLSession，仍走同一个 `ModelStore` | Play AI pack 单包 ≤ 1.5GB，累计上限文档有出入，6GB 模型大概率走自有 CDN | 自有 CDN，存进浏览器的站点存储（OPFS） |
 | 后台下载 | 系统托管 | 用户发起的数据传输任务（`setUserInitiated`） | 不适用 |
 | 移动网络 | `allowsExpensiveNetworkAccess` | 超过 200MB 走确认 | 不适用 |
 | 审核 | 4.2.3 要求首次启动下载前披露大小，欢迎流程已满足 | 禁止下载可执行代码，模型属于数据 **[推断]** | 不适用 |
 
 换模型时要先释放旧模型再载入新模型，等待时间因设备差别很大。原型里的秒数是占位，要用实测数据换掉 **[待实测]**。
 
-内存：iOS 有 `increased-memory-limit` 权限（部分机型），用 `os_proc_available_memory` 判断余量，不要缓存这个值。Android 17 按设备内存设上限，超限退出原因含 `MemoryLimiter:AnonSwap`。
+内存：iOS 有 `increased-memory-limit` 权限（部分机型），用 `os_proc_available_memory` 判断余量，不要缓存这个值。这个权限不在免费个人团队的能力表里，免费签名下能否生效 **[待实测]**。开发期先用轻量看图模型。Android 17 按设备内存设上限，超限退出原因含 `MemoryLimiter:AnonSwap`。
+
+开发期若把 iOS 客户端装到真机，只用免费个人团队、只装在自己的设备上。描述文件 7 天过期，不能用 TestFlight，iCloud 和 Apple 托管的模型包都测不了。限制和替代做法见 [开发期合规](12-compliance.md#个人设备测试)。付费账号、正式 Bundle ID 和提审见 [首次发布与商店政策](13-release-and-store-policy.md)。
 
 ### 规格
 
