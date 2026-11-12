@@ -1,0 +1,133 @@
+{
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "shouldTranslate" : false,
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MiniCPM"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "System permission prompt. Preserve on-device recognition and conditional remote processing claims.",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照提问时使用摄像头。默认在这台设备上处理，连接远程服务时发送到你设置的地址。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses the camera when asking with a photo. Processed on this device by default, and sent to your configured address when connected to a remote service."
+          }
+        },
+        "zh-Hant-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照提問時使用相機。預設在這部裝置上處理，連接遠端服務時傳送到你設定的位址。"
+          }
+        },
+        "zh-Hant-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照提問時使用相機。預設在此裝置上處理，連接遠端服務時傳送到你設定的地址。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "System permission prompt. Preserve on-device recognition and conditional remote processing claims.",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说话输入时使用麦克风，声音在这台设备上转成文字。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses the microphone for dictation. Audio is converted to text on this device."
+          }
+        },
+        "zh-Hant-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音輸入時使用麥克風，聲音在這部裝置上轉成文字。"
+          }
+        },
+        "zh-Hant-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音輸入時使用咪高風，聲音在此裝置上轉成文字。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "comment" : "System permission prompt. Preserve on-device recognition and conditional remote processing claims.",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选图片提问时读取相册。默认在这台设备上处理，连接远程服务时发送到你设置的地址。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accesses your photo library when selecting images to ask questions. Processed on this device by default, and sent to your configured address when connected to a remote service."
+          }
+        },
+        "zh-Hant-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選取圖片提問時讀取相簿。預設在這部裝置上處理，連接遠端服務時傳送到你設定的位址。"
+          }
+        },
+        "zh-Hant-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選取圖片提問時讀取相簿。預設在此裝置上處理，連接遠端服務時傳送到你設定的地址。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "System permission prompt. Preserve on-device recognition and conditional remote processing claims.",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说话输入时用系统语音识别，只在这台设备上转成文字。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses system speech recognition for dictation. Audio is converted to text only on this device."
+          }
+        },
+        "zh-Hant-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音輸入時使用系統語音辨識，只在這部裝置上轉成文字。"
+          }
+        },
+        "zh-Hant-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音輸入時使用系統語音辨識，只在此裝置上轉成文字。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

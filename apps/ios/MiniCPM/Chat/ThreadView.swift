@@ -4,6 +4,7 @@ import UIKit
 
 struct ThreadView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var position = ScrollPosition(edge: .bottom)
     @State private var isNearEnd = true
 
@@ -13,6 +14,7 @@ struct ThreadView: View {
                 ForEach(model.current.items) { item in
                     ThreadItemView(item: item)
                 }
+                if typeSize.isAccessibilitySize { BannerView() }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -161,7 +163,7 @@ private struct AssistantMessageView: View {
                 .frame(width: 44, height: 44)
                 .contentShape(.rect)
             if model.prefs.showTechInfo, let stats = message.stats {
-                Text("\(message.modelName ?? "") · \(Int(stats.tokensPerSecond)) tok/s · \(stats.seconds.formatted(.number.precision(.fractionLength(1)))) s")
+                Text("\(message.modelName ?? "") · \(Int(stats.tokensPerSecond)) tok/s · \(Duration.seconds(stats.seconds).formatted(.units(allowed: [.seconds], width: .abbreviated, fractionalPart: .show(length: 1))))")
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }

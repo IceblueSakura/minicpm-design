@@ -143,7 +143,7 @@ struct TitleSheet: View {
 enum Swap {
     @MainActor
     static func message(_ option: ModelOption, _ model: AppModel) -> String {
-        model.isRemote ? String(localized: "所有对话都会改用 \(option.name)。") : String(localized: "所有对话都会改用 \(option.name)，要等约 \(option.loadSeconds) 秒。")
+        model.isRemote ? String(localized: "所有对话都会改用 \(option.name)。") : String(localized: "所有对话都会改用 \(option.name)，要等约 \(Copy.duration(option.loadSeconds))。", comment: "Model switch confirmation; placeholders are the model name and system-formatted duration.")
     }
 }
 

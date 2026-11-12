@@ -117,7 +117,7 @@ private struct EngineStatusRow: View {
             model.settingsRoute = .models
         } label: {
             VStack(alignment: .leading, spacing: 2) {
-                Text(model.currentOption?.name ?? "还没选模型").font(.subheadline.weight(.medium))
+                Text(model.currentOption?.name ?? String(localized: "还没选模型")).font(.subheadline.weight(.medium))
                 Text(Copy.engineStatus(model)).font(.caption).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -43,7 +43,15 @@
 | `MiniCPM/Shared/Copy.swift` | 把 Core 的类型化状态翻成文案。规则层不写文案 |
 | `MiniCPM/Assets.xcassets/*.colorset` | 由 `node tools/tokens.mjs` 生成，不要手改 |
 
-文案以简体中文为源语言，`Localizable.xcstrings` 由 Xcode 在编译时抽取。
+## 界面语言
+
+支持 English、简体中文、繁體中文（台灣）、繁體中文（香港）。以简体中文为源语言，界面文案在 `MiniCPM/Localizable.xcstrings`，系统权限说明在 `MiniCPM/InfoPlist.xcstrings`，由 Xcode 抽取和编译，不引入第三方本地化框架。
+
+默认跟随系统；“设置 → 通用 → 界面语言”打开系统的 App 设置。语言选择交给 iOS，不在应用里另存偏好或只覆盖 SwiftUI 的 `locale`。回答语言是另一项偏好，不自动翻译模型回答、用户内容或已有文件名。
+
+普通界面文字直接用 SwiftUI 的本地化初始化器；提前生成的文案用 `String(localized:)`。同一中文在不同动作里含义不同时，用带 `defaultValue` 和注释的 `LocalizedStringResource` 区分，例如欢迎页的 Continue 与暂停下载后的 Resume。英文数量的复数变化放在 String Catalog，同一句的两个数量各自使用 substitution；容量和时长用 Foundation 格式化后插入整句。
+
+新增文案后在 Mac 上构建一次，查看 Catalog 的新增、过期和待翻译条目。按 [文案与多语言](../../docs/09-i18n-copy.md) 的术语表翻译，特别检查占位符类型、远程目的地和 iCloud 备份的隐私分支。译文由 `agy --model gemini-3.8-flash-high` 生成，繁体两列仍需母语审校。
 
 ## 接入真实引擎
 
@@ -76,6 +84,8 @@ cd apps/ios
 xcodebuild -scheme MiniCPM -destination 'platform=iOS Simulator,name=iPhone 18 Pro' analyze
 ```
 
+模拟器可用启动参数指定语言和地区，例如 `-AppleLanguages '(zh-Hant-HK)' -AppleLocale zh_HK`。走查欢迎、模型选择、空白对话、标题面板、设置和异常横幅；英文要检查长文案，四语都检查明暗模式和辅助功能字号。香港文案应出现“私隱”“咪高風”，不能误用台湾资源。
+
 通过 SSH 构建真机版本时，登录钥匙串是锁着的，签名会报 `errSecInternalComponent`。在 Mac 本机构建，或者先 `security unlock-keychain`。
 
 ## 模拟器上看过的
@@ -85,7 +95,8 @@ xcodebuild -scheme MiniCPM -destination 'platform=iOS Simulator,name=iPhone 18 P
 - 系统的主按钮文字是白色，深色模式下配浅绿看不清。用 `prominentButton()`、`prominentGlassButton()`，文字走 `OnJade`。
 - 超出 `safeAreaBar` 范围的视图能显示，但点不到。轻提示所以放在 `ChatView` 上，用输入区高度定位。
 - `Section` 上的修饰符会落到每一行。`.sheet`、`.fileImporter` 要放在 `Form` 上。
-- 长标签的 `Picker`、`LabeledContent` 会把值挤到单独一行，用 `ActionRow`。
+- 常规字号下，长标签的 `Picker`、`LabeledContent` 会把值挤到单独一行，用 `ActionRow` 组织说明和操作；辅助功能字号下用 `AnyLayout` 纵向排列。联网搜索的长选项改用原生 `navigationLink` Picker，避免菜单值被截断。
+- 辅助功能字号下，长横幅放进对话的滚动内容，不能固定在底栏里把导航和输入区顶出屏幕。模型行的操作也要纵排，避免 `Download` 被拆成碎词。
 - 手机上 `List` 的选中项一变就推出详情，所以停在列表时选中项是空。
 - `URL.path()` 默认做百分号编码，数据目录 `Application Support` 带空格，文件接口拿到的路径就不存在。读文件用 `path(percentEncoded: false)`。
 - 不透明的视图只遮住画面，被遮住的内容仍在无障碍树里，读屏能读、能点。给 `NavigationSplitView` 外面加 `accessibilityHidden` 也拿不掉它，所以锁定时不构建内容。

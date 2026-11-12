@@ -79,20 +79,24 @@ struct SettingToggle: View {
     }
 }
 
-/// A title, a line of consequence, and a control beside them. A system row drops the control to its own line under a long label.
+/// A title, a line of consequence, and a control. Accessibility sizes put the control below the text.
 struct ActionRow<Control: View>: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let title: LocalizedStringKey
     let detail: LocalizedStringKey
     @ViewBuilder let control: Control
 
     var body: some View {
-        HStack {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout())
+        layout {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 Text(detail).font(.subheadline).foregroundStyle(.secondary)
             }
-            Spacer(minLength: 8)
-            control.fixedSize()
+            if !typeSize.isAccessibilitySize { Spacer(minLength: 8) }
+            control.fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: true)
         }
     }
 }
@@ -167,6 +171,7 @@ private struct ReplySettings: View {
 
 private struct ModelSettings: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var removing: ModelOption?
     @State private var asking: ModelOption?
     @State private var token = ""
@@ -252,7 +257,7 @@ private struct ModelSettings: View {
     }
 
     private func row(_ option: ModelOption) -> some View {
-        HStack {
+        modelRowLayout {
             VStack(alignment: .leading, spacing: 2) {
                 Text(option.name)
                 Text(model.isRemote ? Copy.capabilities(option) : "\(Copy.capabilities(option)) · \(Copy.spec(option)) · \(Copy.size(option.sizeGB))")
@@ -264,9 +269,15 @@ private struct ModelSettings: View {
                     HStack { DownloadActions(state: state) }.buttonStyle(.bordered).font(.caption)
                 }
             }
-            Spacer()
+            if !typeSize.isAccessibilitySize { Spacer() }
             control(option)
         }
+    }
+
+    private var modelRowLayout: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout())
     }
 
     @ViewBuilder
@@ -280,7 +291,7 @@ private struct ModelSettings: View {
         } else if option.id == model.currentOptionID {
             Text(model.loadingOptionID == option.id ? "载入中" : "使用中").font(.caption).foregroundStyle(.secondary)
         } else {
-            HStack {
+            modelRowLayout {
                 Button("换用") {
                     if model.reply != nil {
                         model.setModel(option.id)
@@ -301,6 +312,7 @@ private struct ModelSettings: View {
 private struct PrivacySettings: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var confirmsClear = false
     @State private var camera = AVCaptureDevice.authorizationStatus(for: .video)
     @State private var microphone = AVCaptureDevice.authorizationStatus(for: .audio)
@@ -323,13 +335,12 @@ private struct PrivacySettings: View {
 
             Section("联网") {
                 SettingToggle(title: "离线模式", detail: "关闭所有联网功能，包括更新、联网搜索、远程服务和备份。", isOn: $model.prefs.offlineMode)
-                ActionRow(title: "联网搜索", detail: "需要时让它上网查资料，搜索词会离开这台设备。") {
-                    Picker("联网搜索", selection: $model.prefs.webSearch) {
-                        Text("关闭").tag(WebSearch.off)
-                        Text("每次询问").tag(WebSearch.ask)
-                        Text("自动").tag(WebSearch.auto)
+                if typeSize.isAccessibilitySize {
+                    searchPicker.pickerStyle(.navigationLink)
+                } else {
+                    ActionRow(title: "联网搜索", detail: "需要时让它上网查资料，搜索词会离开这台设备。") {
+                        searchPicker.labelsHidden()
                     }
-                    .labelsHidden()
                 }
                 SettingToggle(title: "自动检查更新", detail: "只发送版本号。", isOn: $model.prefs.updates)
                 SettingToggle(title: "匿名使用统计", detail: "不包含对话和文件。", isOn: $model.prefs.analytics)
@@ -397,6 +408,18 @@ private struct PrivacySettings: View {
         }
         .task {
             notifications = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        }
+    }
+
+    private var searchPicker: some View {
+        @Bindable var model = model
+        return Picker(selection: $model.prefs.webSearch) {
+            Text("关闭").tag(WebSearch.off)
+            Text("每次询问").tag(WebSearch.ask)
+            Text("自动").tag(WebSearch.auto)
+        } label: {
+            Text("联网搜索")
+            Text("需要时让它上网查资料，搜索词会离开这台设备。")
         }
     }
 
@@ -742,11 +765,11 @@ private struct DeveloperView: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Multimedia Adapter", value: "未配置")
-                LabeledContent("Online Service", value: "未配置")
-                LabeledContent("Computer Use", value: "未配置")
-                LabeledContent("Scheduler", value: "未配置")
-                LabeledContent("Gateway", value: "未配置")
+                LabeledContent("Multimedia Adapter", value: String(localized: "未配置"))
+                LabeledContent("Online Service", value: String(localized: "未配置"))
+                LabeledContent("Computer Use", value: String(localized: "未配置"))
+                LabeledContent("Scheduler", value: String(localized: "未配置"))
+                LabeledContent("Gateway", value: String(localized: "未配置"))
             } footer: {
                 Text("Resource 层对接媒体、工具与外部通道。")
             }

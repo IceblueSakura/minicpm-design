@@ -109,12 +109,16 @@ struct ChatView: View {
 struct EmptyConversationView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dictation) private var dictation
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let temporary = model.current.isTemporary
         GeometryReader { proxy in
             ScrollView {
                 VStack(spacing: 12) {
+                    if typeSize.isAccessibilitySize {
+                        BannerView().multilineTextAlignment(.leading)
+                    }
                     // The keyboard plus a banner leaves little room, and the words matter more than the mark.
                     if proxy.size.height > 280 {
                         BrandMark().frame(width: 48, height: 48)

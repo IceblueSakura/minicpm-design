@@ -25,7 +25,8 @@ struct ComposerArea: View {
     var body: some View {
         @Bindable var model = model
         VStack(spacing: 8) {
-            BannerView()
+            // Large banners belong to the scrollable chat, not a bar that can grow over the navigation.
+            if !typeSize.isAccessibilitySize { BannerView() }
             // At accessibility sizes the cards cut their own words and push the banner over the title. They are shortcuts, so they go.
             if model.current.isBlank && !hasContent && !typeSize.isAccessibilitySize {
                 StartersRow(takePhoto: takePhoto, usePrompt: { text in
@@ -88,7 +89,7 @@ struct ComposerArea: View {
         }
         .fullScreenCover(isPresented: $showsCamera) {
             CameraPicker { data in
-                if let attachment = try? Files.store(data: data, name: "照片.jpg", kind: .image) { model.addAttachment(attachment) }
+                if let attachment = try? Files.store(data: data, name: String(localized: "照片.jpg", comment: "Default name for a new camera photo. Keep the .jpg extension."), kind: .image) { model.addAttachment(attachment) }
             }
             .ignoresSafeArea()
         }
@@ -164,7 +165,7 @@ struct ComposerArea: View {
     private func addPhotos(_ items: [PhotosPickerItem]) async {
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            if let attachment = try? Files.store(data: data, name: "图片.jpg", kind: .image) { model.addAttachment(attachment) }
+            if let attachment = try? Files.store(data: data, name: String(localized: "图片.jpg", comment: "Default name for a newly imported photo. Keep the .jpg extension."), kind: .image) { model.addAttachment(attachment) }
         }
         photoItems = []
     }

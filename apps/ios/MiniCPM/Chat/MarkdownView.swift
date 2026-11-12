@@ -150,7 +150,7 @@ private struct TableBlock: View {
             .font(row == 0 ? .subheadline.weight(.semibold) : .subheadline)
             .frame(maxWidth: cellWidth, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
-            .accessibilityLabel(row == 0 || header.isEmpty ? Text(value) : Text(verbatim: "\(header)：\(String(value.characters))"))
+            .accessibilityLabel(row == 0 || header.isEmpty ? Text(value) : Text("\(header)：\(String(value.characters))", comment: "Table cell spoken by VoiceOver; placeholders are the column heading and cell content. Do not translate their values."))
             .accessibilityAddTraits(row == 0 ? .isHeader : [])
     }
 }

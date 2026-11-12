@@ -1,6 +1,8 @@
 # 文案与多语言
 
-第一阶段支持 English、简体中文、繁體中文（台灣）、繁體中文（香港）。现在原型只有简体中文。全球发布不能只有简体中文：iOS 的 String Catalog 和 Web 的界面先补 English，台湾和香港两列仍按下面的术语表做，需要母语审校。政策页每种语言各一份。
+第一阶段支持 English、简体中文、繁體中文（台灣）、繁體中文（香港）。网页原型仍只有简体中文；iOS 客户端使用原生 String Catalog 接入四语，简体中文是源语言。现阶段重点是原型的交互展示和 SwiftUI 原生用法，不扩展真实服务。
+
+全球发布不能只有简体中文：Web 的界面先补 English，台湾和香港两列仍按下面的术语表做，需要母语审校。政策页每种语言各一份。
 
 字符串不必等全部界面定稿才抽。隐私、法律、AI 身份告知和在线备用的说明现在就要进消息表，见 [开发期合规](12-compliance.md)。其余字符串可以等界面稳定后一次补齐。
 
@@ -38,10 +40,10 @@
 |---|---|---|---|---|
 | English | `en` | `en` | `values` | `en` |
 | 简体中文 | `zh-Hans` | `zh-Hans` | `values-b+zh+Hans` | `zh-Hans` |
-| 繁體中文（台灣） | `zh-Hant-TW` | `zh-Hant` 或 `zh-Hant-TW` | `values-b+zh+Hant+TW` | `zh-Hant-TW` |
-| 繁體中文（香港） | `zh-Hant-HK` | `zh-HK` 或 `zh-Hant-HK` | `values-b+zh+Hant+HK` | `zh-Hant-HK` |
+| 繁體中文（台灣） | `zh-Hant-TW` | `zh-Hant-TW` | `values-b+zh+Hant+TW` | `zh-Hant-TW` |
+| 繁體中文（香港） | `zh-Hant-HK` | `zh-Hant-HK` | `values-b+zh+Hant+HK` | `zh-Hant-HK` |
 
-Apple 上 `zh-HK` 缺失时会回落到 `zh-Hant`，所以台湾和香港要分开建。String Catalog 里的准确键名需要实测一次。
+Apple 的台湾和香港资源分开建，不能把香港文案放进通用繁体资源。iOS 的界面语言由系统选择；应用内“界面语言”打开系统的 App 设置，不维护第二套语言偏好，也不在根视图强行覆盖 `locale`。这样 SwiftUI、Foundation 和系统控件使用同一套语言选择。
 
 语言列表用各语言自己的名字显示，不翻译。
 
@@ -163,6 +165,8 @@ Apple 上 `zh-HK` 缺失时会回落到 `zh-Hant`，所以台湾和香港要分�
 
 隐私相关文字不能截断。放不下就换行或换短句。
 
+iOS 使用 Dynamic Type，不为了英文长文案缩小字号。辅助功能字号下，设置项的说明与操作改成纵向排列；对话的长横幅移入可滚动内容，输入区仍固定在底部，避免横幅向上越过导航栏。常规字号保留原来的紧凑布局。
+
 ## 格式
 
 | 项目 | 规则 |
@@ -194,8 +198,8 @@ Apple 上 `zh-HK` 缺失时会回落到 `zh-Hant`，所以台湾和香港要分�
 
 ### iOS 的目录
 
-- `apps/ios/MiniCPM/Localizable.xcstrings` 源语言是 `zh-Hans`，460 条键，没有 English。先加 English。
-- 相机、麦克风、相册、语音识别的用途说明现在写在 `MiniCPM.xcodeproj/project.pbxproj` 的 `INFOPLIST_KEY_*`，只有中文。移到新建的 `InfoPlist.xcstrings`，和界面文案一起翻译。用途说明和应用内的权限说明保持一致。
+- `apps/ios/MiniCPM/Localizable.xcstrings` 源语言是 `zh-Hans`，已接入 English、台湾繁体和香港繁体。新增合规文案时同步补齐四语。
+- 相机、麦克风、相册、语音识别的用途说明已在 `InfoPlist.xcstrings` 接入四语，`MiniCPM.xcodeproj/project.pbxproj` 的 `INFOPLIST_KEY_*` 保留源文案。用途说明和应用内的权限说明保持一致；在 Mac 上构建时检查最终权限提示的语言。
 
 ### Web 的消息表
 
@@ -203,7 +207,7 @@ Apple 上 `zh-HK` 缺失时会回落到 `zh-Hant`，所以台湾和香港要分�
 
 ## 字符串结构
 
-键名按界面位置和含义组织，不用中文当键，也不用序号。
+跨平台的显式键名按界面位置和含义组织，不用序号。
 
 ```text
 live.dock.mute          麦克风
@@ -214,9 +218,19 @@ scene.life.name         生活助手
 privacy.promise.local   只在这台设备上处理，内容不会离开
 ```
 
-每条字符串带给译者的说明：出现位置、长度预算、语气、占位符含义。Apple 的 String Catalog 和 Android 的字符串资源都支持注释。
+iOS 沿用 SwiftUI 的源文字面量和 Xcode 自动抽取，不为了与 Web 同名而额外包一层键名查找。静态界面文字使用 SwiftUI 的本地化初始化器；需要提前生成 `String` 的动态文案使用 `String(localized:)`，不能把未本地化的字符串变量当作已翻译的界面文字。资源在 `apps/ios/MiniCPM/Localizable.xcstrings`，系统权限说明在 `InfoPlist.xcstrings`。两者都由 Xcode 编译，不生成另一份运行时词典。
+
+同一源文在不同交互里含义不同时，使用带语义键、`defaultValue` 和注释的 `LocalizedStringResource`。例如欢迎页的“继续”是 Continue，暂停下载后的“继续”是 Resume，不能共享一条英文译文。
+
+给译者的说明应包含出现位置、长度预算、语气、占位符含义，尤其是隐私分支和系统格式化后的值。Apple 的 String Catalog 和 Android 的字符串资源都支持注释。
 
 一句话不要拆成几段拼接，语序在不同语言里不同。需要变量时用占位符。
+
+英文数量使用 String Catalog 的复数变化；同一句有两个数量时，各自使用 substitution，不只根据第一个数量决定整句。容量、时长先用 Foundation 格式化，再插入完整句子，不在译文后面手动补 `GB` 或“秒”。
+
+用户输入、对话标题、真实文件名、记忆、模型回答和模型提示词不是界面文案，不随界面语言自动翻译。应用新建图片的默认文件名可以本地化；旧附件和用户文件名保持原样。原型的演示引擎仍使用既有触发词和占位回答，不把翻译当成真实模型语言能力。
+
+本轮译文由 `agy` 的 `gemini-3.8-flash-high` 生成，按上述术语表检查；繁体两列仍需母语审校。
 
 ## 字体
 

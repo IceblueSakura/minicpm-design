@@ -145,9 +145,9 @@ enum Copy {
         case .crashedLoading(let option):
             return BannerText(title: String(localized: "上次载入 \(option.name) 时应用退出了"), detail: String(localized: "可能是内存不够，这次没有自动载入。\(kept)"))
         case .preparing(let option):
-            return BannerText(title: String(localized: "正在准备 \(option.name)"), detail: String(localized: "约 \(option.loadSeconds) 秒。可以先写，发送后会自动接上。"), isProblem: false)
+            return BannerText(title: String(localized: "正在准备 \(option.name)"), detail: String(localized: "约 \(duration(option.loadSeconds))。可以先写，发送后会自动接上。", comment: "Model load estimate; placeholder is a system-formatted duration, including its unit."), isProblem: false)
         case .switching(let option):
-            return BannerText(title: String(localized: "正在换到 \(option.name)"), detail: String(localized: "约 \(option.loadSeconds) 秒。可以先写，发送后会自动接上。"), isProblem: false)
+            return BannerText(title: String(localized: "正在换到 \(option.name)"), detail: String(localized: "约 \(duration(option.loadSeconds))。可以先写，发送后会自动接上。", comment: "Model load estimate; placeholder is a system-formatted duration, including its unit."), isProblem: false)
         }
     }
 
@@ -219,7 +219,25 @@ enum Copy {
         }.joined(separator: " · ")
     }
 
-    static func spec(_ option: ModelOption) -> String { "\(option.specLabel) \(option.specTag)" }
-    static func size(_ gb: Double) -> String { String(format: "%.1f GB", gb) }
+    static func spec(_ option: ModelOption) -> String {
+        // Built-in stub labels are known UI copy. Labels from a future model store remain its data.
+        let label: String
+        switch option.specLabel {
+        case "轻量": label = String(localized: "轻量", comment: "Model size label, shown beside Q4. Not the model kind.")
+        case "完整": label = String(localized: "完整", comment: "Model size label, shown beside F16. Not the model kind.")
+        default: label = option.specLabel
+        }
+        return "\(label) \(option.specTag)"
+    }
+
+    /// Model sizes are decimal GB, not GiB.
+    static func size(_ gb: Double) -> String {
+        Int64((gb * 1_000_000_000).rounded()).formatted(.byteCount(style: .file, allowedUnits: .gb, spellsOutZero: false))
+    }
+
+    static func duration(_ seconds: Int) -> String {
+        Duration.seconds(seconds).formatted(.units(allowed: [.seconds], width: .wide))
+    }
+
     static func percent(_ fraction: Double) -> String { fraction.formatted(.percent.precision(.fractionLength(0))) }
 }

@@ -37,7 +37,7 @@ private struct WelcomeView: View {
             .frame(maxWidth: .infinity)
         }
         .safeAreaBar(edge: .bottom) {
-            PrimaryAction("继续") { model.finishWelcome() }
+            PrimaryAction(LocalizedStringResource("onboarding.continue", defaultValue: "继续", comment: "Continue from welcome to model selection. Not resuming a paused download.")) { model.finishWelcome() }
         }
     }
 
@@ -112,8 +112,8 @@ private struct ModelPickView: View {
 
     private var deviceLine: String {
         guard let device = model.device else { return "" }
-        let memory = device.memoryGB.map { String(localized: "内存 \($0.formatted()) GB") }
-        let storage = device.freeStorageGB.map { String(localized: "可用空间 \($0.formatted()) GB") }
+        let memory = device.memoryGB.map { String(localized: "内存 \(Copy.size($0))", comment: "Device memory; placeholder includes the system-formatted size and unit.") }
+        let storage = device.freeStorageGB.map { String(localized: "可用空间 \(Copy.size($0))", comment: "Available storage; placeholder includes the system-formatted size and unit.") }
         return ([String(localized: "这台设备")] + [memory, storage].compactMap(\.self)).joined(separator: " · ")
     }
 }
@@ -153,10 +153,10 @@ private struct DownloadStepView: View {
 }
 
 private struct PrimaryAction: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let action: @MainActor () -> Void
 
-    init(_ title: LocalizedStringKey, action: @escaping @MainActor () -> Void) {
+    init(_ title: LocalizedStringResource, action: @escaping @MainActor () -> Void) {
         self.title = title
         self.action = action
     }
