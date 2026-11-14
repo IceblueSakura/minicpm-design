@@ -1,10 +1,16 @@
 # MiniCPM Design
 
-Design source for the MiniCPM client: a single-file web prototype, design docs in Chinese, and design tokens. The final product is native UI on Android, iOS, macOS and Web. First real clients live in `apps/`.
+Design source for the MiniCPM client: a single-file web prototype, design docs in Chinese, and design tokens. UI/UX scope covers iOS, Android, macOS, Windows, Linux and Web; Windows and Linux currently use Web delivery. Native clients use platform controls. First client skeletons live in `apps/`.
 
-Current stage: draft. Copy is not final, and the web prototype is the main test bed. A client install during development uses free signing on personal devices only. Paid enrollment, TestFlight, and submission wait until the first release. See `docs/12-compliance.md` and `docs/13-release-and-store-policy.md`.
+Project goal: demonstrate and advance OpenBMB's LES-led on-device inference across platforms, embracing useful new technology. Privacy-first scenarios make that capability useful. Evaluate performance, research contribution and maintainability rather than optimizing primarily for the fastest release.
 
-Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` records settled and open decisions; do not reverse a settled one without the user.
+Current stage: UI/UX draft and client skeletons; no real inference backend has been selected or integrated. Work runs on two decoupled tracks (see `docs/14-roadmap.md`):
+- **UI/UX & Client Track (current workspace focus):** refining Web, Desktop and Mobile UI/UX design and client skeletons, with immediate focus on Web, iOS and macOS.
+- **Backend Research & Experiment Track (isolated in `experiments/`):** comparing C++ LES, hybrid Apple acceleration and Core AI via discriminating experiments before any `Engine` integration. Global App Store release (excluding mainland China initially) remains the first release target once both tracks converge.
+
+Copy is not final, and the web prototype is the main UI test bed. A client install during development uses free signing on personal devices only. Paid enrollment, TestFlight, and submission wait until the first release. See `docs/12-compliance.md` and `docs/13-release-and-store-policy.md`.
+
+Read `README.md` first, then `docs/01-philosophy.md`. For planning or backend work, also read `docs/14-roadmap.md`. `docs/10-decisions.md` records settled and open decisions; do not reverse a settled one without the user.
 
 ## Rules
 
@@ -26,7 +32,7 @@ Read `README.md` first, then `docs/01-philosophy.md`. `docs/10-decisions.md` rec
 
 ## Working in the clients
 
-- `apps/web` (Vite, React, TypeScript) and `apps/ios` (SwiftUI, iOS 27) follow `docs/11-client-architecture.md`. The prototype rules against frameworks and build steps do not apply here.
+- `apps/web` (Vite, React, TypeScript), `apps/ios` (SwiftUI, iOS 27) and the planned separate `apps/macos` (SwiftUI, macOS 27, sharing `MiniCPMCore`) follow `docs/11-client-architecture.md`. The prototype rules against frameworks and build steps do not apply here.
 - The prototype stays the spec. Behavior, states and copy come from it and `docs/`; a change of behavior lands in the design first or together.
 - First stage only: vision models and text. Live and omni entries stay hidden by model capability.
 - Rules live in the UI-free layer (`apps/web/src/core`, `MiniCPMCore`) and mirror each other. Change a rule on both sides.

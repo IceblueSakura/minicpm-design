@@ -2,6 +2,8 @@
 
 初版骨架：界面和规则是真的，推理、下载和各项系统服务是空实现。最低 iOS 27，用系统控件和 Liquid Glass。架构和推理接口见 [客户端架构](../../docs/11-client-architecture.md)，控件映射见 [平台落地](../../docs/07-platforms.md)。
 
+当前阶段重点完善 Web、iOS、macOS 的 UI/UX 设计与客户端骨架，全球 App Store（首发暂不含中国大陆）为首个原生发布目标。端侧推理后端选型与实验独立收敛在 [`experiments/`](../../experiments/README.md)，双轨分工见 [项目路线](../../docs/14-roadmap.md)。
+
 ## 在 Mac 上开始
 
 需要 Xcode 27，它要求 macOS Tahoe 26.6 或更新、Apple 芯片。
@@ -54,6 +56,8 @@
 新增文案后在 Mac 上构建一次，查看 Catalog 的新增、过期和待翻译条目。按 [文案与多语言](../../docs/09-i18n-copy.md) 的术语表翻译，特别检查占位符类型、远程目的地和 iCloud 备份的隐私分支。译文由 `agy --model gemini-3.8-flash-high` 生成，繁体两列仍需母语审校。
 
 ## 接入真实引擎
+
+以下是选型后的接线参考，当前不按此直接启动后端实现。
 
 1. 在 `MiniCPMCore` 或单独的包里实现 `Engine` 和 `ModelStore`。官方 `MTMDWrapper` 的对应关系见 [客户端架构](../../docs/11-client-architecture.md#接入真实后端)。
 2. 改 `AppModel.stubbed(arguments:)`，或者在 `MiniCPMApp.swift` 里直接构造 `AppModel`。界面不用改。
@@ -120,4 +124,4 @@ xcodebuild -scheme MiniCPM -destination 'platform=iOS Simulator,name=iPhone 18 P
 - 说话输入、联网搜索、定时通知、备忘录、备份、导出导入、打开时验证和录屏遮盖有接口和规则，真实实现还没有。
 - 锁定时不构建对话内容，挂在对话上的标题面板和对话详情应随之关闭，还没在模拟器上走查。设置在锁定前关闭；导出后的分享面板挂在根视图上，锁定时还在。
 - 下阶段的实时、语音回复和全能模型没有实现。`Conversation` 读到不认识的条目会跳过。
-- 没有 macOS 目标。`MiniCPMCore` 已声明 macOS 27，加目标时能直接用。
+- macOS 客户端将在 `apps/macos/` 下拆分为独立工程，直接共用 `MiniCPMCore`（已声明 macOS 27）。

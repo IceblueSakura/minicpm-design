@@ -1,6 +1,6 @@
 # 平台落地
 
-目标平台：iOS / iPadOS、Android、macOS、Web，Windows 和 Linux 目前主要由 Web 交付。本文说明同一份设计在各端怎么落地。平台事实核对于 2026-11-05，当时最新是 iOS / macOS 27.2、Android 17（API 37）。开发开始时再核对一次。
+设计范围：iOS / iPadOS、Android、macOS、Windows、Linux 和 Web；Windows 和 Linux 目前主要由 Web 交付。当前阶段重点推进 Web、iOS、macOS 的 UI/UX 设计与客户端骨架，双轨分工与后端实验边界见 [项目路线](14-roadmap.md)。本文说明同一份设计在各端怎么落地。平台事实核对于 2026-11-05，当时最新是 iOS / macOS 27.2、Android 17（API 37）。开发开始时再核对一次。
 
 事实的把握度这样标：无标记为已读官方文档；**[推断]** 是从文档推出的结论；**[待实测]** 必须在真机上确认，现阶段不做，进入开发前处理。
 
@@ -197,7 +197,7 @@ iOS 的关键矛盾：共享其他应用的屏幕时 MiniCPM 在后台，后台�
 
 换模型时要先释放旧模型再载入新模型，等待时间因设备差别很大。原型里的秒数是占位，要用实测数据换掉 **[待实测]**。
 
-内存：iOS 有 `increased-memory-limit` 权限（部分机型），用 `os_proc_available_memory` 判断余量，不要缓存这个值。这个权限不在免费个人团队的能力表里，免费签名下能否生效 **[待实测]**。开发期先用轻量看图模型。Android 17 按设备内存设上限，超限退出原因含 `MemoryLimiter:AnonSwap`。
+内存：iOS 有 `increased-memory-limit` 权限（部分机型），用 `os_proc_available_memory` 判断余量，不要缓存这个值。这个权限不在免费个人团队的能力表里，免费签名下能否生效 **[待实测]**。后端选型需记录实际设备与签名限制；轻量看图模型可用于接口验证，LES 大规格 MoE 的评估另行记录，不能用小模型结果替代。Android 17 按设备内存设上限，超限退出原因含 `MemoryLimiter:AnonSwap`。
 
 开发期若把 iOS 客户端装到真机，只用免费个人团队、只装在自己的设备上。描述文件 7 天过期，不能用 TestFlight，iCloud 和 Apple 托管的模型包都测不了。限制和替代做法见 [开发期合规](12-compliance.md#个人设备测试)。付费账号、正式 Bundle ID 和提审见 [首次发布与商店政策](13-release-and-store-policy.md)。
 

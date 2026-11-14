@@ -1,0 +1,5 @@
+/coreai-models/
+/views/
+/runs/
+__pycache__/
+*.pyc

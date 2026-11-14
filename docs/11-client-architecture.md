@@ -2,7 +2,13 @@
 
 本文说明真实客户端（`apps/`）怎么组织，以及 Web 和 iOS 共用的推理接口。产品规则仍以 [信息架构](03-structure.md)、[状态矩阵](05-states.md) 和 [隐私设计](08-privacy.md) 为准，这里只写落地方式。
 
-现阶段是初版骨架：界面和状态是真的，推理、下载、备份都是空实现。
+现阶段是初版骨架：界面和状态是真的，推理、下载、备份都是空实现。当前主工作区继续完善 Web、iOS、macOS 的 UI/UX 与客户端骨架；独立 Backend 选型与判别实验在 [`experiments/`](../experiments/README.md) 并行推进，双轨边界见 [项目路线与双轨分工](14-roadmap.md)。
+
+## 当前架构与后端选型的边界
+
+已确定的是 UI 与规则分层、通过 `Engine` / `ModelStore` 接入推理与模型资产，以及由用户决定运行位置。计算后端尚未确定：社区 C++ LES 的演进、Apple 平台混合实现、Core AI 中心实现都是候选。
+
+现有协议是 UI/UX 骨架的接入边界，尚未覆盖 LES 的全部调度与测量需求。选型时先标出生命周期、模型资产和诊断方面的缺口，后续按实证需求修改；现在不预建通用后端框架。`probe()` 当前只返回设备能力，不能直接承担逐 token 的性能跟踪。Foundation Models 会话适配与计算后端分开评估，不预先要求引入 `LanguageModelExecutor`。
 
 ## 仓库结构
 
@@ -11,9 +17,10 @@
 | `index.html`、`docs/`、`tokens/` | 设计来源，继续作为规格 |
 | `apps/web/` | 真实 Web 客户端：Vite、React、TypeScript |
 | `apps/ios/` | 真实 iOS 客户端：SwiftUI，最低 iOS 27 |
-| `tools/tokens.mjs` | 把 `tokens/` 同步到原型、`apps/web` 和 `apps/ios` |
+| `apps/macos/` | 规划中的独立 macOS 客户端：SwiftUI，最低 macOS 27，与 `apps/ios/` 共用 `MiniCPMCore` |
+| `tools/tokens.mjs` | 把 `tokens/` 同步到原型和 `apps/` |
 
-两端都是三层，名字尽量相同，这样同一条规则能对着看：
+各端都是三层，名字尽量相同，这样同一条规则能对着看：
 
 ```mermaid
 flowchart TD
@@ -25,7 +32,7 @@ flowchart TD
   Models -.空实现.-> Stub2[StubModelStore]
 ```
 
-规则层不依赖界面框架。Web 是 `apps/web/src/core`，iOS 是 `apps/ios/Packages/MiniCPMCore`，后者不引用 SwiftUI，规则用 `swift test` 单独测试。iOS 工程只在 macOS 上构建。
+规则层不依赖界面框架。Web 是 `apps/web/src/core`，Apple 平台是 `apps/ios/Packages/MiniCPMCore`（已支持 iOS 27 与 macOS 27，供 `apps/ios/` 和独立工程 `apps/macos/` 共用），后者不引用 SwiftUI，规则用 `swift test` 单独测试。iOS 与 macOS 工程只在 macOS 上构建。
 
 ## 第一阶段的范围
 
@@ -84,6 +91,8 @@ iOS 的 `probe()` 还多返回 `isResponding`，`ModelStore.download` 多一个 
 `EngineError` 只有这几种：`unavailable`（跑不了或连不上）、`outOfMemory`、`network`、`notInstalled`。界面文案由规则层按错误选，引擎不写用户文案。
 
 ### 接入真实后端
+
+以下是现有接口的接线参考。真实后端选定后再落实；官方桥的对应关系用于理解社区实现，不锁定 iOS 的最终技术路线。
 
 - **Web**：实现 `Engine` 和 `ModelStore`，改 `apps/web/src/engine/index.ts` 里的一行。接口只传可序列化的数据和 `AbortSignal`，方便放进 Worker。模型文件放 OPFS，开始下载前调用 `navigator.storage.persist()`。开发服务器已带跨源隔离响应头（COOP、COEP），多线程 WebAssembly 要用。GitHub Pages 不能设响应头，部署时要换托管方式或用 Service Worker 补 **[待实测]**。
 - **iOS**：实现同名协议，改 `AppModel` 的构造参数。官方的 `MTMDWrapper` 对应关系：`initialize` 对 `load`，`addImageInBackground` 对 `prepareImage`，`addTextInBackground` 加 `startGeneration` 对 `generate`，`stopGeneration` 对取消，`cleanup` 对 `unload`（`refs/minicpm-v-apps/MiniCPM-V-demo/MTMDWrapper/MTMDWrapper.swift@d0dd7a6`）。
