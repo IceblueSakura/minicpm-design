@@ -1,8 +1,8 @@
 # refs — 外部参考仓库
 
-这里用 git submodule 引入三个上游仓库，**只用来读现有版本的界面实现**，不是本项目代码，不参与原型构建，也不改动其中任何文件。
+这里用 git submodule 引入八个上游只读仓库，用来对照**现有客户端界面实现**、**端侧推理引擎与桌面交互**以及**模型能力/部署契约**，不是本项目代码，不参与原型构建，也不改动其中任何文件。
 
-原型仍然是 [`../index.html`](../index.html) 一份。这里的代码回答"结构、状态和文案在真实客户端里长什么样"，不决定本项目的样式（样式只对 Web 定稿，见 [设计语言](../docs/02-design-language.md)）。
+原型仍然是 [`../index.html`](../index.html) 一份。客户端部分回答"结构、状态和文案在真实客户端里长什么样"，不决定本项目的样式（样式只对 Web 定稿，见 [设计语言](../docs/02-design-language.md)）；引擎与模型仓库只作只读对照基线，不直接锁定本项目的后端路线。
 
 ## 拉取
 
@@ -24,13 +24,18 @@ git submodule update --init
 git -C refs/minicpm-v-apps fetch --unshallow
 ```
 
-## 三个仓库
+## 八个仓库
 
 | 本地路径 | 上游 | 固定提交 | 上游最近改动 | 工作区体积 |
 |---|---|---|---|---|
 | `refs/minicpm-v-apps` | [OpenBMB/MiniCPM-V-Apps](https://github.com/OpenBMB/MiniCPM-V-Apps) | `d0dd7a6` | 2026-10-29 | 7.5 MB |
 | `refs/minicpm-o-demo` | [OpenBMB/MiniCPM-o-Demo](https://github.com/OpenBMB/MiniCPM-o-Demo) | `47709a9` | 2026-09-15 | 31 MB |
 | `refs/mobilecpm` | [OpenBMB/MobileCPM](https://github.com/OpenBMB/MobileCPM) | `3943591` | 2024-07-04 | 27 MB |
+| `refs/llama.cpp-omni` | [OpenBMB/llama.cpp-omni](https://github.com/OpenBMB/llama.cpp-omni) | `a64932e` | 2026-10-19 | 165 MB |
+| `refs/minicpm-desk-pet` | [OpenBMB/MiniCPM-Desk-Pet](https://github.com/OpenBMB/MiniCPM-Desk-Pet) | `87dc4d7` | 2026-08-18 | 59 MB |
+| `refs/minicpm-v` | [OpenBMB/MiniCPM-V](https://github.com/OpenBMB/MiniCPM-V) | `4dbbb6c` | 2026-11-09 | 564 MB |
+| `refs/minicpm` | [OpenBMB/MiniCPM](https://github.com/OpenBMB/MiniCPM) | `f4293a1` | 2026-11-09 | 142 MB |
+| `refs/cpm.cu` | [OpenBMB/CPM.cu](https://github.com/OpenBMB/CPM.cu) | `23aa7b7` | 2026-01-14 | 1.7 MB |
 
 提交号固定在这里，是为了我们讨论时看的是同一份界面。升级时在对应目录检出新的上游版本，再提交新的 pin。
 
@@ -97,6 +102,38 @@ React 版（`frontend/mobile/`，React 19 + TypeScript + Vite）：
 | `mobileCPM/mobileCPM/Sources/Base` | 网络、DB、缓存、图片、颜色等基础设施 |
 
 Android 侧只有 `llama.cpp` 的示例，不是产品界面。
+
+## refs/llama.cpp-omni —— 全模态 C++ 推理引擎基线
+
+OpenBMB 主线全模态 C++ 引擎（注意：`refs/minicpm-v-apps` 内的嵌套子模块指向的是 `tc-mb/llama.cpp-omni` 的 `ios-omni` 分支，两者并列对照）。
+
+- `app/`、`common/`、`examples/`：端侧应用与全双工多模态调用流程参考
+- `ggml/`、`conversion/`、`convert_hf_to_gguf.py`：量化内核、模型转换与 GGUF 资产结构
+
+## refs/minicpm-desk-pet —— macOS / 桌面本地伴侣应用
+
+本地优先桌面伴侣应用，覆盖 Apple Silicon macOS 等桌面形态（Electron 壳 + `llama.cpp` sidecar）：
+
+- `clawd-on-desk/`、`adapters/`：桌面常驻悬浮交互、状态机与本地开发工具联动
+- `minicpm-sidecar/`、`llama.cpp/`、`skills/`：本地 sidecar 网关（`gateway/`）、进程生命周期管理与技能配置
+
+## refs/minicpm-v —— 多模态模型与契约对照
+
+MiniCPM-V / MiniCPM-o 系列多模态官方主仓库：
+
+- `chat.py`、`omnilmm/`、`web_demos/`：官方推理入口、图像切片/预处理与聊天格式契约
+- `docs/`：各版本多模态与全双工文档（含 `minicpm_o4dot5_*.md`、`minicpm_v4dot6_en.md`、`best_practice_summary_zh.md`）
+
+## refs/minicpm —— 纯文本端侧模型与部署技能
+
+MiniCPM5 与纯文本端侧基座主仓库：
+
+- `skills/`：覆盖 `minicpm5-deploy-llama-cpp`、`minicpm5-deploy-mlx`、`minicpm5-deploy-litert` 等部署与微调技能模板
+- `quantize/`、`tool_parsers/`、`minicpm_sala/`、`demo/`：量化脚本、工具解析器与长上下文实现
+
+## refs/cpm.cu —— 轻量端侧 CUDA 推理与算子优化
+
+- `cpmcu/`、`src/`、`examples/`、`scripts/`：端侧推理算子融合、量化与投机采样等底层性能优化实现参考
 
 ## 在 refs 里工作的约定
 

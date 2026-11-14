@@ -10,3 +10,23 @@
 	path = refs/mobilecpm
 	url = https://github.com/OpenBMB/MobileCPM.git
 	shallow = true
+[submodule "refs/llama.cpp-omni"]
+	path = refs/llama.cpp-omni
+	url = https://github.com/OpenBMB/llama.cpp-omni.git
+	shallow = true
+[submodule "refs/minicpm-desk-pet"]
+	path = refs/minicpm-desk-pet
+	url = https://github.com/OpenBMB/MiniCPM-Desk-Pet.git
+	shallow = true
+[submodule "refs/cpm.cu"]
+	path = refs/cpm.cu
+	url = https://github.com/OpenBMB/CPM.cu.git
+	shallow = true
+[submodule "refs/minicpm-v"]
+	path = refs/minicpm-v
+	url = https://github.com/OpenBMB/MiniCPM-V.git
+	shallow = true
+[submodule "refs/minicpm"]
+	path = refs/minicpm
+	url = https://github.com/OpenBMB/MiniCPM.git
+	shallow = true
