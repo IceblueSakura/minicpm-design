@@ -1,4 +1,5 @@
 import AVFoundation
+import Foundation
 import MiniCPMCore
 import PhotosUI
 import SwiftUI
@@ -16,6 +17,7 @@ struct ComposerArea: View {
     @State private var showsFiles = false
     @State private var showsCamera = false
     @State private var photoItems: [PhotosPickerItem] = []
+    @State private var attachmentConversationID: UUID?
     @State private var listening: Task<Void, Never>?
 
     private var hasContent: Bool { model.draft.hasContent }
@@ -80,26 +82,46 @@ struct ComposerArea: View {
         .frame(maxWidth: 760)
         .photosPicker(isPresented: $showsPhotos, selection: $photoItems, maxSelectionCount: 5, matching: .images)
         .onChange(of: photoItems) { _, items in
-            Task { await addPhotos(items) }
+            let conversationID = attachmentConversationID ?? model.currentID
+            Task { await addPhotos(items, to: conversationID) }
         }
         .fileImporter(isPresented: $showsFiles, allowedContentTypes: [.image, .movie, .pdf, .plainText, .item], allowsMultipleSelection: true) { result in
-            for url in (try? result.get()) ?? [] {
-                if let attachment = try? Files.store(pickedFile: url) { model.addAttachment(attachment) }
+            let conversationID = attachmentConversationID ?? model.currentID
+            do {
+                for url in try result.get() {
+                    do { model.addAttachment(try Files.store(pickedFile: url), to: conversationID) }
+                    catch { model.show(.actionFailed) }
+                }
+            } catch {
+                if (error as NSError).code != NSUserCancelledError { model.show(.actionFailed) }
             }
         }
         .fullScreenCover(isPresented: $showsCamera) {
             CameraPicker { data in
-                if let attachment = try? Files.store(data: data, name: String(localized: "照片.jpg", comment: "Default name for a new camera photo. Keep the .jpg extension."), kind: .image) { model.addAttachment(attachment) }
+                do {
+                    let attachment = try Files.store(data: data, name: String(localized: "照片.jpg", comment: "Default name for a new camera photo. Keep the .jpg extension."), kind: .image)
+                    model.addAttachment(attachment, to: attachmentConversationID ?? model.currentID)
+                } catch { model.show(.actionFailed) }
             }
             .ignoresSafeArea()
+        }
+        .onDisappear {
+            listening?.cancel()
+            listening = nil
         }
     }
 
     private var addMenu: some View {
         Menu {
             Button("相机", systemImage: "camera", action: takePhoto)
-            Button("相册", systemImage: "photo") { showsPhotos = true }
-            Button("文件", systemImage: "doc") { showsFiles = true }
+            Button("相册", systemImage: "photo") {
+                attachmentConversationID = model.currentID
+                showsPhotos = true
+            }
+            Button("文件", systemImage: "doc") {
+                attachmentConversationID = model.currentID
+                showsFiles = true
+            }
             Divider()
             Toggle(isOn: Bindable(model).thinking) {
                 Label("深度思考", systemImage: "lightbulb")
@@ -139,17 +161,26 @@ struct ComposerArea: View {
             return
         }
         let start = model.draftText
+        let conversationID = model.currentID
         listening = Task {
             do {
-                for try await text in dictation.transcribe() { model.draftText = start + text }
+                for try await text in dictation.transcribe() {
+                    try Task.checkCancellation()
+                    model.setDraftText(start + text, in: conversationID)
+                }
+            } catch is CancellationError {
+                // Leaving this conversation must not write recognition into the next one.
+                return
             } catch {
+                guard !Task.isCancelled else { return }
                 model.permissionDenied = .microphone
             }
-            listening = nil
+            if !Task.isCancelled { listening = nil }
         }
     }
 
     private func takePhoto() {
+        attachmentConversationID = model.currentID
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .denied, .restricted:
             model.permissionDenied = .camera
@@ -162,10 +193,13 @@ struct ComposerArea: View {
         }
     }
 
-    private func addPhotos(_ items: [PhotosPickerItem]) async {
+    private func addPhotos(_ items: [PhotosPickerItem], to conversationID: UUID) async {
         for item in items {
-            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            if let attachment = try? Files.store(data: data, name: String(localized: "图片.jpg", comment: "Default name for a newly imported photo. Keep the .jpg extension."), kind: .image) { model.addAttachment(attachment) }
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else { throw ServiceError.unreadableFile }
+                let attachment = try Files.store(data: data, name: String(localized: "图片.jpg", comment: "Default name for a newly imported photo. Keep the .jpg extension."), kind: .image)
+                model.addAttachment(attachment, to: conversationID)
+            } catch { model.show(.actionFailed) }
         }
         photoItems = []
     }

@@ -6,11 +6,12 @@ private let v46 = "minicpm-v-4.6:q4"
 private let v45 = "minicpm-v-4.5:q4"
 
 @MainActor
-private func makeApp(
+func makeApp(
     installed: [String] = [v46, v45],
     onboarded: Bool = true,
     loadMarker: String? = nil,
     services: AppServices = .unconnected,
+    attachmentsDirectory: URL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
     configure: (inout Snapshot) -> Void = { _ in }
 ) async -> (app: AppModel, engine: StubEngine, persistence: InMemoryPersistence) {
     var snapshot = Snapshot()
@@ -24,7 +25,8 @@ private func makeApp(
         remoteEngine: StubEngine(options: .instant),
         modelStore: StubModelStore(installed: installed, tick: .zero),
         persistence: persistence,
-        services: services
+        services: services,
+        attachmentsDirectory: attachmentsDirectory
     )
     await app.start()
     await settled { app.loadingOptionID == nil }
@@ -32,9 +34,13 @@ private func makeApp(
 }
 
 @MainActor
-private func settled(_ condition: () -> Bool) async {
-    for _ in 0..<2000 where !condition() { await Task.yield() ; try? await Task.sleep(for: .milliseconds(1)) }
-    #expect(condition())
+func settled(_ condition: () async -> Bool) async {
+    for _ in 0..<2000 {
+        if await condition() { return }
+        await Task.yield()
+        try? await Task.sleep(for: .milliseconds(1))
+    }
+    #expect(await condition())
 }
 
 @MainActor

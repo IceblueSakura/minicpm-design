@@ -1350,12 +1350,14 @@ const state = {
   sceneOff: new Set(),
   memories: ['你习惯用公制单位', '你对青霉素过敏', '回答尽量简短'],
   timers: [{ id: 'tm1', when: '工作日 18:00', text: '把今天的发票拍下来', taskId: 'invoice' }],   // system notifications; the model does not run for them
-  backup: { on: false, status: 'idle', pct: 0, last: '今天 03:12', size: '98 MB', hasCloud: false, ask: null },   // status: idle | running | full | signedout
+  backup: { on: false, status: 'idle', pct: 0, pending: false, last: '今天 03:12', size: '98 MB', hasCloud: false, ask: null },   // status: idle | running | full | signedout
   importFail: false,
   preset: 'balanced',            // saver | balanced | detail | custom
   params: { ...PRESETS.balanced.params },
   placeOpen: false,
   lastRequest: null,             // last turn_based payload, see buildFollowUp()
+  drafts: {},                   // session-only drafts, owned by conversation
+  queued: null,                 // the one message waiting for the model
   atts: [],
   voiceReply: false,
   thinking: false,
@@ -1860,7 +1862,7 @@ function syncComposer() {
   const shot = !canLive() && isCompact() && !has && !busy && !state.recording;
   $('#shotBtn').hidden = !shot;
   send.hidden = !(has || busy || (!canLive() && !shot)) || !!state.recording;
-  send.disabled = !busy && (engineTaken || !has || unreadable || cannotSend());
+  send.disabled = !busy && (engineTaken || !!state.reply || !!state.queued || !has || unreadable || cannotSend());
   send.innerHTML = icon(busy ? 'stop' : 'up');
   send.setAttribute('aria-label', busy ? '停止生成' : '发送');
   send.title = busy ? '停止生成 (Esc)' : state.sendKey === 'enter' ? '发送 (Enter)' : `发送 (${MOD}Enter)`;
@@ -1908,14 +1910,17 @@ function addFiles(files) {
   syncComposer();
 }
 // Marks the first message or live session after the place changed, so a mixed conversation stays honest.
-function markPlace(t) {
+function markPlace(t, before) {
   const place = isRemote() ? remoteHost() : 'local';
-  if (t.items.length && (t.place ?? 'local') !== place) t.items.push({ type: 'place', text: isRemote() ? `从这里开始发送到 ${place} 处理，上文也包括在内` : '从这里开始只在这台设备上处理' });
+  if (t.items.length && (t.place ?? 'local') !== place) {
+    const index = before ? t.items.indexOf(before) : t.items.length;
+    t.items.splice(index, 0, { type: 'place', text: isRemote() ? `从这里开始发送到 ${place} 处理，上文也包括在内` : '从这里开始只在这台设备上处理' });
+  }
   t.place = place;
 }
 function send() {
   if (state.reply?.taskId === state.current) return stopReply();
-  if ((state.live && !liveHere()) || cannotSend()) return;
+  if (state.reply || state.queued || (state.live && !liveHere()) || cannotSend()) return;
   const text = $('#prompt').value.trim();
   if (!text && !state.atts.length) return;
   const t = cur();
@@ -1927,7 +1932,24 @@ function send() {
   t.meta = '刚刚';
   $('#prompt').value = ''; state.atts = [];
   renderAll({ stick: true });
-  if (!it.failed) loadModel(() => startReply(t));
+  if (!it.failed) queueReply(t, it);
+}
+function queueReply(t, it, replacing) {
+  const queued = state.queued = { taskId: t.id, item: it };
+  syncComposer();
+  loadModel(() => {
+    if (state.queued !== queued) return;
+    state.queued = null;
+    if (!tasks.includes(t) || !t.items.includes(it)) return syncComposer();
+    if (!backendReady()) { it.failed = true; return renderAll(); }
+    it.failed = false;
+    startReply(t, it, replacing);
+  });
+}
+function cancelQueuedReply(id) {
+  if (state.queued?.taskId !== id) return;
+  state.queued.item.failed = true;
+  state.queued = null;
 }
 /* Text after a live session. Duplex and turn_based are separate engine sessions
  * and the KV cache does not survive the switch, so the client rebuilds context
@@ -1936,8 +1958,9 @@ function send() {
  * only one image from the last user message is used. The system message has no
  * such cut, so the transcript goes there, newest turns first to survive the cap. */
 const CARRY_CHARS = 3000;
-function buildFollowUp(t) {
-  const spoken = t.items.filter(i => i.type === 'live').flatMap(i => i.turns).filter(x => !x.gap);
+function buildFollowUp(t, through = t.items.length) {
+  const items = t.items.slice(0, through);
+  const spoken = items.filter(i => i.type === 'live').flatMap(i => i.turns).filter(x => !x.gap);
   const lines = [];
   let used = 0;
   for (const turn of spoken.toReversed()) {
@@ -1946,7 +1969,7 @@ function buildFollowUp(t) {
     used += line.length; lines.unshift(line);
   }
   const system = state.persona + (lines.length ? `\n\n以下是本对话里实时会话的记录，回答时可以引用：\n${lines.join('\n')}` : '');
-  const chat = t.items.filter(i => (i.type === 'user' || i.type === 'ai') && (i.text || i.html));
+  const chat = items.filter(i => !i.failed && (i.type === 'user' || i.type === 'ai') && (i.text || i.html));
   const last = chat.at(-1);
   const history = chat.slice(-8, -1).map(i => ({ role: i.type === 'user' ? 'user' : 'assistant', text: i.text ?? '' }));
   const image = last?.atts?.findLast(a => a.kind === 'frame' || a.kind === 'image');
@@ -1957,19 +1980,22 @@ function buildFollowUp(t) {
 }
 // The prototype saves what you ask it to. A real model picks for itself; the line works the same.
 const memoryFrom = text => text?.match(/^(?:请|帮我)?记住[：:，,\s]*(.+?)[。.！!]?$/)?.[1].replace(/^我/, '你');
-function startReply(t) {
-  const asked = memoryFrom(t.items.at(-1).text), keep = !!asked && canRemember(t);
-  const req = state.lastRequest = buildFollowUp(t);
-  const prev = t.items.at(-2);                       // item before the user's message
+function startReply(t, user, replacing) {
+  const index = t.items.indexOf(user);
+  if (state.reply || index < 0 || !tasks.includes(t)) return;
+  const asked = memoryFrom(user.text), keep = !!asked && canRemember(t);
+  const req = state.lastRequest = buildFollowUp(t, index + 1);
+  const prev = t.items[index - 1];                   // item before this user's message
   const liveBefore = prev?.type === 'live' ? prev : null;
   const full = asked ? (keep ? '好，记下了。' : t.temp ? '这是临时对话，我不会记下来。' : '记忆关着，我不会记下来。可以在“隐私与数据”里打开。')
     : liveBefore ? LIVE_FOLLOW_UP[liveBefore.source] : REPLIES[t.items.length % REPLIES.length];
-  const it = { type: 'ai', text: '', voice: state.voiceReply && curModel().caps.includes('speech') ? 9 : 0, thought: state.thinking ? 3 : 0 };
+  const it = { type: 'ai', id: replacing?.id, text: '', voice: state.voiceReply && curModel().caps.includes('speech') ? 9 : 0, thought: state.thinking ? 3 : 0 };
   if (liveBefore) {
     const frame = req.messages.at(-1).images.length > 0;
     it.steps = [['Core Agent', `带上实时记录 ${req.carried} 段${frame ? '和 1 帧画面' : ''}`]];
   }
-  t.items.push(it);
+  if (replacing) t.items[t.items.indexOf(replacing)] = it;
+  else t.items.splice(index + 1, 0, it);
   const r = state.reply = { taskId: t.id, item: it, timer: 0, t0: performance.now(), remember: keep ? asked : null };
   renderAll({ stick: true });
   let i = 0;
@@ -2949,7 +2975,7 @@ function runDownload() {
     if (d.pct < 100) return;
     d.status = 'verifying'; paintGates();
     clearInterval(dlTimer);
-    setTimeout(finishDownload, 900);
+    setTimeout(() => { if (state.dl === d) finishDownload(); }, 900);
   }, 120);
 }
 function finishDownload() {
@@ -3006,23 +3032,29 @@ function renderGate() {
 // Temporary conversations leave nothing behind, so there is no undo here.
 function leaveTemp(next) {
   const t = cur();
-  if (!t?.temp || t.id === next || isBlank(t) || state.live?.taskId === t.id) return;
+  if (!t?.temp || t.id === next || state.live?.taskId === t.id) return;
+  if (state.reply?.taskId === t.id) stopReply();
+  cancelQueuedReply(t.id);
+  delete state.drafts[t.id];
   tasks.splice(tasks.indexOf(t), 1);
   showToast('临时对话已清除');
 }
 function selectTask(id) {
+  if (!task(id)) return;
+  if (cur()) state.drafts[state.current] = { text: $('#prompt').value, atts: state.atts };
   leaveTemp(id);
   state.current = id; state.permError = null; state.settingsTab = null;
   const t = cur(); t.unread = false;
   $('#app').classList.remove('nav-open');
   if (innerWidth <= 1180) state.inspector = false;
-  state.atts = []; $('#prompt').value = '';
+  const draft = state.drafts[id];
+  state.atts = draft?.atts ?? []; $('#prompt').value = draft?.text ?? '';
   stopRecord(false);
   renderAll({ stick: true });
 }
 const blankTask = () => ({ id: uid('task'), title: '新对话', autoTitle: true, temp: state.prefs.tempDefault, scene: state.prefs.defaultScene, group: '今天', meta: '刚刚', items: [], ctx: { agents: [['Core Agent', '主会话']], skills: [], sources: [], outputs: [] } });
 function newTask() {
-  let t = tasks.find(x => isBlank(x) && x.autoTitle);
+  let t = tasks.find(x => isBlank(x) && x.autoTitle && !state.drafts[x.id]?.text && !state.drafts[x.id]?.atts.length && (x.id !== state.current || (!$('#prompt').value && !state.atts.length)));
   if (!t) {
     t = blankTask();
     tasks.unshift(t);
@@ -3034,10 +3066,12 @@ function newTask() {
 }
 function deleteTask(id) {
   if (state.live?.taskId === id) endLive({ toast: false });
+  if (state.reply?.taskId === id) stopReply();
+  cancelQueuedReply(id);
   const i = tasks.findIndex(t => t.id === id), [t] = tasks.splice(i, 1);
   if (!tasks.length) { state.current = null; newTask(); }
   else if (state.current === id) selectTask(tasks[Math.min(i, tasks.length - 1)].id);
-  else renderNav();
+  else renderAll();
   showToast(`已删除“${t.title}”`, '撤销', () => { tasks.splice(i, 0, t); renderNav(); });
 }
 
@@ -3049,13 +3083,26 @@ let backupTimer = 0;
 function runBackup() {
   const b = state.backup;
   if (state.prefs.offlineMode) return showToast('离线模式开着，备份已暂停');
-  b.status = 'running'; b.pct = 0; renderSettings();
+  b.status = 'running';
+  if (!b.pending) b.pct = 0;
+  b.pending = false;
+  renderSettings();
   clearInterval(backupTimer);
   backupTimer = setInterval(() => {
+    if (!b.on || state.prefs.offlineMode) {
+      clearInterval(backupTimer);
+      b.pending = true;
+      b.status = 'idle';
+      renderSettings();
+      return;
+    }
     b.pct = Math.min(100, b.pct + 6);
-    if (b.pct >= 100) { clearInterval(backupTimer); b.status = 'idle'; b.last = '刚刚'; renderAll(); return showToast('已备份到 iCloud'); }
+    if (b.pct >= 100) { clearInterval(backupTimer); b.hasCloud = true; b.status = 'idle'; b.last = '刚刚'; renderAll(); return showToast('已备份到 iCloud'); }
     if (state.settingsTab === 'privacy') renderSettings();
   }, 120);
+}
+function resumeBackup() {
+  if (state.backup.on && state.backup.pending && !state.prefs.offlineMode) runBackup();
 }
 function addImported(text) {
   const t = { id: uid('task'), title: '比较两份装修报价', scene: 'life', group: '今天', meta: '导入',
@@ -3077,7 +3124,10 @@ function setBackend(id) {
   if (state.backend === id) return;
   if (state.live) return showToast('实时会话进行中，结束后才能切换');
   const before = state.backend;
-  const apply = to => { state.backend = to; store.set('backend', to); usage.ready = false; renderAll(); };
+  const apply = to => {
+    if (state.queued) cancelQueuedReply(state.queued.taskId);
+    state.backend = to; store.set('backend', to); usage.ready = false; renderAll();
+  };
   apply(id);
   if (!backendReady()) return;
   const undo = () => apply(before);
@@ -3179,10 +3229,11 @@ const actions = {
   pref: el => {
     const k = el.dataset.key;
     state.prefs[k] = !state.prefs[k]; el.setAttribute('aria-checked', state.prefs[k]);
+    if (k === 'offlineMode') resumeBackup();
     if (k === 'tech' || k === 'offlineMode') { renderAll(); $(`[data-action=pref][data-key=${k}]`)?.focus(); }
     if (k === 'lowPower' && state.live) { renderStage(); renderDock(); syncPresence(); }
   },
-  'offline-off': () => { state.prefs.offlineMode = false; usage.ready = false; renderAll(); },
+  'offline-off': () => { state.prefs.offlineMode = false; resumeBackup(); usage.ready = false; renderAll(); },
   'show-source': el => showSource(el),
   'source-full': () => showToast('原型中不打开原图'),
   'source-fix': el => { const r = SOURCE_REFS[el.dataset.ref]; $('#prompt').value = `${r.item}读错了，原图上是 `; syncComposer(); $('#prompt').focus(); },
@@ -3204,14 +3255,24 @@ const actions = {
     const b = state.backup;
     if (!b.on) { b.ask = 'on'; return renderSettings(); }
     b.on = false; b.ask = null; renderAll();
-    showToast('备份已关闭，iCloud 里的副本还在', '撤销', () => { b.on = true; renderAll(); });
+    showToast('备份已关闭，iCloud 里的副本还在', '撤销', () => { b.on = true; resumeBackup(); renderAll(); });
   },
-  'backup-on': () => { const b = state.backup; b.on = b.hasCloud = true; b.ask = null; renderAll(); runBackup(); },
+  'backup-on': () => {
+    if (state.prefs.offlineMode) return showToast('离线模式开着，备份已暂停');
+    const b = state.backup; b.on = true; b.ask = null; renderAll(); runBackup();
+  },
   'backup-ask-close': () => { state.backup.ask = null; renderSettings(); },
   'backup-now': runBackup,
-  'backup-restore': () => addImported('已从 iCloud 取回 1 个对话'),
+  'backup-restore': () => {
+    if (state.prefs.offlineMode) return showToast('离线模式开着，备份已暂停');
+    addImported('已从 iCloud 取回 1 个对话');
+  },
   'backup-delete-ask': () => { state.backup.ask = 'delete'; renderSettings(); },
-  'backup-delete': () => { const b = state.backup; b.on = b.hasCloud = false; b.ask = null; renderAll(); showToast('iCloud 里的备份已删除'); },
+  'backup-delete': () => {
+    if (state.prefs.offlineMode) return showToast('离线模式开着，备份已暂停');
+    clearInterval(backupTimer);
+    const b = state.backup; b.on = b.hasCloud = b.pending = false; b.ask = null; b.status = 'idle'; renderAll(); showToast('iCloud 里的备份已删除');
+  },
   'export-all': () => showToast(`已导出 ${tasks.filter(t => !t.temp && !isBlank(t)).length} 个对话`),
   'import-all': () => addImported('导入了 1 个对话，跳过 2 个重复'),
   'dismiss-import': () => { state.importFail = false; renderSettings(); },
@@ -3285,7 +3346,12 @@ const actions = {
   'dl-pause': () => { state.dl.status = 'paused'; paintGates(); },
   'dl-resume': () => { state.dl.status = 'running'; paintGates(); },
   'dl-again': () => { Object.assign(state.dl, { status: 'running', pct: 0 }); runDownload(); paintGates(); },
-  'dl-cancel': () => { state.dl = null; paintGates(); },
+  'dl-cancel': () => {
+    clearInterval(dlTimer);
+    state.dl = null;
+    if (state.onboard === 'download') state.onboard = 'model';
+    paintGates();
+  },
   'ob-next': () => { state.onboard = 'model'; renderGate(); },
   'ob-pick': el => { state.obModel = el.dataset.id; state.obSpec = el.dataset.spec ?? null; renderGate(); },
   'ob-restore': () => { state.onboard = 'model'; renderGate(); showToast('正在恢复 42 个对话，可以继续'); },
@@ -3354,20 +3420,24 @@ const actions = {
   'toggle-voice-reply': () => { state.voiceReply = !state.voiceReply; syncComposer(); },
   'toggle-thinking': () => { state.thinking = !state.thinking; syncComposer(); },
   'retry-send': el => {
+    if (state.reply || state.queued) return;
     if (!backendReady()) return showToast(isRemote() ? '远程服务还没有连上' : '模型还没有启动');
     const t = cur(), it = t.items.find(x => x.id === el.dataset.id);
-    it.failed = false; renderThread(); loadModel(() => startReply(t));
+    if (!it?.failed) return;
+    markPlace(t, it);
+    queueReply(t, it);
   },
   copy: async el => {
     const text = el.closest('.msg-ai,.msg-user').querySelector('.content,.bubble').innerText;
     try { await navigator.clipboard.writeText(text); showToast('已复制'); } catch { showToast('无法写入剪贴板，请手动选择文字'); }
   },
   regen: el => {
+    if (state.reply || state.queued || !backendReady()) return;
     const t = cur(), node = el.closest('.msg-ai');
     const idx = [...$('#thread').children].indexOf(node);
-    t.items.splice(idx, 1);
-    renderThread();
-    startReply(t);
+    const user = t.items.slice(0, idx).findLast(it => it.type === 'user' && !it.failed);
+    if (!user) return;
+    queueReply(t, user, t.items[idx]);
   },
   'read-aloud': () => showToast('原型中不播放声音'),
   'play-voice': () => showToast('原型中不播放声音'),

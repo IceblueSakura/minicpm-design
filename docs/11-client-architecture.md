@@ -111,6 +111,8 @@ iOS 的 `probe()` 还多返回 `isResponding`，`ModelStore.download` 多一个 
 
 iOS 已经把这些能力收进 `MiniCPMCore/Services.swift` 的协议，规则写在 `AppModel`，实现通过 `AppServices` 传入。未接入的实现抛 `notConnected`，规则层把它变成“这项还没接入”，不改任何状态，也不锁定应用。协议清单见 [iOS 客户端说明](../apps/ios/README.md#接入系统服务)。Web 还没有对应的接口，接入时用同样的名字。
 
+本机持久化的 `Snapshot` 包含可恢复草稿，但 `BackupService` 不接收这个本机快照。上传和恢复统一使用 `BackupContents`（对话、记忆），附件文件由服务按对话引用迁移，恢复前先准备好文件；草稿、偏好和令牌不进入备份。真实备份的传输必须响应任务取消，不能在取消或离线后继续上传并返回成功。
+
 ## 第一版还没移植的
 
 对照原图、回答产物和思考过程、崩溃报告询问、Web 的离线缓存（PWA）、Web 的字符串抽取（四语）、文字大小设置的实际效果。这些设计都在原型里，接入后端时再移植。iOS 的四语界面通过原生 String Catalog 实现，界面语言由系统的 App 语言设置管理，见 [文案与多语言](09-i18n-copy.md)。

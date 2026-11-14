@@ -35,6 +35,7 @@
 |---|---|
 | `Packages/MiniCPMCore/` | 状态和规则，不依赖 SwiftUI，用 `swift test` 测试 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/AppModel.swift` | 全部产品规则：运行位置、当前模型、发送、下载、隐私声明 |
+| `Packages/MiniCPMCore/Tests/MiniCPMCoreTests/FlowRecoveryTests.swift` | 草稿恢复、附件归属/回收、消息重试与重新生成、备份离线/取消/恢复的回归 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/Engine.swift` | `Engine`、`ModelStore` 协议，和 Web 的 `apps/web/src/engine/types.ts` 同义 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/Services.swift` | 其余系统服务的协议、未接入实现和演示实现 |
 | `Packages/MiniCPMCore/Sources/MiniCPMCore/Stub.swift` | 推理和下载的空实现 |
@@ -88,6 +89,8 @@ cd apps/ios
 (cd Packages/MiniCPMCore && swift test)
 xcodebuild -scheme MiniCPM -destination 'platform=iOS Simulator,name=iPhone 18 Pro' analyze
 ```
+
+流程回归不依赖真实后端：普通草稿重启可恢复，临时附件离开即回收；异步导入固定目标对话；图片准备失败不生成无图回答，原消息可重试；重试旧消息和重新生成不会吞掉后续失败消息；备份恢复同时合并记忆，离线不调用恢复/删除服务，关闭上传后立即撤销也能继续。附件测试使用各自的临时目录，不触碰应用数据。上述 Swift 流程及选择器实际行为仍需在 macOS 上运行验证 **[待实测]**。
 
 模拟器可用启动参数指定语言和地区，例如 `-AppleLanguages '(zh-Hant-HK)' -AppleLocale zh_HK`。走查欢迎、模型选择、空白对话、标题面板、设置和异常横幅；英文要检查长文案，四语都检查明暗模式和辅助功能字号。香港文案应出现“私隱”“咪高風”，不能误用台湾资源。
 

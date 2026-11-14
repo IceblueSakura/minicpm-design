@@ -78,6 +78,10 @@
 | 2026-11-14 | 先扩展主题 token：`tokens/themes/` 六个文件，`tools/tokens.mjs` 先校验再生成原型、Asset Catalog 和 Swift 注册表；Asset Catalog 用 `Themes/<前缀>/<前缀><角色>` 命名，不用命名空间文件夹 | 用户决定先做 token。加前缀是为了让 Xcode 生成的颜色符号不重名。见 [扩展接口](02-design-language.md#扩展接口) |
 | 2026-11-14 | 推迟 Web 侧开发（暂缓 `apps/web` 客户端演进与 WebGPU 推理后端实现），当前客户端与 UI/UX 重心收缩至 **iOS 与 macOS**；`index.html` 原型与既有 `apps/web` 骨架保留 | 用户决定。经 [WebGPU 调研评估](../backend/webgpu-browser-assessment.md)，Chrome / Firefox / Safari（macOS / iOS / iPadOS）高阶算子特性仍碎片化，iOS Jetsam 内存上限过低，且浏览器沙盒缺少闪存零拷贝通道、无法承担 LES 主力展示或产品化载体 |
 
+## 当前修订顺序
+
+当前修订顺序（2026-11-14，用户确认）：先修流程，再做文案微调；本轮不调整 UI 显示或样式，不做渲染验收，之后由用户在 macOS 上实测渲染。
+
 ## 本轮提议，等你确认
 
 这些已经写进文档或原型，改起来都容易。

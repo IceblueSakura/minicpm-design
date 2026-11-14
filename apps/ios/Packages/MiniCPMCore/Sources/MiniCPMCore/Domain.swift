@@ -29,7 +29,14 @@ public struct Attachment: Identifiable, Codable, Hashable, Sendable {
         self.storedFileName = storedFileName
     }
 
-    public var fileURL: URL? { storedFileName.map { AppPaths.attachments.appendingPathComponent($0) } }
+    public var fileURL: URL? { fileURL(in: AppPaths.attachments) }
+
+    /// Imported metadata must never address a file outside the attachment directory.
+    public func fileURL(in directory: URL) -> URL? {
+        guard let name = storedFileName, !name.isEmpty, name != ".", name != "..",
+              !name.contains("/"), !name.contains("\\") else { return nil }
+        return directory.appendingPathComponent(name)
+    }
 }
 
 public struct UserMessage: Identifiable, Codable, Hashable, Sendable {

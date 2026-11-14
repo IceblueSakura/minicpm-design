@@ -30,13 +30,13 @@ public struct DownloadState: Hashable, Sendable {
     public var status: DownloadStatus
 }
 
-public struct DraftAttachment: Identifiable, Hashable, Sendable {
+public struct DraftAttachment: Identifiable, Codable, Hashable, Sendable {
     public var attachment: Attachment
     public var isProcessing: Bool
     public var id: UUID { attachment.id }
 }
 
-public struct Draft: Hashable, Sendable {
+public struct Draft: Codable, Hashable, Sendable {
     public var text = ""
     public var attachments: [DraftAttachment] = []
     public var hasContent: Bool {
@@ -130,6 +130,8 @@ public final class AppModel {
     @ObservationIgnored private let modelStore: any ModelStore
     @ObservationIgnored private let persistence: any Persistence
     @ObservationIgnored private let services: AppServices
+    @ObservationIgnored private let attachmentsDirectory: URL
+    @ObservationIgnored private let recoveredSnapshot: Bool
 
     public private(set) var onboarding: OnboardingStep?
     public private(set) var conversations: [Conversation]
@@ -162,7 +164,22 @@ public final class AppModel {
     public var thinking = false
     public var settingsRoute: SettingsPage?
 
-    public var prefs: Prefs { didSet { persist() } }
+    public var prefs: Prefs {
+        didSet {
+            if prefs.offlineMode != oldValue.offlineMode {
+                if prefs.offlineMode {
+                    backupUploadTask?.cancel()
+                } else if backupOn {
+                    let previous = backupUploadTask
+                    Task { [weak self] in
+                        await previous?.value
+                        await self?.backUpNow()
+                    }
+                }
+            }
+            persist()
+        }
+    }
     public var persona: String { didSet { persist() } }
     public private(set) var memories: [String]
     public var hiddenScenes: Set<SceneID> { didSet { persist() } }
@@ -185,17 +202,27 @@ public final class AppModel {
     @ObservationIgnored private var replyTask: Task<Void, Never>?
     @ObservationIgnored private var pendingAfterLoad: [@MainActor () -> Void] = []
     @ObservationIgnored private var downloadHandle: (any DownloadHandle)?
-    @ObservationIgnored private var prepareTasks: [UUID: Task<PreparedImage?, Never>] = [:]
+    @ObservationIgnored private var prepareTasks: [UUID: Task<PreparedImage, any Error>] = [:]
+    @ObservationIgnored private var draftSaveTask: Task<Void, Never>?
+    @ObservationIgnored private var deletionTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored private var undoAttachments: [UUID: [Attachment]] = [:]
+    @ObservationIgnored private var queuedConversationID: UUID?
+    @ObservationIgnored private var queuedUserID: UUID?
+    @ObservationIgnored private var backupOperation = false
+    @ObservationIgnored private var backupUploadTask: Task<Void, Never>?
     @ObservationIgnored private var leftAt: Date?
 
-    public init(localEngine: any Engine, remoteEngine: any Engine, modelStore: any ModelStore, persistence: any Persistence, services: AppServices = .unconnected) {
+    public init(localEngine: any Engine, remoteEngine: any Engine, modelStore: any ModelStore, persistence: any Persistence, services: AppServices = .unconnected, attachmentsDirectory: URL = AppPaths.attachments) {
         self.localEngine = localEngine
         self.remoteEngine = remoteEngine
         self.modelStore = modelStore
         self.persistence = persistence
         self.services = services
+        self.attachmentsDirectory = attachmentsDirectory
 
-        let saved = persistence.load() ?? Snapshot()
+        let recovered = persistence.load()
+        recoveredSnapshot = recovered != nil
+        let saved = recovered ?? Snapshot()
         onboarded = saved.onboarded
         prefs = saved.prefs
         persona = saved.persona
@@ -207,15 +234,23 @@ public final class AppModel {
         remoteURL = saved.remoteURL
         currentOptionID = saved.optionID
         networkLog = saved.networkLog
-
+        let kept = saved.conversations.filter { !$0.isTemporary }
+        let keptIDs = Set(kept.map(\.id))
+        var restoredDrafts = (saved.drafts ?? [:]).filter { keptIDs.contains($0.key) && saved.prefs.keepHistory }
+        for id in Array(restoredDrafts.keys) {
+            for index in restoredDrafts[id]!.attachments.indices {
+                restoredDrafts[id]!.attachments[index].isProcessing = false
+            }
+        }
         let blank = Conversation(scene: saved.prefs.defaultScene, isTemporary: saved.prefs.temporaryByDefault)
-        if saved.prefs.openTo == .last, let last = saved.currentID, saved.conversations.contains(where: { $0.id == last }) {
-            conversations = saved.conversations
+        if saved.prefs.openTo == .last, let last = saved.currentID, keptIDs.contains(last) {
+            conversations = kept
             currentID = last
         } else {
-            conversations = [blank] + saved.conversations
+            conversations = [blank] + kept
             currentID = blank.id
         }
+        drafts = restoredDrafts
     }
 
     /// The stubbed app. Swap the engines and store here when the real ones exist.
@@ -235,6 +270,7 @@ public final class AppModel {
     public func start() async {
         guard !started else { return }
         started = true
+        if recoveredSnapshot { removeOrphanedAttachments() }
         // Before anything renders, so content never flashes ahead of the lock.
         isLocked = prefs.appLock && services.lock.isAvailable
         watchConditions()
@@ -372,11 +408,12 @@ public final class AppModel {
         leaveTemporary(next: id)
         currentID = id
         edit(id) { $0.hasUnread = false }
+        prepareDraft(in: id)
         persist()
     }
 
     public func newConversation() {
-        if let blank = conversations.first(where: \.isFresh) {
+        if let blank = conversations.first(where: { $0.isFresh && drafts[$0.id]?.hasContent != true }) {
             select(blank.id)
             return
         }
@@ -388,6 +425,7 @@ public final class AppModel {
     public func toggleTemporary() {
         guard current.isFresh else { return }
         edit(currentID) { $0.isTemporary.toggle() }
+        persist()
     }
 
     public func setScene(_ scene: SceneID) {
@@ -408,34 +446,62 @@ public final class AppModel {
     public func delete(_ id: UUID) {
         guard let index = conversations.firstIndex(where: { $0.id == id }) else { return }
         if reply?.conversationID == id { stopReply() }
+        cancelQueuedReply(in: id)
         let removed = conversations.remove(at: index)
+        let removedDraft = drafts.removeValue(forKey: id)
+        let files = attachments(in: removed) + (removedDraft?.attachments.map(\.attachment) ?? [])
+        cancelPreparing(files)
+        undoAttachments[id] = files
+        deletionTasks[id] = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(7)) } catch { return }
+            self?.undoAttachments[id] = nil
+            self?.deletionTasks[id] = nil
+            self?.discardAttachments(files)
+        }
         if conversations.isEmpty { conversations = [Conversation(scene: prefs.defaultScene)] }
         if currentID == id { currentID = conversations[min(index, conversations.count - 1)].id }
         persist()
         show(.deleted(title: removed.title), action: ToastAction(kind: .undo) { [weak self] in
             guard let self else { return }
+            guard let pending = deletionTasks.removeValue(forKey: id) else { return }
+            pending.cancel()
+            undoAttachments[id] = nil
             self.conversations.insert(removed, at: min(index, self.conversations.count))
+            drafts[id] = removedDraft
             self.persist()
         })
     }
 
     public func clearAll() {
         stopReply()
+        isQueued = false
+        queuedConversationID = nil
+        queuedUserID = nil
+        pendingAfterLoad = []
+        prepareTasks.values.forEach { $0.cancel() }
+        prepareTasks = [:]
+        deletionTasks.values.forEach { $0.cancel() }
+        deletionTasks = [:]
+        undoAttachments = [:]
         let fresh = Conversation(scene: prefs.defaultScene, isTemporary: prefs.temporaryByDefault)
         conversations = [fresh]
         currentID = fresh.id
         drafts = [:]
-        try? FileManager.default.removeItem(at: AppPaths.attachments)
+        removeOrphanedAttachments()
         persist()
     }
 
     /// Temporary conversations leave nothing behind, so there is no undo here.
     private func leaveTemporary(next: UUID) {
         let leaving = current
-        guard leaving.isTemporary, leaving.id != next, !leaving.isBlank else { return }
+        guard leaving.isTemporary, leaving.id != next else { return }
         if reply?.conversationID == leaving.id { stopReply() }
+        cancelQueuedReply(in: leaving.id)
+        let files = attachments(in: leaving) + (drafts[leaving.id]?.attachments.map(\.attachment) ?? [])
+        cancelPreparing(files)
         conversations.removeAll { $0.id == leaving.id }
         drafts[leaving.id] = nil
+        discardAttachments(files)
         show(.temporaryCleared)
     }
 
@@ -445,27 +511,54 @@ public final class AppModel {
 
     public var draftText: String {
         get { draft.text }
-        set { drafts[currentID, default: Draft()].text = newValue }
+        set { setDraftText(newValue, in: currentID) }
+    }
+
+    public func setDraftText(_ text: String, in conversationID: UUID) {
+        guard conversations.contains(where: { $0.id == conversationID }) else { return }
+        drafts[conversationID, default: Draft()].text = text
+        draftSaveTask?.cancel()
+        draftSaveTask = Task { [weak self] in
+            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            self?.persist()
+        }
     }
 
     /// Images start processing the moment they arrive, so the wait passes while the user types.
-    public func addAttachment(_ attachment: Attachment) {
-        let needsWork = attachment.kind == .image && attachment.fileURL != nil
-        let conversationID = currentID
+    public func addAttachment(_ attachment: Attachment, to conversationID: UUID) {
+        guard conversations.contains(where: { $0.id == conversationID }) else {
+            discardAttachments([attachment])
+            return
+        }
+        let needsWork = attachment.kind == .image && attachment.fileURL(in: attachmentsDirectory) != nil
         drafts[conversationID, default: Draft()].attachments.append(DraftAttachment(attachment: attachment, isProcessing: needsWork))
-        guard needsWork, let file = attachment.fileURL else { return }
+        prepare(attachment, in: conversationID)
+        persist()
+    }
+
+    private func prepareDraft(in conversationID: UUID) {
+        for item in drafts[conversationID]?.attachments ?? [] { prepare(item.attachment, in: conversationID) }
+    }
+
+    private func prepare(_ attachment: Attachment, in conversationID: UUID) {
+        guard attachment.kind == .image, let file = attachment.fileURL(in: attachmentsDirectory), prepareTasks[attachment.id] == nil else { return }
+        if let index = drafts[conversationID]?.attachments.firstIndex(where: { $0.id == attachment.id }) {
+            drafts[conversationID]?.attachments[index].isProcessing = true
+        }
         let engine = isRemote ? remoteEngine : localEngine
         prepareTasks[attachment.id] = Task { [weak self] in
-            let handle = try? await engine.prepareImage(file)
-            self?.finishPreparing(attachment.id, in: conversationID)
-            return handle
+            defer { self?.finishPreparing(attachment.id, in: conversationID) }
+            return try await engine.prepareImage(file)
         }
     }
 
     public func removeAttachment(_ id: UUID) {
+        let removed = draft.attachments.first { $0.id == id }?.attachment
         drafts[currentID]?.attachments.removeAll { $0.id == id }
         prepareTasks[id]?.cancel()
         prepareTasks[id] = nil
+        if let removed { discardAttachments([removed]) }
+        persist()
     }
 
     private func finishPreparing(_ id: UUID, in conversationID: UUID) {
@@ -496,38 +589,48 @@ public final class AppModel {
             conversation.updatedAt = Date()
         }
         if !failed { markPlace(id) }
-        edit(id) { $0.items.append(.user(UserMessage(text: text, attachments: attachments, failed: failed))) }
+        let message = UserMessage(text: text, attachments: attachments, failed: failed)
+        edit(id) { $0.items.append(.user(message)) }
         drafts[id] = nil
         persist()
-        if !failed { queueReply(in: id) }
+        if !failed { queueReply(in: id, replyingTo: message.id) }
     }
 
-    private func queueReply(in id: UUID, continuing itemID: UUID? = nil) {
+    private func queueReply(in id: UUID, replyingTo userID: UUID? = nil, updating itemID: UUID? = nil, continuing: Bool = false) {
         isQueued = true
+        queuedConversationID = id
+        queuedUserID = userID
         loadModel { [weak self] in
-            self?.isQueued = false
-            self?.startReply(in: id, continuing: itemID)
+            guard let self, queuedConversationID == id else { return }
+            isQueued = false
+            queuedConversationID = nil
+            queuedUserID = nil
+            guard conversations.contains(where: { $0.id == id }) else { return }
+            startReply(in: id, replyingTo: userID, updating: itemID, continuing: continuing)
         }
     }
 
     public func retrySend(_ itemID: UUID) {
         guard backendReady, reply == nil, !isQueued else { return }
         let id = currentID
+        guard case .user(let sent)? = current.items.first(where: { $0.id == itemID }), sent.failed else { return }
         edit(id) { conversation in
             guard let index = conversation.items.firstIndex(where: { $0.id == itemID }), case .user(var message) = conversation.items[index] else { return }
             message.failed = false
             conversation.items[index] = .user(message)
         }
-        markPlace(id)
-        queueReply(in: id)
+        markPlace(id, before: itemID)
+        queueReply(in: id, replyingTo: itemID)
     }
 
     /// Leaves a mark before the first message after the place changed. An empty conversation needs none.
-    private func markPlace(_ id: UUID) {
+    private func markPlace(_ id: UUID, before itemID: UUID? = nil) {
         let destination = isRemote ? remoteHost : "local"
         edit(id) { conversation in
             if !conversation.items.isEmpty, (conversation.place ?? "local") != destination {
-                conversation.items.append(.place(PlaceMark(host: self.isRemote ? destination : nil)))
+                let mark = ThreadItem.place(PlaceMark(host: self.isRemote ? destination : nil))
+                let index = itemID.flatMap { id in conversation.items.firstIndex { $0.id == id } } ?? conversation.items.endIndex
+                conversation.items.insert(mark, at: index)
             }
             conversation.place = destination
         }
@@ -544,7 +647,7 @@ public final class AppModel {
         }
         var messages: [GenerateRequest.Message] = conversation.items.compactMap { item in
             switch item {
-            case .user(let m): GenerateRequest.Message(role: .user, text: m.text)
+            case .user(let m) where !m.failed: GenerateRequest.Message(role: .user, text: m.text)
             case .assistant(let m) where !m.text.isEmpty: GenerateRequest.Message(role: .assistant, text: m.text)
             default: nil
             }
@@ -565,38 +668,87 @@ public final class AppModel {
         )
     }
 
-    private func startReply(in conversationID: UUID, continuing itemID: UUID? = nil) {
-        guard reply == nil else { return }
+    private func startReply(in conversationID: UUID, replyingTo userID: UUID? = nil, updating itemID: UUID? = nil, continuing: Bool = false) {
+        guard reply == nil, let conversation = conversations.first(where: { $0.id == conversationID }) else { return }
+        if let userID {
+            guard conversation.items.contains(where: { $0.id == userID }) else { return }
+        }
+        if let itemID {
+            guard conversation.items.contains(where: { $0.id == itemID }) else { return }
+        }
+        guard backendReady else {
+            if let userID {
+                edit(conversationID) { conversation in
+                    guard let index = conversation.items.firstIndex(where: { $0.id == userID }), case .user(var sent) = conversation.items[index] else { return }
+                    sent.failed = true
+                    conversation.items[index] = .user(sent)
+                }
+                persist()
+            }
+            return
+        }
         let targetID: UUID
         if let itemID {
             targetID = itemID
-            editAssistant(conversationID, itemID) { $0.cut = nil }
+            editAssistant(conversationID, itemID) {
+                if !continuing {
+                    $0.text = ""
+                    $0.stats = nil
+                    $0.stopped = false
+                    $0.modelName = currentOption?.name
+                }
+                $0.cut = nil
+            }
         } else {
             let message = AssistantMessage(modelName: currentOption?.name)
             targetID = message.id
-            edit(conversationID) { $0.items.append(.assistant(message)) }
+            edit(conversationID) { conversation in
+                if let userID, let index = conversation.items.firstIndex(where: { $0.id == userID }) {
+                    conversation.items.insert(.assistant(message), at: index + 1)
+                } else {
+                    conversation.items.append(.assistant(message))
+                }
+            }
         }
         reply = ReplyState(conversationID: conversationID, itemID: targetID)
         let engine = isRemote ? remoteEngine : localEngine
         replyTask = Task { [weak self] in
-            await self?.runReply(engine, conversationID, targetID, continuing: itemID != nil)
+            await self?.runReply(engine, conversationID, targetID, continuing: continuing)
         }
     }
 
     private func runReply(_ engine: any Engine, _ conversationID: UUID, _ itemID: UUID, continuing: Bool) async {
-        guard let conversation = conversations.first(where: { $0.id == conversationID }) else { return }
-        // Sending before an image finished processing just queues behind it.
-        var images: [PreparedImage] = []
-        if case .user(let message)? = conversation.items.last(where: { if case .user = $0 { true } else { false } }) {
-            for attachment in message.attachments {
-                if let handle = await prepareTasks[attachment.id]?.value { images.append(handle) }
-                prepareTasks[attachment.id] = nil
-            }
-        }
+        guard var conversation = conversations.first(where: { $0.id == conversationID }),
+              let index = conversation.items.firstIndex(where: { $0.id == itemID }) else { return }
+        // A retry uses the selected message's history, never a newer failed message.
+        conversation.items = Array(conversation.items.prefix(through: index))
         var memory: String?
         do {
+            try Task.checkCancellation()
+            var images: [PreparedImage] = []
+            if !continuing, case .user(let message)? = conversation.items.last(where: { if case .user = $0 { true } else { false } }) {
+                for attachment in message.attachments where attachment.kind == .image {
+                    guard let file = attachment.fileURL(in: attachmentsDirectory) else { throw ServiceError.unreadableFile }
+                    if let pending = prepareTasks[attachment.id] {
+                        do {
+                            let image = try await pending.value
+                            prepareTasks[attachment.id] = nil
+                            images.append(image)
+                        } catch {
+                            prepareTasks[attachment.id] = nil
+                            throw error
+                        }
+                    } else {
+                        images.append(try await engine.prepareImage(file))
+                    }
+                    try Task.checkCancellation()
+                }
+            }
+            try Task.checkCancellation()
             let request = makeRequest(for: conversation, images: images, continuing: continuing)
             for try await event in engine.generate(request) {
+                try Task.checkCancellation()
+                guard reply?.itemID == itemID else { return }
                 switch event {
                 case .text(let delta): editAssistant(conversationID, itemID) { $0.text += delta }
                 case .memory(let text): memory = text
@@ -611,9 +763,9 @@ public final class AppModel {
             memory = nil
         } catch {
             memory = nil
-            failReply(conversationID, itemID, error: error)
+            if !Task.isCancelled, reply?.itemID == itemID { failReply(conversationID, itemID, error: error) }
         }
-        guard reply?.itemID == itemID else { return }
+        guard !Task.isCancelled, reply?.itemID == itemID else { return }
         reply = nil
         if let memory, prefs.memory, conversations.first(where: { $0.id == conversationID })?.isTemporary == false {
             remember(memory)
@@ -634,7 +786,7 @@ public final class AppModel {
             guard let index = conversation.items.firstIndex(where: { $0.id == itemID }), case .assistant(var message) = conversation.items[index] else { return }
             if message.text.isEmpty {
                 conversation.items.remove(at: index)
-                if let user = conversation.items.lastIndex(where: { if case .user = $0 { true } else { false } }), case .user(var sent) = conversation.items[user] {
+                if let user = conversation.items[..<index].lastIndex(where: { if case .user = $0 { true } else { false } }), case .user(var sent) = conversation.items[user] {
                     sent.failed = true
                     conversation.items[user] = .user(sent)
                 }
@@ -648,29 +800,33 @@ public final class AppModel {
     public func stopReply() {
         guard let reply else { return }
         replyTask?.cancel()
+        if let conversation = conversations.first(where: { $0.id == reply.conversationID }) {
+            cancelPreparing(attachments(in: conversation))
+        }
         editAssistant(reply.conversationID, reply.itemID) { $0.stopped = true }
         self.reply = nil
         persist()
     }
 
     public func regenerate(_ itemID: UUID) {
-        guard reply == nil, !isQueued else { return }
-        let id = currentID
-        edit(id) { conversation in
-            if let index = conversation.items.firstIndex(where: { $0.id == itemID }) { conversation.items.removeSubrange(index...) }
-        }
-        queueReply(in: id)
+        guard reply == nil, !isQueued, backendReady else { return }
+        guard case .assistant(_)? = current.items.first(where: { $0.id == itemID }) else { return }
+        queueReply(in: currentID, updating: itemID)
     }
 
     public func continueReply(_ itemID: UUID) {
         guard reply == nil, !isQueued, backendReady else { return }
         let id = currentID
-        queueReply(in: id, continuing: itemID)
+        queueReply(in: id, updating: itemID, continuing: true)
     }
 
     /// Models do not run in the background, so leaving the app ends the reply and keeps what was written.
     public func didEnterBackground() {
         stopReply()
+        if let id = queuedConversationID {
+            cancelQueuedReply(in: id)
+        }
+        persist()
         leftAt = Date()
     }
 
@@ -772,18 +928,13 @@ public final class AppModel {
     /// Uploading cannot be undone, so the confirm sits in front of this. The rest of the backup path is `backUpNow`.
     public func enableBackup() async {
         guard !prefs.offlineMode else { return show(.backupPaused) }
-        do {
-            try await services.backup.enable()
-            backup = await services.backup.state()
-            await backUpNow()
-        } catch ServiceError.notConnected {
-            show(.notConnectedYet)
-        } catch {
-            backup = await services.backup.state()
-        }
+        await uploadBackup(enabling: true)
     }
 
     public func disableBackup() async {
+        let uploading = backupUploadTask
+        uploading?.cancel()
+        await uploading?.value
         await services.backup.disable()
         backup = await services.backup.state()
         show(.backupOff, action: ToastAction(kind: .undo) { [weak self] in
@@ -795,14 +946,55 @@ public final class AppModel {
     /// Failures show only in settings, through the state, and never interrupt.
     public func backUpNow() async {
         guard !prefs.offlineMode else { return show(.backupPaused) }
+        guard backupOn else { return }
+        await uploadBackup(enabling: false)
+    }
+
+    private func uploadBackup(enabling: Bool) async {
+        guard !backupOperation else { return }
+        backupOperation = true
+        let task = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                backupUploadTask = nil
+                backupOperation = false
+            }
+            do {
+                if enabling { try await services.backup.enable() }
+                try Task.checkCancellation()
+                backup = await services.backup.state()
+                if backupOn { await performBackup() }
+            } catch is CancellationError {
+                backup = await services.backup.state()
+            } catch ServiceError.notConnected {
+                show(.notConnectedYet)
+            } catch {
+                backup = await services.backup.state()
+            }
+        }
+        backupUploadTask = task
+        await task.value
+    }
+
+    private func performBackup() async {
+        guard !prefs.offlineMode else { return show(.backupPaused) }
+        let contents = BackupContents(conversations: conversations.filter { !$0.isTemporary && !$0.isBlank }, memories: memories)
         do {
-            for try await fraction in services.backup.backUp(makeSnapshot()) {
+            for try await fraction in services.backup.backUp(contents) {
+                try Task.checkCancellation()
+                guard !prefs.offlineMode, backupOn else {
+                    backup = await services.backup.state()
+                    return show(.backupPaused)
+                }
                 backup.status = .running(fraction: fraction)
             }
+            try Task.checkCancellation()
             backup = await services.backup.state()
             networkLog.insert(NetworkRecord(kind: .backup, detail: ""), at: 0)
             persist()
             show(.backedUp)
+        } catch is CancellationError {
+            backup = await services.backup.state()
         } catch ServiceError.notConnected {
             show(.notConnectedYet)
         } catch {
@@ -812,9 +1004,15 @@ public final class AppModel {
 
     /// Takes back only what this device does not have, and never overwrites.
     public func restoreBackup() async {
+        guard !prefs.offlineMode else { return show(.backupPaused) }
+        guard !backupOperation else { return }
+        backupOperation = true
+        defer { backupOperation = false }
         do {
             let found = try await services.backup.restore()
-            let added = merge(found)
+            let added = merge(found.conversations)
+            for memory in found.memories where !memories.contains(memory) { memories.append(memory) }
+            persist()
             show(.restored(count: added.count))
         } catch ServiceError.notConnected {
             show(.notConnectedYet)
@@ -824,7 +1022,12 @@ public final class AppModel {
     }
 
     public func deleteCloudCopy() async {
+        guard !prefs.offlineMode else { return show(.backupPaused) }
+        guard !backupOperation else { return }
+        backupOperation = true
+        defer { backupOperation = false }
         do {
+            await services.backup.disable()
             try await services.backup.deleteCloudCopy()
             backup = await services.backup.state()
             show(.cloudCopyDeleted)
@@ -878,8 +1081,8 @@ public final class AppModel {
     public func dismissImportFailure() { importFailed = false }
 
     private func merge(_ found: [Conversation]) -> [Conversation] {
-        let known = Set(conversations.map(\.id))
-        let added = found.filter { !known.contains($0.id) }
+        var known = Set(conversations.map(\.id))
+        let added = found.filter { !$0.isTemporary && known.insert($0.id).inserted }
         conversations.append(contentsOf: added)
         persist()
         return added
@@ -975,6 +1178,8 @@ public final class AppModel {
             })
             return
         }
+        prepareTasks.values.forEach { $0.cancel() }
+        prepareTasks = [:]
         swapFailure = nil
         currentOptionID = id
         persist()
@@ -1068,7 +1273,7 @@ public final class AppModel {
     public func setPlace(_ next: Place) {
         guard place != next else { return }
         if next == .remote, remoteURL.isEmpty {
-            place = .remote
+            applyPlace(.remote)
             // Already inside settings, the address field is right there. Changing the route would reopen the sheet.
             if settingsRoute == nil { settingsRoute = .models }
             persist()
@@ -1087,6 +1292,11 @@ public final class AppModel {
     }
 
     private func applyPlace(_ next: Place) {
+        if let id = queuedConversationID { cancelQueuedReply(in: id) }
+        if reply == nil {
+            prepareTasks.values.forEach { $0.cancel() }
+            prepareTasks = [:]
+        }
         place = next
         isResponding = true
         persist()
@@ -1150,13 +1360,70 @@ public final class AppModel {
         }
     }
 
-    private func persist() { persistence.save(makeSnapshot()) }
+    private func cancelQueuedReply(in conversationID: UUID) {
+        guard queuedConversationID == conversationID else { return }
+        if let userID = queuedUserID {
+            edit(conversationID) { conversation in
+                guard let index = conversation.items.firstIndex(where: { $0.id == userID }), case .user(var sent) = conversation.items[index] else { return }
+                sent.failed = true
+                conversation.items[index] = .user(sent)
+            }
+        }
+        queuedConversationID = nil
+        queuedUserID = nil
+        isQueued = false
+        pendingAfterLoad = []
+    }
+
+    private func attachments(in conversation: Conversation) -> [Attachment] {
+        conversation.items.flatMap { item -> [Attachment] in
+            if case .user(let message) = item { return message.attachments }
+            return []
+        }
+    }
+
+    private var referencedAttachmentNames: Set<String> {
+        let sent = conversations.flatMap { attachments(in: $0) }
+        let unsent = drafts.values.flatMap { $0.attachments.map(\.attachment) }
+        return Set((sent + unsent + undoAttachments.values.flatMap { $0 }).compactMap(\.storedFileName))
+    }
+
+    private func cancelPreparing(_ attachments: [Attachment]) {
+        for attachment in attachments { prepareTasks.removeValue(forKey: attachment.id)?.cancel() }
+    }
+
+    private func discardAttachments(_ attachments: [Attachment]) {
+        let kept = referencedAttachmentNames
+        for attachment in attachments {
+            guard let name = attachment.storedFileName, !kept.contains(name),
+                  let file = attachment.fileURL(in: attachmentsDirectory),
+                  FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) else { continue }
+            do { try FileManager.default.removeItem(at: file) } catch { show(.actionFailed) }
+        }
+    }
+
+    /// Also recovers files orphaned by a process exit during a temporary chat or an import.
+    private func removeOrphanedAttachments() {
+        guard let files = try? FileManager.default.contentsOfDirectory(at: attachmentsDirectory, includingPropertiesForKeys: nil) else { return }
+        let kept = referencedAttachmentNames
+        for file in files where !kept.contains(file.lastPathComponent) {
+            do { try FileManager.default.removeItem(at: file) } catch { show(.actionFailed) }
+        }
+    }
+
+    private func persist() {
+        draftSaveTask?.cancel()
+        draftSaveTask = nil
+        persistence.save(makeSnapshot())
+    }
 
     private func makeSnapshot() -> Snapshot {
         var snapshot = Snapshot()
         snapshot.onboarded = onboarded
         // Blank conversations are free to recreate. Temporary ones must never reach the disk.
-        snapshot.conversations = prefs.keepHistory ? conversations.filter { !$0.isTemporary && !$0.isBlank } : []
+        snapshot.conversations = prefs.keepHistory ? conversations.filter { !$0.isTemporary && (!$0.isBlank || drafts[$0.id]?.hasContent == true) } : []
+        let keptIDs = Set(snapshot.conversations.map(\.id))
+        snapshot.drafts = drafts.filter { keptIDs.contains($0.key) && $0.value.hasContent }
         snapshot.currentID = currentID
         snapshot.prefs = prefs
         snapshot.memories = memories

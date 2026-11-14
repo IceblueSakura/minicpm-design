@@ -51,14 +51,28 @@ public struct BackupState: Hashable, Sendable {
     }
 }
 
-/// The app's own backup, off by default. The snapshot already leaves out temporary chats; models and tokens are never in it.
+/// The same content goes up and comes back. Local drafts, preferences, models and tokens are not backup data.
+public struct BackupContents: Sendable {
+    public var conversations: [Conversation]
+    public var memories: [String]
+
+    public init(conversations: [Conversation] = [], memories: [String] = []) {
+        self.conversations = conversations
+        self.memories = memories
+    }
+}
+
+/// The app's own backup, off by default.
 public protocol BackupService: Sendable {
     func state() async -> BackupState
     func enable() async throws
     func disable() async
     /// Follows this device: what was deleted here goes from the cloud too. Yields the fraction done.
-    func backUp(_ snapshot: Snapshot) -> AsyncThrowingStream<Double, any Error>
-    func restore() async throws -> [Conversation]
+    /// Includes attachment files referenced by conversations; cancellation stops the transfer.
+    func backUp(_ contents: BackupContents) -> AsyncThrowingStream<Double, any Error>
+    /// Materializes referenced attachment files before returning. No local records are overwritten.
+    func restore() async throws -> BackupContents
+    /// Called after disabling backup. A failed deletion must leave backup disabled and the copy retryable.
     func deleteCloudCopy() async throws
 }
 
@@ -135,10 +149,10 @@ public struct UnconnectedServices: SearchService, SystemActionService, BackupSer
     public func state() async -> BackupState { BackupState() }
     public func enable() async throws { throw ServiceError.notConnected }
     public func disable() async {}
-    public func backUp(_ snapshot: Snapshot) -> AsyncThrowingStream<Double, any Error> {
+    public func backUp(_ contents: BackupContents) -> AsyncThrowingStream<Double, any Error> {
         AsyncThrowingStream { $0.finish(throwing: ServiceError.notConnected) }
     }
-    public func restore() async throws -> [Conversation] { throw ServiceError.notConnected }
+    public func restore() async throws -> BackupContents { throw ServiceError.notConnected }
     public func deleteCloudCopy() async throws { throw ServiceError.notConnected }
 
     public var isConnected: Bool { false }
@@ -154,6 +168,7 @@ public struct UnconnectedServices: SearchService, SystemActionService, BackupSer
 /// Nothing here reaches a network or the system. It only makes the states reachable.
 public actor DemoServices: SearchService, SystemActionService, BackupService, ArchiveService, AppLockService, DeviceConditionService {
     private var backup: BackupState
+    private var backupContents = BackupContents()
     private let conditions: [DeviceCondition]
     private let lockPasses: Bool
 
@@ -171,24 +186,33 @@ public actor DemoServices: SearchService, SystemActionService, BackupService, Ar
     public func state() -> BackupState { backup }
     public func enable() { backup.isOn = true }
     public func disable() { backup.isOn = false }
-    private func finishBackup() {
+    private func finishBackup(_ contents: BackupContents) {
+        backupContents = contents
         backup.status = .idle(last: Date())
         backup.hasCloudCopy = true
     }
-    public nonisolated func backUp(_ snapshot: Snapshot) -> AsyncThrowingStream<Double, any Error> {
+    public nonisolated func backUp(_ contents: BackupContents) -> AsyncThrowingStream<Double, any Error> {
         AsyncThrowingStream { continuation in
-            Task {
-                for step in 1...10 {
-                    try? await Task.sleep(for: .milliseconds(150))
-                    continuation.yield(Double(step) / 10)
+            let task = Task {
+                do {
+                    for step in 1...10 {
+                        try await Task.sleep(for: .milliseconds(150))
+                        continuation.yield(Double(step) / 10)
+                    }
+                    await self.finishBackup(contents)
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
                 }
-                await self.finishBackup()
-                continuation.finish()
             }
+            continuation.onTermination = { _ in task.cancel() }
         }
     }
-    public func restore() -> [Conversation] { [] }
-    public func deleteCloudCopy() { backup.hasCloudCopy = false }
+    public func restore() -> BackupContents { backupContents }
+    public func deleteCloudCopy() {
+        backupContents = BackupContents()
+        backup.hasCloudCopy = false
+    }
 
     public nonisolated var isConnected: Bool { true }
     public func export(_ conversations: [Conversation]) throws -> URL {

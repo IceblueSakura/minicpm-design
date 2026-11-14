@@ -15,6 +15,8 @@ public struct Snapshot: Codable, Sendable {
     public var version = 1
     public var onboarded = false
     public var conversations: [Conversation] = []
+    /// Local recovery only. Optional so snapshots from before draft recovery still decode.
+    public var drafts: [UUID: Draft]?
     public var currentID: UUID?
     public var prefs = Prefs()
     public var memories: [String] = []
