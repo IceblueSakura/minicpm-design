@@ -1,0 +1,113 @@
+{
+  "$description": "石墨纸面，青色作模型色。面向关心性能的人",
+  "$extensions": {
+    "minicpm": {
+      "name": "实验台",
+      "nameEn": "Lab",
+      "order": 6,
+      "surfaces": "theme"
+    }
+  },
+  "light": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#ECEFF2"
+    },
+    "surface": {
+      "$value": "#F4F6F8"
+    },
+    "raised": {
+      "$value": "#FFFFFF"
+    },
+    "sunken": {
+      "$value": "#E8ECF0"
+    },
+    "line": {
+      "$value": "#D9DFE5"
+    },
+    "line-2": {
+      "$value": "#C3CBD3"
+    },
+    "control": {
+      "$value": "#78838E"
+    },
+    "ink": {
+      "$value": "#0E1216"
+    },
+    "ink-2": {
+      "$value": "#3A434C"
+    },
+    "ink-3": {
+      "$value": "#57626D"
+    },
+    "you-wave": {
+      "$value": "#252C33"
+    },
+    "jade": {
+      "$value": "#00708A"
+    },
+    "jade-wave": {
+      "$value": "#0098B8"
+    },
+    "jade-soft": {
+      "$value": "#D9F0F5"
+    },
+    "on-jade": {
+      "$value": "#FFFFFF"
+    },
+    "user-bubble": {
+      "$value": "#E6EBEF"
+    }
+  },
+  "dark": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#0A0C0E"
+    },
+    "surface": {
+      "$value": "#0D0F12"
+    },
+    "raised": {
+      "$value": "#161A1F"
+    },
+    "sunken": {
+      "$value": "#08090B"
+    },
+    "line": {
+      "$value": "#252B32"
+    },
+    "line-2": {
+      "$value": "#36404A"
+    },
+    "control": {
+      "$value": "#69737E"
+    },
+    "ink": {
+      "$value": "#E6EBF0"
+    },
+    "ink-2": {
+      "$value": "#AEB8C2"
+    },
+    "ink-3": {
+      "$value": "#85909B"
+    },
+    "you-wave": {
+      "$value": "#D2DAE2"
+    },
+    "jade": {
+      "$value": "#4FD8F0"
+    },
+    "jade-wave": {
+      "$value": "#2CC4E0"
+    },
+    "jade-soft": {
+      "$value": "#0E2E36"
+    },
+    "on-jade": {
+      "$value": "#032029"
+    },
+    "user-bubble": {
+      "$value": "#1A1F25"
+    }
+  }
+}

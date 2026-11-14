@@ -1,0 +1,113 @@
+{
+  "$description": "淡紫灰纸面，紫藤作模型色。柔和",
+  "$extensions": {
+    "minicpm": {
+      "name": "紫藤",
+      "nameEn": "Wisteria",
+      "order": 5,
+      "surfaces": "theme"
+    }
+  },
+  "light": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#F3F0F7"
+    },
+    "surface": {
+      "$value": "#F9F7FB"
+    },
+    "raised": {
+      "$value": "#FFFFFF"
+    },
+    "sunken": {
+      "$value": "#EFEBF4"
+    },
+    "line": {
+      "$value": "#E4DEEC"
+    },
+    "line-2": {
+      "$value": "#CFC6DB"
+    },
+    "control": {
+      "$value": "#857A93"
+    },
+    "ink": {
+      "$value": "#1E1726"
+    },
+    "ink-2": {
+      "$value": "#4A4056"
+    },
+    "ink-3": {
+      "$value": "#655A72"
+    },
+    "you-wave": {
+      "$value": "#352B40"
+    },
+    "jade": {
+      "$value": "#6B3FA0"
+    },
+    "jade-wave": {
+      "$value": "#8B5CC7"
+    },
+    "jade-soft": {
+      "$value": "#EDE4F7"
+    },
+    "on-jade": {
+      "$value": "#FFFFFF"
+    },
+    "user-bubble": {
+      "$value": "#EEE8F4"
+    }
+  },
+  "dark": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#120F16"
+    },
+    "surface": {
+      "$value": "#17131C"
+    },
+    "raised": {
+      "$value": "#211B28"
+    },
+    "sunken": {
+      "$value": "#0F0C13"
+    },
+    "line": {
+      "$value": "#30283A"
+    },
+    "line-2": {
+      "$value": "#43394F"
+    },
+    "control": {
+      "$value": "#776D85"
+    },
+    "ink": {
+      "$value": "#EDE7F3"
+    },
+    "ink-2": {
+      "$value": "#C1B6CD"
+    },
+    "ink-3": {
+      "$value": "#9A8FA7"
+    },
+    "you-wave": {
+      "$value": "#DDD4E6"
+    },
+    "jade": {
+      "$value": "#C9A4F2"
+    },
+    "jade-wave": {
+      "$value": "#B48BE8"
+    },
+    "jade-soft": {
+      "$value": "#2E2140"
+    },
+    "on-jade": {
+      "$value": "#22113A"
+    },
+    "user-bubble": {
+      "$value": "#261F2E"
+    }
+  }
+}

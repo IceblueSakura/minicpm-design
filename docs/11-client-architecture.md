@@ -2,7 +2,7 @@
 
 本文说明真实客户端（`apps/`）怎么组织，以及 Web 和 iOS 共用的推理接口。产品规则仍以 [信息架构](03-structure.md)、[状态矩阵](05-states.md) 和 [隐私设计](08-privacy.md) 为准，这里只写落地方式。
 
-现阶段是初版骨架：界面和状态是真的，推理、下载、备份都是空实现。当前主工作区继续完善 Web、iOS、macOS 的 UI/UX 与客户端骨架；独立 Backend 选型与判别实验在 [`experiments/`](../experiments/README.md) 并行推进，双轨边界见 [项目路线与双轨分工](14-roadmap.md)。
+现阶段是初版骨架：界面和状态是真的，推理、下载、备份都是空实现。当前只推进 macOS 和 iOS 客户端，`apps/web` 暂停；独立 Backend 选型与判别实验在 [`backend/`](../backend/README.md) 并行推进，双轨边界见 [项目路线与双轨分工](14-roadmap.md)。
 
 ## 当前架构与后端选型的边界
 
@@ -18,7 +18,7 @@
 | `apps/web/` | 真实 Web 客户端：Vite、React、TypeScript |
 | `apps/ios/` | 真实 iOS 客户端：SwiftUI，最低 iOS 27 |
 | `apps/macos/` | 规划中的独立 macOS 客户端：SwiftUI，最低 macOS 27，与 `apps/ios/` 共用 `MiniCPMCore` |
-| `tools/tokens.mjs` | 把 `tokens/` 同步到原型和 `apps/` |
+| `tools/tokens.mjs` | 检查对比度和主题规则，通过后把 `tokens/` 同步到原型和 `apps/` |
 
 各端都是三层，名字尽量相同，这样同一条规则能对着看：
 
@@ -65,7 +65,7 @@ flowchart TD
 | `askSearch` | `query` | 联网询问卡片，点了才发 |
 | `action` | `kind` `when` `text` | 定时通知或备忘录卡片 |
 | `cut` | `reason` | “回答太长，到这里停了”，给接着写 |
-| `done` | `tokensPerSecond` `seconds` | 记到回答上，打开“显示技术信息”后可见 |
+| `done` | `tokensPerSecond` `seconds` | 记到回答上，显示在回答下方的测量行。运行详情要的首字用时、内存峰值和 LES 测量还没有字段，见 [运行参数与测量](03-structure.md#测量) |
 
 `memory`、`askSearch`、`action` 由模型判断，所以放在事件里，不在界面里猜。
 

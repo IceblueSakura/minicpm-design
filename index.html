@@ -1,17 +1,20 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="light" data-palette="celadon">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" id="themeColor" content="#FAFBF8">
 <title>MiniCPM</title>
 <script>
-  // Resolve the theme before first paint so dark mode never flashes light.
+  // Resolve the theme before first paint so dark mode never flashes light. applyTheme() checks the palette ID later.
   (() => {
-    let t = new URLSearchParams(location.search).get('theme');
-    try { t ||= localStorage.getItem('minicpm.theme'); } catch {}
+    const q = new URLSearchParams(location.search);
+    let t = q.get('theme'), p = q.get('palette');
+    try { t ||= localStorage.getItem('minicpm.theme'); p ||= localStorage.getItem('minicpm.palette'); } catch {}
     if (!t || t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     document.documentElement.dataset.theme = t;
+    if (p) document.documentElement.dataset.palette = p;
+    if (q.get('contrast') === 'more' || matchMedia('(prefers-contrast: more)').matches) document.documentElement.dataset.contrast = 'more';
   })();
 </script>
 <style>
@@ -36,6 +39,33 @@
   /* /tokens */
   --shadow:0 1px 2px #0006,0 10px 32px #0008;
 }
+/* Themes change the content layer only; signal colors stay. docs/02-design-language.md#主题 */
+/* tokens:themes */
+:root[data-palette=plain]{--chrome:#F2F2F7; --surface:#FFFFFF; --raised:#FFFFFF; --sunken:#F2F2F7; --line:#E5E5EA; --line-2:#D1D1D6; --control:#8E8E93; --ink:#000000; --ink-2:#48484A; --ink-3:#636366; --you-wave:#3A3A3C; --jade:#0B6E5B; --jade-wave:#12A383; --jade-soft:#DCEDE6; --on-jade:#FFFFFF; --user-bubble:#EFEFF4;}
+:root[data-palette=celadon]{--chrome:#F1F3EE; --surface:#FAFBF8; --raised:#FFFFFF; --sunken:#EBEEE8; --line:#DFE3DB; --line-2:#C5CCC3; --control:#838E87; --ink:#17211D; --ink-2:#47544E; --ink-3:#5F6C66; --you-wave:#2C3833; --jade:#0B6E5B; --jade-wave:#12A383; --jade-soft:#DCEDE6; --on-jade:#FFFFFF; --user-bubble:#E9EDE6;}
+:root[data-palette=xuan]{--chrome:#F3EFE6; --surface:#FAF7F0; --raised:#FFFDF8; --sunken:#F0EBE0; --line:#E6DFD0; --line-2:#D3CAB7; --control:#8C8371; --ink:#241F18; --ink-2:#4F473B; --ink-3:#6B6253; --you-wave:#3A3329; --jade:#2D5B8C; --jade-wave:#4A7DB8; --jade-soft:#E1E9F2; --on-jade:#FFFFFF; --user-bubble:#EFE8DA;}
+:root[data-palette=indigo]{--chrome:#EFF1F8; --surface:#F7F8FC; --raised:#FFFFFF; --sunken:#ECEEF6; --line:#E0E3EE; --line-2:#C9CEDD; --control:#7E859C; --ink:#161A2B; --ink-2:#434A63; --ink-3:#5D6480; --you-wave:#2E3448; --jade:#4146B8; --jade-wave:#5F66D9; --jade-soft:#E3E4F7; --on-jade:#FFFFFF; --user-bubble:#E8EAF5;}
+:root[data-palette=wisteria]{--chrome:#F3F0F7; --surface:#F9F7FB; --raised:#FFFFFF; --sunken:#EFEBF4; --line:#E4DEEC; --line-2:#CFC6DB; --control:#857A93; --ink:#1E1726; --ink-2:#4A4056; --ink-3:#655A72; --you-wave:#352B40; --jade:#6B3FA0; --jade-wave:#8B5CC7; --jade-soft:#EDE4F7; --on-jade:#FFFFFF; --user-bubble:#EEE8F4;}
+:root[data-palette=lab]{--chrome:#ECEFF2; --surface:#F4F6F8; --raised:#FFFFFF; --sunken:#E8ECF0; --line:#D9DFE5; --line-2:#C3CBD3; --control:#78838E; --ink:#0E1216; --ink-2:#3A434C; --ink-3:#57626D; --you-wave:#252C33; --jade:#00708A; --jade-wave:#0098B8; --jade-soft:#D9F0F5; --on-jade:#FFFFFF; --user-bubble:#E6EBEF;}
+:root[data-palette=plain][data-theme=dark]{--chrome:#1C1C1E; --surface:#000000; --raised:#1C1C1E; --sunken:#2C2C2E; --line:#38383A; --line-2:#48484A; --control:#8E8E93; --ink:#FFFFFF; --ink-2:#C7C7CC; --ink-3:#98989D; --you-wave:#D1D1D6; --jade:#5ADBB8; --jade-wave:#3FD0AA; --jade-soft:#14332A; --on-jade:#06231B; --user-bubble:#232326;}
+:root[data-palette=celadon][data-theme=dark]{--chrome:#0F1412; --surface:#141A18; --raised:#1B2320; --sunken:#0B0F0D; --line:#28322E; --line-2:#3C4843; --control:#6B7770; --ink:#E8EDE8; --ink-2:#B1BCB5; --ink-3:#8E9A93; --you-wave:#D5DDD7; --jade:#5ADBB8; --jade-wave:#3FD0AA; --jade-soft:#14332A; --on-jade:#06231B; --user-bubble:#212A27;}
+:root[data-palette=xuan][data-theme=dark]{--chrome:#15120F; --surface:#1A1713; --raised:#24201A; --sunken:#12100D; --line:#332D24; --line-2:#463E32; --control:#7A705F; --ink:#EDE6D9; --ink-2:#C4BAA8; --ink-3:#9C927F; --you-wave:#DDD4C4; --jade:#8DB8E8; --jade-wave:#7AA9DE; --jade-soft:#1D2A3A; --on-jade:#0E1B2A; --user-bubble:#2A251E;}
+:root[data-palette=indigo][data-theme=dark]{--chrome:#0E1019; --surface:#12141F; --raised:#1B1E2C; --sunken:#0B0D15; --line:#2A2E40; --line-2:#3B4058; --control:#6E7591; --ink:#E6E8F2; --ink-2:#B3B8CC; --ink-3:#8C92AA; --you-wave:#D3D7E6; --jade:#9EA3FF; --jade-wave:#8A90F5; --jade-soft:#22254A; --on-jade:#121433; --user-bubble:#212436;}
+:root[data-palette=wisteria][data-theme=dark]{--chrome:#120F16; --surface:#17131C; --raised:#211B28; --sunken:#0F0C13; --line:#30283A; --line-2:#43394F; --control:#776D85; --ink:#EDE7F3; --ink-2:#C1B6CD; --ink-3:#9A8FA7; --you-wave:#DDD4E6; --jade:#C9A4F2; --jade-wave:#B48BE8; --jade-soft:#2E2140; --on-jade:#22113A; --user-bubble:#261F2E;}
+:root[data-palette=lab][data-theme=dark]{--chrome:#0A0C0E; --surface:#0D0F12; --raised:#161A1F; --sunken:#08090B; --line:#252B32; --line-2:#36404A; --control:#69737E; --ink:#E6EBF0; --ink-2:#AEB8C2; --ink-3:#85909B; --you-wave:#D2DAE2; --jade:#4FD8F0; --jade-wave:#2CC4E0; --jade-soft:#0E2E36; --on-jade:#032029; --user-bubble:#1A1F25;}
+:root[data-contrast=more][data-palette=plain]{--chrome:#F2F2F7; --surface:#FFFFFF; --raised:#FFFFFF; --sunken:#F2F2F7; --line:#D1D1D6; --line-2:#8E8E93; --control:#5F5F62; --ink:#000000; --ink-2:#161617; --ink-3:#48484A; --you-wave:#3A3A3C; --jade:#05493B; --jade-wave:#086E57; --jade-soft:#DCEDE6; --on-jade:#FFFFFF; --user-bubble:#EFEFF4;}
+:root[data-contrast=more][data-palette=celadon]{--chrome:#F1F3EE; --surface:#FAFBF8; --raised:#FFFFFF; --sunken:#EBEEE8; --line:#C5CCC3; --line-2:#838E87; --control:#66716A; --ink:#17211D; --ink-2:#2E3A35; --ink-3:#47544E; --you-wave:#2C3833; --jade:#175A4B; --jade-wave:#1F8067; --jade-soft:#DCEDE6; --on-jade:#FFFFFF; --user-bubble:#E9EDE6;}
+:root[data-contrast=more][data-palette=xuan]{--chrome:#F3EFE6; --surface:#FAF7F0; --raised:#FFFDF8; --sunken:#F0EBE0; --line:#D3CAB7; --line-2:#8C8371; --control:#706859; --ink:#241F18; --ink-2:#393229; --ink-3:#4F473B; --you-wave:#3A3329; --jade:#2D4C6D; --jade-wave:#42648D; --jade-soft:#E1E9F2; --on-jade:#FFFFFF; --user-bubble:#EFE8DA;}
+:root[data-contrast=more][data-palette=indigo]{--chrome:#EFF1F8; --surface:#F7F8FC; --raised:#FFFFFF; --sunken:#ECEEF6; --line:#C9CEDD; --line-2:#7E859C; --control:#62687E; --ink:#161A2B; --ink-2:#2C3146; --ink-3:#434A63; --you-wave:#2E3448; --jade:#353B92; --jade-wave:#4B52AA; --jade-soft:#E3E4F7; --on-jade:#FFFFFF; --user-bubble:#E8EAF5;}
+:root[data-contrast=more][data-palette=wisteria]{--chrome:#F3F0F7; --surface:#F9F7FB; --raised:#FFFFFF; --sunken:#EFEBF4; --line:#CFC6DB; --line-2:#857A93; --control:#695F76; --ink:#1E1726; --ink-2:#332B3D; --ink-3:#4A4056; --you-wave:#352B40; --jade:#56357F; --jade-wave:#6D4A9B; --jade-soft:#EDE4F7; --on-jade:#FFFFFF; --user-bubble:#EEE8F4;}
+:root[data-contrast=more][data-palette=lab]{--chrome:#ECEFF2; --surface:#F4F6F8; --raised:#FFFFFF; --sunken:#E8ECF0; --line:#C3CBD3; --line-2:#78838E; --control:#5B646D; --ink:#0E1216; --ink-2:#232930; --ink-3:#3A434C; --you-wave:#252C33; --jade:#11566A; --jade-wave:#17738B; --jade-soft:#D9F0F5; --on-jade:#FFFFFF; --user-bubble:#E6EBEF;}
+:root[data-contrast=more][data-palette=plain][data-theme=dark]{--chrome:#1C1C1E; --surface:#000000; --raised:#1C1C1E; --sunken:#2C2C2E; --line:#48484A; --line-2:#8E8E93; --control:#A9A9AD; --ink:#FFFFFF; --ink-2:#E3E3E5; --ink-3:#C7C7CC; --you-wave:#D1D1D6; --jade:#8DE5C9; --jade-wave:#7EDCBF; --jade-soft:#14332A; --on-jade:#06231B; --user-bubble:#232326;}
+:root[data-contrast=more][data-palette=celadon][data-theme=dark]{--chrome:#0F1412; --surface:#141A18; --raised:#1B2320; --sunken:#0B0F0D; --line:#3C4843; --line-2:#6B7770; --control:#89938C; --ink:#E8EDE8; --ink-2:#CCD4CE; --ink-3:#B1BCB5; --you-wave:#D5DDD7; --jade:#87E0C4; --jade-wave:#78D8B9; --jade-soft:#14332A; --on-jade:#06231B; --user-bubble:#212A27;}
+:root[data-contrast=more][data-palette=xuan][data-theme=dark]{--chrome:#15120F; --surface:#1A1713; --raised:#24201A; --sunken:#12100D; --line:#463E32; --line-2:#7A705F; --control:#958C7C; --ink:#EDE6D9; --ink-2:#D8D0C0; --ink-3:#C4BAA8; --you-wave:#DDD4C4; --jade:#A5C4E5; --jade-wave:#97B9DE; --jade-soft:#1D2A3A; --on-jade:#0E1B2A; --user-bubble:#2A251E;}
+:root[data-contrast=more][data-palette=indigo][data-theme=dark]{--chrome:#0E1019; --surface:#12141F; --raised:#1B1E2C; --sunken:#0B0D15; --line:#3B4058; --line-2:#6E7591; --control:#8A90A9; --ink:#E6E8F2; --ink-2:#CCD0DF; --ink-3:#B3B8CC; --you-wave:#D3D7E6; --jade:#AFB5FD; --jade-wave:#9FA7F6; --jade-soft:#22254A; --on-jade:#121433; --user-bubble:#212436;}
+:root[data-contrast=more][data-palette=wisteria][data-theme=dark]{--chrome:#120F16; --surface:#17131C; --raised:#211B28; --sunken:#0F0C13; --line:#43394F; --line-2:#776D85; --control:#938A9F; --ink:#EDE7F3; --ink-2:#D7CEE0; --ink-3:#C1B6CD; --you-wave:#DDD4E6; --jade:#D2B5F3; --jade-wave:#C2A2EC; --jade-soft:#2E2140; --on-jade:#22113A; --user-bubble:#261F2E;}
+:root[data-contrast=more][data-palette=lab][data-theme=dark]{--chrome:#0A0C0E; --surface:#0D0F12; --raised:#161A1F; --sunken:#08090B; --line:#36404A; --line-2:#69737E; --control:#879099; --ink:#E6EBF0; --ink-2:#CAD1D9; --ink-3:#AEB8C2; --you-wave:#D2DAE2; --jade:#81DDF0; --jade-wave:#6FCEE4; --jade-soft:#0E2E36; --on-jade:#032029; --user-bubble:#1A1F25;}
+  /* /tokens */
 
 /* ---------- Base ---------- */
 *{box-sizing:border-box}
@@ -217,7 +247,8 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .msg-ai:hover .msg-tools,.msg-ai:focus-within .msg-tools,.msg-ai:last-child .msg-tools,.msg-ai:has(+ .mem-line:last-child) .msg-tools{opacity:1}
 .msg-tools .icon-btn{width:30px;height:30px}
 .msg-tools .icon-btn svg{width:16px;height:16px}
-.msg-stat{margin-left:8px;font-size:12px;color:var(--ink-3)}
+.msg-stat{margin-left:8px;padding:3px 6px;border-radius:6px;font-size:12px;color:var(--ink-3)}
+.msg-stat:hover,.msg-stat[aria-expanded=true]{background:var(--sunken);color:var(--ink-2)}
 .steps{margin-bottom:8px;font-size:13px;color:var(--ink-2)}
 .steps summary{display:inline-flex;align-items:center;gap:6px;cursor:pointer;list-style:none;padding:2px 6px 2px 0;border-radius:6px}
 .steps summary::-webkit-details-marker{display:none}
@@ -457,6 +488,16 @@ button.tag:hover{background:#0B0F0DF0}
 .voice[aria-checked=true]{border-color:var(--jade);box-shadow:inset 0 0 0 1px var(--jade)}
 .voice b{display:block;font-weight:500}
 .voice small{display:block;font-size:12.5px;color:var(--ink-3)}
+.palettes{margin-bottom:14px}
+.pal-swatch{flex:none;display:grid;align-content:center;gap:4px;width:52px;height:38px;padding:0 7px;border-radius:8px;background:var(--pl-paper);box-shadow:inset 0 0 0 1px #0000001f}
+.pal-swatch i{display:block;height:4px;border-radius:2px;background:var(--pl-ink)}
+.pal-swatch i:first-child{justify-self:end;width:55%;height:7px;border-radius:4px;background:var(--pl-bubble)}
+.pal-swatch i:nth-child(2){width:90%;background:var(--pl-model)}
+.pal-swatch i:last-child{width:65%;opacity:.55}
+:root[data-theme=dark] .pal-swatch{background:var(--pd-paper);box-shadow:inset 0 0 0 1px #ffffff24}
+:root[data-theme=dark] .pal-swatch i{background:var(--pd-ink)}
+:root[data-theme=dark] .pal-swatch i:first-child{background:var(--pd-bubble)}
+:root[data-theme=dark] .pal-swatch i:nth-child(2){background:var(--pd-model)}
 .set-in textarea{display:block;width:100%;min-height:92px;margin-top:8px;padding:9px 11px;resize:vertical;border:1px solid var(--control);border-radius:10px;background:var(--raised);line-height:1.6}
 
 /* ---------- Menu & toast ---------- */
@@ -500,6 +541,16 @@ button.tag:hover{background:#0B0F0DF0}
 .param input{display:block;width:100%;margin:8px 0 2px;accent-color:var(--jade)}
 .param small{display:block;font-size:13px;line-height:1.5;color:var(--ink-3)}
 .tech{font:12px var(--mono);color:var(--ink-3)}
+.voice small.tech{margin-top:2px;font-size:11.5px}
+.param .rec{font-size:12px;font-weight:400;color:var(--ink-3);white-space:nowrap}
+.param .row b .tech,.param .row b .rec,.param .row b .link{margin-left:8px;font-weight:400}
+.param .rec+.link{font-size:12px}
+.param.changed .param-top output{color:var(--ink);font-weight:600}
+.param .row{padding:0;border:0}
+.param-sum{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--sunken);font-size:13.5px}
+.fit{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.fit svg{flex:none;width:16px;height:16px;margin-top:2px}
+.fit.warn svg{color:var(--amber)}.fit.bad svg{color:var(--cinnabar)}
 .back{transform:rotate(180deg)}
 .sw:disabled{opacity:.5}
 .btn.danger{color:var(--cinnabar)}
@@ -1204,11 +1255,58 @@ const PRESETS = {
   balanced: { label: '均衡', sub: '默认，适合大多数情况', params: { max_tokens: 1024, temperature: .7, top_p: .9, top_k: 40, repeat_penalty: 1.05, n_ctx: 4096, n_gpu_layers: 99 } },
   detail: { label: '细致', sub: '回答更完整，响应更慢', params: { max_tokens: 2048, temperature: .7, top_p: .9, top_k: 40, repeat_penalty: 1.05, n_ctx: 8192, n_gpu_layers: 99 } },
 };
+// Each preset names the numbers it changes, so the choice is not a black box.
+const presetTag = p => `记忆 ${p.n_ctx / 1024}K · 回答上限 ${p.max_tokens}`;
+// Defaults come from the current model's recommendation; placeholder until the catalog provides one.
+const recParams = () => ({ ...PRESETS.balanced.params, ...(MODELS[state.model]?.rec ?? {}) });
+const changedParams = () => { const rec = recParams(); return Object.keys(rec).filter(k => state.params[k] !== rec[k]); };
+// Memory fit for a context length, with the cause when it does not fit (borrowed from Unsloth's verdict + cause).
+// Placeholder numbers: the spec's memory assumes a 4K context, and the cache grows linearly. The backend replaces both.
+const CTX_OPTIONS = [2048, 4096, 8192, 16384];
+const kvGB = n => n / 4096 * .5;
+const needGB = (n, id = state.model) => MODELS[id].specs[specOf(id)].memory - kvGB(4096) + kvGB(n);
+function memoryFit(n) {
+  const cap = deviceMemory(), need = needGB(n);
+  if (need > cap) {
+    const fits = CTX_OPTIONS.filter(c => needGB(c) <= cap).at(-1);
+    return { verdict: 'exceeds', cause: fits ? 'context' : 'model', need, cap, fits };
+  }
+  return { verdict: need / cap > .85 ? 'tight' : 'fits', need, cap };
+}
+// One answer's run, one tap from its measurement line. Only speed and time come from the Engine today
+// (done: tokensPerSecond, seconds); the rest are placeholders until the backend defines its measurements.
+function runDetailHTML(it) {
+  const stat = (k, v) => `<div class="stat"><span>${k}</span><span class="mono">${v}</span></div>`;
+  const [, tps = '40', secs = '1.0'] = /(\d+) tok\/s · ([\d.]+) s/.exec(it?.stat ?? '') ?? [];
+  const m = curModel(), first = (.3 + (+tps % 5) / 10).toFixed(1);
+  const where = isRemote() ? esc(remoteHost()) : inBrowser() ? '这个浏览器' : '这台设备';
+  const mode = state.preset === 'custom' ? `自定义 · 改了 ${changedParams().length} 项` : PRESETS[state.preset].label;
+  return `<div class="ttl">运行详情</div>
+    <div class="perf-head"><b>${tps} tok/s</b><small>生成速度 · ${where}</small></div>
+    ${stat('模型', `${esc(m.name)}${isRemote() ? '' : ` · ${specText(state.model)}`}`)}
+    ${stat('首字用时', `${first} s`)}${stat('生成用时', `${secs} s`)}${stat('生成长度', `${Math.round(tps * secs)} tokens`)}
+    ${isRemote() || inBrowser() ? '' : stat('内存峰值', `${needGB(state.params.n_ctx).toFixed(1)} GB`)}
+    ${stat('运行方式', mode)}
+    <div class="hint">${isRemote() ? '这条回答在远程服务上生成，本机没有内存数据。' : 'LES 测量（专家缓存命中、闪存读取）在后端接入后显示。'}</div>
+    <div class="sep"></div>${mi('open-settings', '运行参数', { data: 'data-tab="advanced"' })}`;
+}
+function memoryFitHTML(n) {
+  if (isRemote() || inBrowser()) return '';
+  const f = memoryFit(n), gb = v => `${v.toFixed(1)} GB`;
+  const text = {
+    fits: `约占用 ${gb(f.need)}，这台设备有 ${f.cap} GB。`,
+    tight: `约占用 ${gb(f.need)}，接近这台设备的 ${f.cap} GB，其他应用可能被系统关掉。`,
+    exceeds: f.cause === 'context' ? `约需 ${gb(f.need)}，超过这台设备的 ${f.cap} GB。改到 ${f.fits} 或更短就能放下。` : '这个模型本身就放不下，缩短记忆也没用。换轻量规格或更小的模型。',
+  }[f.verdict];
+  const kind = { fits: '', tight: 'warn', exceeds: 'bad' }[f.verdict];
+  return `<p class="fit ${kind}" id="ctxFit" role="status">${kind ? icon('alert') : ''}<span>${text}</span></p>`;
+}
 
 /* ================= State ================= */
 const state = {
   current: 'report',
   theme: store.get('theme', 'system'),
+  palette: store.get('palette', 'celadon'),
   sendKey: store.get('sendKey', 'enter'),
   settingsTab: null,
   inspector: false,
@@ -1237,7 +1335,7 @@ const state = {
   remote: { url: store.get('remoteUrl', ''), hasToken: false },   // the token itself is never kept here
   voice: 'qing',
   persona: '你是一个耐心、直接的助手。回答简短，先说结论。',
-  prefs: { proactiveDefault: 'scene', hd: false, aec: true, listenFirst: false, tech: false, keepHistory: true, keepTranscript: true, keepFrames: false, appLock: false, retention: 'never',
+  prefs: { proactiveDefault: 'scene', hd: false, aec: true, listenFirst: false, tech: true, keepHistory: true, keepTranscript: true, keepFrames: false, appLock: false, retention: 'never',
     // General
     lang: 'system', textSize: 'm', openTo: 'new', sounds: true, haptics: true, autostart: false, closeAction: 'tray', defaultScene: 'life',
     // Voice
@@ -1279,13 +1377,25 @@ const isBlank = t => t.items.length === 0;
 const liveHere = () => state.live && state.live.taskId === state.current;
 
 /* ================= Theme ================= */
+/* tokens:palettes */
+const DEFAULT_PALETTE = 'celadon';
+const PALETTES = [{"id":"plain","name":"素","description":"系统中性色，青瓷作模型色。最接近原生","light":{"chrome":"#F2F2F7","surface":"#FFFFFF","ink":"#000000","jade":"#0B6E5B","user-bubble":"#EFEFF4"},"dark":{"chrome":"#1C1C1E","surface":"#000000","ink":"#FFFFFF","jade":"#5ADBB8","user-bubble":"#232326"}},{"id":"celadon","name":"青瓷","description":"绿灰纸面，墨与青瓷。现有品牌色","light":{"chrome":"#F1F3EE","surface":"#FAFBF8","ink":"#17211D","jade":"#0B6E5B","user-bubble":"#E9EDE6"},"dark":{"chrome":"#0F1412","surface":"#141A18","ink":"#E8EDE8","jade":"#5ADBB8","user-bubble":"#212A27"}},{"id":"xuan","name":"宣纸","description":"暖米色纸面，黛蓝作模型色。适合长时间阅读","light":{"chrome":"#F3EFE6","surface":"#FAF7F0","ink":"#241F18","jade":"#2D5B8C","user-bubble":"#EFE8DA"},"dark":{"chrome":"#15120F","surface":"#1A1713","ink":"#EDE6D9","jade":"#8DB8E8","user-bubble":"#2A251E"}},{"id":"indigo","name":"靛蓝","description":"冷灰纸面，靛蓝作模型色。安静，偏工作","light":{"chrome":"#EFF1F8","surface":"#F7F8FC","ink":"#161A2B","jade":"#4146B8","user-bubble":"#E8EAF5"},"dark":{"chrome":"#0E1019","surface":"#12141F","ink":"#E6E8F2","jade":"#9EA3FF","user-bubble":"#212436"}},{"id":"wisteria","name":"紫藤","description":"淡紫灰纸面，紫藤作模型色。柔和","light":{"chrome":"#F3F0F7","surface":"#F9F7FB","ink":"#1E1726","jade":"#6B3FA0","user-bubble":"#EEE8F4"},"dark":{"chrome":"#120F16","surface":"#17131C","ink":"#EDE7F3","jade":"#C9A4F2","user-bubble":"#261F2E"}},{"id":"lab","name":"实验台","description":"石墨纸面，青色作模型色。面向关心性能的人","light":{"chrome":"#ECEFF2","surface":"#F4F6F8","ink":"#0E1216","jade":"#00708A","user-bubble":"#E6EBEF"},"dark":{"chrome":"#0A0C0E","surface":"#0D0F12","ink":"#E6EBF0","jade":"#4FD8F0","user-bubble":"#1A1F25"}}];
+  /* /tokens */
+const moreContrast = matchMedia('(prefers-contrast: more)');
+// An unknown palette ID shows the default but stays stored, the same rule as the apps.
+const paletteOf = id => (PALETTES.some(p => p.id === id) ? id : DEFAULT_PALETTE);
 function applyTheme() {
-  const t = state.theme === 'system' ? (darkScheme.matches ? 'dark' : 'light') : state.theme;
-  document.documentElement.dataset.theme = t;
-  $('#themeColor').content = t === 'dark' ? '#141A18' : '#FAFBF8';
+  const t = state.theme === 'system' ? (darkScheme.matches ? 'dark' : 'light') : state.theme, root = document.documentElement;
+  root.dataset.theme = t;
+  root.dataset.palette = paletteOf(state.palette);
+  if (state.proto.contrast || moreContrast.matches) root.dataset.contrast = 'more';
+  else delete root.dataset.contrast;
+  $('#themeColor').content = getComputedStyle(root).getPropertyValue('--surface').trim();
   readTrackColors();
 }
 darkScheme.addEventListener('change', applyTheme);
+moreContrast.addEventListener('change', applyTheme);
+const paletteCard = p => `<button class="voice pal" role="radio" aria-checked="${paletteOf(state.palette) === p.id}" data-action="set-palette" data-id="${p.id}"><span class="pal-swatch" aria-hidden="true" style="--pl-paper:${p.light.surface};--pl-ink:${p.light.ink};--pl-model:${p.light.jade};--pl-bubble:${p.light['user-bubble']};--pd-paper:${p.dark.surface};--pd-ink:${p.dark.ink};--pd-model:${p.dark.jade};--pd-bubble:${p.dark['user-bubble']}"><i></i><i></i><i></i></span><span><b>${esc(p.name)}${p.id === DEFAULT_PALETTE ? '（默认）' : ''}</b><small>${esc(p.description)}</small></span></button>`;
 
 /* ================= Navigation ================= */
 function renderNav() {
@@ -1530,7 +1640,7 @@ function aiHTML(it) {
   const cutWhy = { length: '回答太长，到这里停了', crash: '模型中断了，回答到这里' }[it.cut];
   const cut = cutWhy ? `<div class="cut">${cutWhy}<button class="btn" data-action="continue-reply" data-id="${it.id}">接着写</button></div>` : '';
   return `${steps}${think}${voice}<div class="content ${live ? 'caret' : ''}" id="${it.id}">${content}</div>${art}${cut}
-    ${live ? '' : `<div class="msg-tools"><button class="icon-btn" data-action="copy" aria-label="复制" title="复制">${icon('copy')}</button><button class="icon-btn" data-action="regen" aria-label="重新生成" title="重新生成">${icon('retry')}</button><button class="icon-btn" data-action="read-aloud" aria-label="朗读" title="朗读">${icon('speaker')}</button>${it.stat && tech ? `<span class="msg-stat mono">${esc(it.stat)}</span>` : ''}</div>`}`;
+    ${live ? '' : `<div class="msg-tools"><button class="icon-btn" data-action="copy" aria-label="复制" title="复制">${icon('copy')}</button><button class="icon-btn" data-action="regen" aria-label="重新生成" title="重新生成">${icon('retry')}</button><button class="icon-btn" data-action="read-aloud" aria-label="朗读" title="朗读">${icon('speaker')}</button>${it.stat && tech ? `<button class="msg-stat mono" data-action="run-detail" data-id="${it.id}" aria-haspopup="dialog" aria-expanded="false" title="运行详情">${esc(it.stat)}</button>` : ''}</div>`}`;
 }
 // The one place content may leave the device on a local setup, so it is asked for in the thread.
 function askHTML(it) {
@@ -2481,6 +2591,8 @@ function specPicker() {
 function settingsBody(tab) {
   if (tab === 'general') return `<h2>通用</h2><p>外观和输入习惯。</p>
     ${row('外观', '跟随系统时，会随日夜自动切换。', sel('setTheme', [['system', '跟随系统'], ['light', '浅色'], ['dark', '深色']], state.theme, '外观'))}
+    <h3>主题</h3><p class="res-note">只换对话区的纸面和模型的颜色。正在采集、等待的颜色在所有主题下都一样。</p>
+    <div class="voices palettes" role="radiogroup" aria-label="主题">${PALETTES.map(paletteCard).join('')}</div>
     ${isCompact() ? '' : row('发送方式', '输入法选词时按回车不会发送。', sel('setSend', [['enter', 'Enter 发送，Shift+Enter 换行'], ['mod', `${MOD}Enter 发送，Enter 换行`]], state.sendKey, '发送方式'))}
     ${row('界面语言', '切换后立即生效。', pick('lang', [['system', '跟随系统'], ['zh-CN', '简体中文'], ['zh-TW', '繁體中文（台灣）'], ['zh-HK', '繁體中文（香港）'], ['en', 'English']], '界面语言'))}
     ${row('文字大小', '', pick('textSize', [['s', '小'], ['m', '标准'], ['l', '大'], ['xl', '特大']], '文字大小'))}
@@ -2583,9 +2695,12 @@ function settingsBody(tab) {
     ${row('清除全部对话', `对话、转写和产物都会从这台设备上删除。${backupOn() ? '下次备份时，iCloud 里的也会删除。' : ''}`, '<button class="btn danger" data-action="clear-all">清除</button>')}`;
   }
   if (tab === 'advanced') {
-    const v = state.params;
-    const param = (key, name, desc, min, max, step) => `<div class="param"><div class="param-top"><b>${name}</b><span class="tech">${key}</span><output class="mono" id="out-${key}">${v[key]}</output></div><input type="range" data-param="${key}" min="${min}" max="${max}" step="${step}" value="${v[key]}" aria-label="${name}"><small>${desc}</small></div>`;
-    return `<h2>高级</h2><p>大多数情况下不用改。改动后，运行方式会显示为“自定义”。</p>
+    const v = state.params, rec = recParams(), changed = changedParams();
+    const recMark = key => v[key] === rec[key] ? '' : `<span class="rec">推荐 ${rec[key]}</span><button class="link" data-action="reset-param" data-key="${key}" aria-label="恢复推荐值 ${rec[key]}">恢复</button>`;
+    const param = (key, name, desc, min, max, step) => `<div class="param ${v[key] === rec[key] ? '' : 'changed'}"><div class="param-top"><b>${name}</b><span class="tech">${key}</span>${recMark(key)}<output class="mono" id="out-${key}">${v[key]}</output></div><input type="range" data-param="${key}" min="${min}" max="${max}" step="${step}" value="${v[key]}" aria-label="${name}"><small>${desc}</small></div>`;
+    const summary = changed.length ? `<div class="param-sum" role="status"><span>和推荐值相比，改了 ${changed.length} 项。</span><button class="btn" data-action="reset-params">恢复推荐值</button></div>` : '<div class="param-sum" role="status"><span>都是当前模型的推荐值。</span></div>';
+    return `<h2>高级</h2><p>大多数情况下不用改。改动后，运行方式会显示为“自定义”。参数跟着当前模型，换模型时换成新模型的推荐值。</p>
+      ${summary}
       <h3>回答</h3>
       ${param('max_tokens', '回答长度上限', '回答最长能写多少。', 256, 4096, 256)}
       ${param('temperature', '随机程度', '越高越有变化，越低越稳定。', 0, 1.5, .05)}
@@ -2593,13 +2708,12 @@ function settingsBody(tab) {
       ${param('top_k', '候选词数量', '每一步考虑多少个候选词。', 1, 100, 1)}
       ${param('repeat_penalty', '避免重复', '越高越不容易重复同样的话。', 1, 1.5, .01)}
       <h3>设备</h3>
-      ${row('对话记忆长度 <span class="tech">n_ctx</span>', '记得更多会占用更多内存。', sel('setCtx', [[2048, '2048'], [4096, '4096'], [8192, '8192'], [16384, '16384']], v.n_ctx, '对话记忆长度'))}
+      <div class="param ${v.n_ctx === rec.n_ctx ? '' : 'changed'}">${row(`对话记忆长度 <span class="tech">n_ctx</span>${recMark('n_ctx')}`, '记得更多会占用更多内存。', sel('setCtx', CTX_OPTIONS.map(n => [n, String(n)]), v.n_ctx, '对话记忆长度'))}${memoryFitHTML(v.n_ctx)}</div>
       ${inBrowser() ? '' : `${param('n_gpu_layers', '显卡加速层数', '0 表示只用 CPU。层数越多越快，占用显存也越多。', 0, 99, 1)}
       ${row('本地服务地址', '', `<input type="text" id="engineAddr" value="${esc(state.address)}" aria-label="本地服务地址">`)}
       ${row('连接状态', '', `${pill(backendState() === 'ready' ? '已连接' : '未连接', backendState() === 'ready' ? 'ok' : 'bad')}<button class="btn" data-action="test-engine">测试</button>`)}`}
       <h3>显示</h3>
-      ${row('显示技术信息', '在回答和对话详情里显示速度、执行步骤和用到的技能。', sw('tech', '显示技术信息'))}
-      ${row('恢复默认', '把上面的参数改回“均衡”。', '<button class="btn" data-action="reset-params">恢复</button>')}
+      ${row('显示技术信息', '在回答下方显示速度和用时，在设置里显示参数名。关掉后只留白话。', sw('tech', '显示技术信息'))}
       <h3>开发者</h3>
       ${DEVELOPER_PAGES.map(([id, name, desc]) => row(name, desc, `<button class="btn" data-action="settings-tab" data-tab="${id}">查看</button>`)).join('')}`;
   }
@@ -2616,7 +2730,7 @@ function settingsBody(tab) {
   const connection = isRemote() ? `${row('服务地址', 'MiniCPM 服务的 WebSocket 地址。', `<input type="text" id="remoteUrl" value="${esc(state.remote.url)}" placeholder="wss://example.com/omni" aria-label="服务地址">`)}
       ${row('访问令牌', '服务要求鉴权时填写。', `<input type="password" id="remoteToken" autocomplete="off" placeholder="${state.remote.hasToken ? '已保存' : '未设置'}" aria-label="访问令牌">`)}
       ${row('连接状态', '', `${status}<button class="btn" data-action="test-engine">测试连接</button>`)}` : '';
-  const preset = (id, p) => `<button class="voice" role="radio" aria-checked="${state.preset === id}" data-action="set-preset" data-id="${id}"><span><b>${p.label}</b><small>${p.sub}</small></span></button>`;
+  const preset = (id, p) => `<button class="voice" role="radio" aria-checked="${state.preset === id}" data-action="set-preset" data-id="${id}"><span><b>${p.label}</b><small>${p.sub}</small>${state.prefs.tech ? `<small class="tech">${presetTag(p.params)}</small>` : ''}</span></button>`;
   return `<h2>模型</h2><p>${isRemote() ? '所有对话共用当前模型。' : `${inBrowser() ? '这个浏览器' : '这台设备'}一次只运行一个模型，所有对话共用。换模型要等它重新载入。`}</p>
     <h3>可用模型</h3>${Object.entries(MODELS).map(([id, m]) => {
       const missing = !isRemote() && !state.installed.has(id);
@@ -2630,7 +2744,7 @@ function settingsBody(tab) {
     <h3>看图</h3>
     ${row('高清细节', '看清小字和细节，响应会变慢。', sw('hd', '高清细节'))}
     <h3>运行方式</h3><div class="voices" role="radiogroup" aria-label="运行方式">${Object.entries(PRESETS).map(([id, p]) => preset(id, p)).join('')}</div>
-    ${state.preset === 'custom' ? '<p class="res-note">当前使用自定义参数。<button class="link" data-action="settings-tab" data-tab="advanced">查看</button></p>' : ''}
+    ${state.preset === 'custom' ? `<p class="res-note">自定义 · 和推荐值相比改了 ${changedParams().length} 项。<button class="link" data-action="settings-tab" data-tab="advanced">查看</button></p>` : ''}
     <h3>电量与发热</h3>
     ${row('空闲后释放内存', '让出内存给其他应用，下次使用时要重新载入。', pick('idleRelease', [['5', '5 分钟后'], ['15', '15 分钟后'], ['60', '1 小时后'], ['never', '不释放']], '空闲后释放内存'))}
     ${STAGE > 1 ? row('低电量时自动省电', '实时时先放慢看画面，再只用声音。', sw('lowPower', '低电量时自动省电')) : ''}
@@ -3102,7 +3216,18 @@ const actions = {
   'import-all': () => addImported('导入了 1 个对话，跳过 2 个重复'),
   'dismiss-import': () => { state.importFail = false; renderSettings(); },
   'set-preset': el => { state.preset = el.dataset.id; state.params = { ...PRESETS[el.dataset.id].params }; renderSettings(); $(`[data-action=set-preset][data-id=${state.preset}]`)?.focus(); },
-  'reset-params': () => { state.preset = 'balanced'; state.params = { ...PRESETS.balanced.params }; renderSettings(); showToast('已恢复默认'); },
+  'reset-params': () => {
+    const before = { preset: state.preset, params: { ...state.params } };
+    state.preset = 'balanced'; state.params = recParams(); renderSettings();
+    showToast('已恢复推荐值', '撤销', () => { Object.assign(state, before); renderSettings(); });
+  },
+  'reset-param': el => {
+    const key = el.dataset.key;
+    state.params[key] = recParams()[key];
+    if (!changedParams().length) state.preset = 'balanced';
+    renderSettings(); $(`[data-param=${key}],#setCtx`)?.focus();
+  },
+  'run-detail': el => openMenu(el, runDetailHTML(cur().items.find(x => x.id === el.dataset.id)), { label: '运行详情', role: 'dialog' }),
   'clear-all': () => showToast('原型中不清除数据'),
   'proto-note': el => showToast(el.dataset.msg),
   forget: el => {
@@ -3139,6 +3264,7 @@ const actions = {
     showToast(`已移除 ${MODELS[id].name}`, '撤销', () => { state.installed.add(id); renderSettings(); });
   },
   'set-voice': el => { state.voice = el.dataset.id; renderSettings(); $(`.voice[data-id=${state.voice}]`).focus(); },
+  'set-palette': el => { state.palette = el.dataset.id; store.set('palette', state.palette); applyTheme(); renderSettings(); $(`.pal[data-id=${state.palette}]`).focus(); },
   'model-menu': el => openMenu(el, `${modelTitle()}${modelItems()}${placeItems()}<div class="sep"></div>${mi('open-settings', '管理模型', { data: 'data-tab="models"' })}`, { label: '选择模型' }),
   'ask-model': el => askSwap(el, el.dataset.id),
   'swap-ask-close': () => { const row = document.querySelector('.swap-ask')?.previousElementSibling; closeSwapAsk(); (row?.matches('.mi') ? row : row?.querySelector('[data-action=ask-model]'))?.focus(); },
@@ -3333,7 +3459,8 @@ document.addEventListener('change', e => {
     if (pref === 'defaultScene') { state.sceneOff.delete(e.target.value); }
   }
   if (e.target.dataset.sceneLevel) SCENE_PROACTIVE[e.target.dataset.sceneLevel] = e.target.value;
-  if (id === 'setCtx') { state.params.n_ctx = +e.target.value; state.preset = 'custom'; }
+  if (id === 'setCtx') { state.params.n_ctx = +e.target.value; state.preset = changedParams().length ? 'custom' : 'balanced'; renderSettings(); $('#setCtx')?.focus(); }
+  if (e.target.dataset.param) { const key = e.target.dataset.param; if (!changedParams().length) state.preset = 'balanced'; renderSettings(); $(`[data-param=${key}]`)?.focus(); }
   if (id === 'setSend') { state.sendKey = e.target.value; store.set('sendKey', state.sendKey); syncComposer(); }
   if (id === 'file') { addFiles(e.target.files); e.target.value = ''; }
 });
@@ -3518,13 +3645,17 @@ COMPACT_QUERY.addEventListener('change', () => { closeMenu(); syncForm(); render
  * ?task=allergy (&forgot=1)  ?remember=1 (with live)  ?memory=off
  * ?battery=1|2  ?hold=battery (&ready=1)
  * ?crash=model (&fail=1, with live)  ?crash=live|reply|load|report|sent
- * ?stage=1|2 (default 1; any ?live= opens stage 2)  ?dlstate=badfile  ?att=busy  ?dictate=off  ?rec=1  ?nav=1 */
+ * ?stage=1|2 (default 1; any ?live= opens stage 2)  ?dlstate=badfile  ?att=busy  ?dictate=off  ?rec=1  ?nav=1
+ * ?params=custom (two changed, long memory; with &settings=advanced, try &device=low)  ?run=1 (run details of the last answer)
+ * ?palette=plain|celadon|xuan|indigo|wisteria|lab (tokens/themes/)  ?contrast=more (Increased Contrast values) */
 document.querySelectorAll('kbd[data-mod]').forEach(k => { k.textContent = MOD + k.dataset.mod; });
 syncForm();
 {
   const q = BOOT;
   if (q.get('dictate') === 'off') state.proto.dictate = false;
   if (q.get('theme')) state.theme = q.get('theme');
+  if (q.get('palette')) state.palette = q.get('palette');
+  if (q.get('contrast') === 'more') state.proto.contrast = true;
   applyTheme();
   if (q.get('engine') === 'offline') state.engine = 'offline';
   if (q.get('runtime')) { state.proto.runtime = q.get('runtime'); if (inBrowser()) state.proto.hw = 'none'; }
@@ -3575,6 +3706,7 @@ syncForm();
   if (q.get('inspector')) state.inspector = true;
   else if (innerWidth >= 1560) state.inspector = true;
   if (task(q.get('task'))) state.current = q.get('task');
+  if (q.get('params') === 'custom') { state.params = { ...recParams(), temperature: 1, n_ctx: 16384 }; state.preset = 'custom'; }
   if (q.get('settings')) state.settingsTab = q.get('settings');
   if (q.get('crash') && q.get('crash') !== 'model') afterCrash(q.get('crash'));
   renderAll({ stick: true });
@@ -3602,6 +3734,7 @@ syncForm();
   // Review pages hold the frame; otherwise a turn that lasts a second is gone before it is seen.
   if (q.get('still')) { cancelAnimationFrame(raf); clearInterval(dlTimer); }
   if (q.get('settings') === 'privacy' && (q.get('backup') || q.get('import'))) $('#backupSec').scrollIntoView();
+  if (q.get('run')) { const b = [...document.querySelectorAll('.msg-stat')].at(-1); if (b) actions['run-detail'](b); }
   if (q.get('swap') === 'ask') {
     if (isCompact()) titleSheet($('.head-title')); else actions['model-menu']($('#modelBtn'));
     const id = Object.keys(MODELS).find(m => m !== state.model);

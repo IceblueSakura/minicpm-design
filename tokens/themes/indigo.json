@@ -1,0 +1,113 @@
+{
+  "$description": "冷灰纸面，靛蓝作模型色。安静，偏工作",
+  "$extensions": {
+    "minicpm": {
+      "name": "靛蓝",
+      "nameEn": "Indigo",
+      "order": 4,
+      "surfaces": "theme"
+    }
+  },
+  "light": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#EFF1F8"
+    },
+    "surface": {
+      "$value": "#F7F8FC"
+    },
+    "raised": {
+      "$value": "#FFFFFF"
+    },
+    "sunken": {
+      "$value": "#ECEEF6"
+    },
+    "line": {
+      "$value": "#E0E3EE"
+    },
+    "line-2": {
+      "$value": "#C9CEDD"
+    },
+    "control": {
+      "$value": "#7E859C"
+    },
+    "ink": {
+      "$value": "#161A2B"
+    },
+    "ink-2": {
+      "$value": "#434A63"
+    },
+    "ink-3": {
+      "$value": "#5D6480"
+    },
+    "you-wave": {
+      "$value": "#2E3448"
+    },
+    "jade": {
+      "$value": "#4146B8"
+    },
+    "jade-wave": {
+      "$value": "#5F66D9"
+    },
+    "jade-soft": {
+      "$value": "#E3E4F7"
+    },
+    "on-jade": {
+      "$value": "#FFFFFF"
+    },
+    "user-bubble": {
+      "$value": "#E8EAF5"
+    }
+  },
+  "dark": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#0E1019"
+    },
+    "surface": {
+      "$value": "#12141F"
+    },
+    "raised": {
+      "$value": "#1B1E2C"
+    },
+    "sunken": {
+      "$value": "#0B0D15"
+    },
+    "line": {
+      "$value": "#2A2E40"
+    },
+    "line-2": {
+      "$value": "#3B4058"
+    },
+    "control": {
+      "$value": "#6E7591"
+    },
+    "ink": {
+      "$value": "#E6E8F2"
+    },
+    "ink-2": {
+      "$value": "#B3B8CC"
+    },
+    "ink-3": {
+      "$value": "#8C92AA"
+    },
+    "you-wave": {
+      "$value": "#D3D7E6"
+    },
+    "jade": {
+      "$value": "#9EA3FF"
+    },
+    "jade-wave": {
+      "$value": "#8A90F5"
+    },
+    "jade-soft": {
+      "$value": "#22254A"
+    },
+    "on-jade": {
+      "$value": "#121433"
+    },
+    "user-bubble": {
+      "$value": "#212436"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # 平台落地
 
-设计范围：iOS / iPadOS、Android、macOS、Windows、Linux 和 Web；Windows 和 Linux 目前主要由 Web 交付。当前阶段重点推进 Web、iOS、macOS 的 UI/UX 设计与客户端骨架，双轨分工与后端实验边界见 [项目路线](14-roadmap.md)。本文说明同一份设计在各端怎么落地。平台事实核对于 2026-11-05，当时最新是 iOS / macOS 27.2、Android 17（API 37）。开发开始时再核对一次。
+设计范围：iOS / iPadOS、Android、macOS、Windows、Linux 和 Web；Windows 和 Linux 目前主要由 Web 交付。当前只推进 macOS 和 iOS，Android、Windows、Linux、Web 暂停，下面这些平台的内容保留但不再更新；双轨分工与后端实验边界见 [项目路线](14-roadmap.md)。本文说明同一份设计在各端怎么落地。平台事实核对于 2026-11-05，当时最新是 iOS / macOS 27.2、Android 17（API 37）。开发开始时再核对一次。
 
 事实的把握度这样标：无标记为已读官方文档；**[推断]** 是从文档推出的结论；**[待实测]** 必须在真机上确认，现阶段不做，进入开发前处理。
 
@@ -61,7 +61,7 @@ Web 没有系统控件，所以向原生端的操作靠：紧凑形态的历史�
 
 | Token | Web | iOS / macOS | Android |
 |---|---|---|---|
-| `chrome` `surface` `raised` `sunken` | 使用 | 系统背景色 | M3 surface 角色 |
+| `chrome` `surface` `raised` `sunken` | 使用 | 功能层用系统背景色；对话内容层用主题纸面，主题“素”用系统背景色，见 [设计语言](02-design-language.md#apple-端风格与主题) | M3 surface 角色 |
 | `ink` `ink-2` `ink-3` | 使用 | 系统 label 色 | `onSurface` `onSurfaceVariant` |
 | `line` `line-2` `control` | 使用 | 系统分隔色 | `outlineVariant` `outline` |
 | `jade` | 使用 | App accent | `primary` |
@@ -342,7 +342,7 @@ iOS 客户端最低版本是 27。来自 WWDC26 的 What's new in SwiftUI（sess
 
 `tokens/` 使用 Design Tokens 社区组（DTCG）的结构。颜色值保留十六进制字符串，方便手改，也是 Style Dictionary 能读的写法。
 
-`tools/tokens.mjs` 生成 `apps/web/src/styles/tokens.css` 和 iOS 的 Asset Catalog 颜色，见 [决策记录](10-decisions.md)。Android 开工时再看要不要换成 Style Dictionary，它内置 `compose/object` 格式，对 DTCG 2025.10 的支持还不完整，所以先不用新版的颜色对象写法。
+`tools/tokens.mjs` 先检查对比度和主题规则，全部通过才生成：原型的 token 块、`apps/web/src/styles/tokens.css`（只有默认主题）、iOS 的 Asset Catalog 颜色（根目录是默认主题的角色色，`Themes/` 是各主题的内容层颜色，都带增强对比度外观），以及 `MiniCPMCore` 的主题注册表和 App 里的主题显示名。规则见 [扩展接口](02-design-language.md#扩展接口)，选型见 [决策记录](10-decisions.md)。Android 开工时再看要不要换成 Style Dictionary，它内置 `compose/object` 格式，对 DTCG 2025.10 的支持还不完整，所以先不用新版的颜色对象写法。
 
 ## 交接方式
 

@@ -93,6 +93,14 @@ const GROUPS = [
     ['备份关闭', '?settings=privacy&import=none'], ['没有 iCloud（Android）', '?settings=privacy&backup=none'], ['备份开启', '?settings=privacy&backup=on'], ['正在备份', '?settings=privacy&backup=running'], ['iCloud 空间不够', '?settings=privacy&backup=full'], ['没有登录', '?settings=privacy&backup=signedout'],
     ['浏览器·只有导出', '?settings=privacy&runtime=browser&import=none'], ['导入失败', '?settings=privacy&import=failed'], ['新对话·备份开启', '?view=empty&backup=on'],
   ]],
+  ['运行参数与测量', '测量就近可见，参数分层披露。docs/03-structure.md', [
+    ['运行详情', '?task=report&run=1'], ['运行方式·自定义', '?settings=models&params=custom'], ['参数·都是推荐值', '?settings=advanced'],
+    ['参数·已调整', '?settings=advanced&params=custom'], ['参数·记忆太长', '?settings=advanced&params=custom&device=low'], ['参数·模型太大', '?settings=advanced&device=low&model=minicpm-v-4.5'],
+  ]],
+  ['主题', '六套主题只换内容层的纸面和模型色，信号色不变。勾“深色”看深色值。docs/02-design-language.md', [
+    ['素', '?task=report&palette=plain'], ['青瓷（默认）', '?task=report&palette=celadon'], ['宣纸', '?task=report&palette=xuan'], ['靛蓝', '?task=report&palette=indigo'], ['紫藤', '?task=report&palette=wisteria'], ['实验台', '?task=report&palette=lab'],
+    ['增强对比度', '?task=report&contrast=more'], ['实验台·增强对比度', '?task=report&palette=lab&contrast=more'], ['主题选择', '?settings=general&palette=xuan'], ['不认识的主题', '?task=report&palette=unknown'],
+  ]],
   ['设置', '手机是列表进详情，桌面是两栏。', [
     ['设置首页', '?settings=index', 'phone'], ['通用', '?settings=general'], ['定时通知', '?settings=reminders'], ['回答与人设', '?settings=voice'], ['声音与人设（下阶段）', '?settings=voice&stage=2'], ['实时会话（下阶段）', '?settings=live&stage=2'], ['模型', '?settings=models'],
     ['模型下载中', '?settings=models&dl=40'], ['应用场景', '?settings=applications'], ['高级', '?settings=advanced'],

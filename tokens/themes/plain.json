@@ -1,0 +1,113 @@
+{
+  "$description": "系统中性色，青瓷作模型色。最接近原生",
+  "$extensions": {
+    "minicpm": {
+      "name": "素",
+      "nameEn": "Plain",
+      "order": 1,
+      "surfaces": "system"
+    }
+  },
+  "light": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#F2F2F7"
+    },
+    "surface": {
+      "$value": "#FFFFFF"
+    },
+    "raised": {
+      "$value": "#FFFFFF"
+    },
+    "sunken": {
+      "$value": "#F2F2F7"
+    },
+    "line": {
+      "$value": "#E5E5EA"
+    },
+    "line-2": {
+      "$value": "#D1D1D6"
+    },
+    "control": {
+      "$value": "#8E8E93"
+    },
+    "ink": {
+      "$value": "#000000"
+    },
+    "ink-2": {
+      "$value": "#48484A"
+    },
+    "ink-3": {
+      "$value": "#636366"
+    },
+    "you-wave": {
+      "$value": "#3A3A3C"
+    },
+    "jade": {
+      "$value": "#0B6E5B"
+    },
+    "jade-wave": {
+      "$value": "#12A383"
+    },
+    "jade-soft": {
+      "$value": "#DCEDE6"
+    },
+    "on-jade": {
+      "$value": "#FFFFFF"
+    },
+    "user-bubble": {
+      "$value": "#EFEFF4"
+    }
+  },
+  "dark": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#1C1C1E"
+    },
+    "surface": {
+      "$value": "#000000"
+    },
+    "raised": {
+      "$value": "#1C1C1E"
+    },
+    "sunken": {
+      "$value": "#2C2C2E"
+    },
+    "line": {
+      "$value": "#38383A"
+    },
+    "line-2": {
+      "$value": "#48484A"
+    },
+    "control": {
+      "$value": "#8E8E93"
+    },
+    "ink": {
+      "$value": "#FFFFFF"
+    },
+    "ink-2": {
+      "$value": "#C7C7CC"
+    },
+    "ink-3": {
+      "$value": "#98989D"
+    },
+    "you-wave": {
+      "$value": "#D1D1D6"
+    },
+    "jade": {
+      "$value": "#5ADBB8"
+    },
+    "jade-wave": {
+      "$value": "#3FD0AA"
+    },
+    "jade-soft": {
+      "$value": "#14332A"
+    },
+    "on-jade": {
+      "$value": "#06231B"
+    },
+    "user-bubble": {
+      "$value": "#232326"
+    }
+  }
+}

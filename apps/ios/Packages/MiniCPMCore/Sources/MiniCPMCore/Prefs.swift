@@ -93,7 +93,7 @@ public struct Prefs: Hashable, Sendable {
     public var coverWhileRecording = false
     public var encrypt = true
 
-    public var showTechInfo = false
+    public var showTechInfo = true
 
     public init() {}
 }

@@ -1,0 +1,113 @@
+{
+  "$description": "暖米色纸面，黛蓝作模型色。适合长时间阅读",
+  "$extensions": {
+    "minicpm": {
+      "name": "宣纸",
+      "nameEn": "Xuan Paper",
+      "order": 3,
+      "surfaces": "theme"
+    }
+  },
+  "light": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#F3EFE6"
+    },
+    "surface": {
+      "$value": "#FAF7F0"
+    },
+    "raised": {
+      "$value": "#FFFDF8"
+    },
+    "sunken": {
+      "$value": "#F0EBE0"
+    },
+    "line": {
+      "$value": "#E6DFD0"
+    },
+    "line-2": {
+      "$value": "#D3CAB7"
+    },
+    "control": {
+      "$value": "#8C8371"
+    },
+    "ink": {
+      "$value": "#241F18"
+    },
+    "ink-2": {
+      "$value": "#4F473B"
+    },
+    "ink-3": {
+      "$value": "#6B6253"
+    },
+    "you-wave": {
+      "$value": "#3A3329"
+    },
+    "jade": {
+      "$value": "#2D5B8C"
+    },
+    "jade-wave": {
+      "$value": "#4A7DB8"
+    },
+    "jade-soft": {
+      "$value": "#E1E9F2"
+    },
+    "on-jade": {
+      "$value": "#FFFFFF"
+    },
+    "user-bubble": {
+      "$value": "#EFE8DA"
+    }
+  },
+  "dark": {
+    "$type": "color",
+    "chrome": {
+      "$value": "#15120F"
+    },
+    "surface": {
+      "$value": "#1A1713"
+    },
+    "raised": {
+      "$value": "#24201A"
+    },
+    "sunken": {
+      "$value": "#12100D"
+    },
+    "line": {
+      "$value": "#332D24"
+    },
+    "line-2": {
+      "$value": "#463E32"
+    },
+    "control": {
+      "$value": "#7A705F"
+    },
+    "ink": {
+      "$value": "#EDE6D9"
+    },
+    "ink-2": {
+      "$value": "#C4BAA8"
+    },
+    "ink-3": {
+      "$value": "#9C927F"
+    },
+    "you-wave": {
+      "$value": "#DDD4C4"
+    },
+    "jade": {
+      "$value": "#8DB8E8"
+    },
+    "jade-wave": {
+      "$value": "#7AA9DE"
+    },
+    "jade-soft": {
+      "$value": "#1D2A3A"
+    },
+    "on-jade": {
+      "$value": "#0E1B2A"
+    },
+    "user-bubble": {
+      "$value": "#2A251E"
+    }
+  }
+}

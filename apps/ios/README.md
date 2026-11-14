@@ -2,7 +2,7 @@
 
 初版骨架：界面和规则是真的，推理、下载和各项系统服务是空实现。最低 iOS 27，用系统控件和 Liquid Glass。架构和推理接口见 [客户端架构](../../docs/11-client-architecture.md)，控件映射见 [平台落地](../../docs/07-platforms.md)。
 
-当前阶段重点完善 Web、iOS、macOS 的 UI/UX 设计与客户端骨架，全球 App Store（首发暂不含中国大陆）为首个原生发布目标。端侧推理后端选型与实验独立收敛在 [`experiments/`](../../experiments/README.md)，双轨分工见 [项目路线](../../docs/14-roadmap.md)。
+当前阶段重点完善 Web、iOS、macOS 的 UI/UX 设计与客户端骨架，全球 App Store（首发暂不含中国大陆）为首个原生发布目标。端侧推理后端选型与实验独立收敛在 [`backend/`](../../backend/README.md)，双轨分工见 [项目路线](../../docs/14-roadmap.md)。
 
 ## 在 Mac 上开始
 
@@ -43,7 +43,8 @@
 | `MiniCPM/Onboarding/` | 欢迎、选模型、下载 |
 | `MiniCPM/Settings/` | 设置全部页面 |
 | `MiniCPM/Shared/Copy.swift` | 把 Core 的类型化状态翻成文案。规则层不写文案 |
-| `MiniCPM/Assets.xcassets/*.colorset` | 由 `node tools/tokens.mjs` 生成，不要手改 |
+| `MiniCPM/Assets.xcassets/*.colorset`、`Themes/` | 由 `node tools/tokens.mjs` 生成，不要手改。`Themes/` 是六套主题的内容层颜色，带增强对比度外观 |
+| `Packages/MiniCPMCore/Sources/MiniCPMCore/ThemeCatalog.generated.swift`、`MiniCPM/Shared/ThemeNames.generated.swift` | 主题注册表和显示名，同样由工具生成。界面还没接主题 |
 
 ## 界面语言
 

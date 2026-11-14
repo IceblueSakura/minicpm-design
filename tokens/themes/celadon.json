@@ -1,0 +1,11 @@
+{
+  "$description": "绿灰纸面，墨与青瓷。现有品牌色",
+  "$extensions": {
+    "minicpm": {
+      "name": "青瓷",
+      "nameEn": "Celadon",
+      "order": 2,
+      "surfaces": "theme"
+    }
+  }
+}

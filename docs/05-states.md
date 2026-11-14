@@ -82,6 +82,31 @@
 | 列表和引用 | 与正文同宽 | `?task=repot` |
 | 产物 | 卡片，打开走系统预览 | `?task=script` |
 
+## 运行参数与测量
+
+规则见 [运行参数与测量](03-structure.md#运行参数与测量)。
+
+| 状态 | 用户看到 | 参数 |
+|---|---|---|
+| 测量行 | 回答工具行末尾一行模型、速度、用时，可点。“显示技术信息”默认打开 | `?task=report` |
+| 运行详情 | 生成速度、模型和规格、首字用时、生成用时、生成长度、内存峰值、运行方式；LES 测量写明后端接入后显示 | `?task=report&run=1` |
+| 运行方式·自定义 | 档位下写“自定义 · 和推荐值相比改了 2 项”和查看 | `?settings=models&params=custom` |
+| 参数·都是推荐值 | 顶部写“都是当前模型的推荐值”，每项标“推荐值” | `?settings=advanced` |
+| 参数·已调整 | 顶部写改了几项和“恢复推荐值”，改过的项数值加重，旁边有推荐值和恢复 | `?settings=advanced&params=custom` |
+| 参数·记忆太长 | 对话记忆长度下面写约需多少、超过多少，改到多少就能放下 | `?settings=advanced&params=custom&device=low` |
+| 参数·模型太大 | 写明模型本身放不下，缩短记忆也没用，换轻量规格或更小的模型 | `?settings=advanced&device=low&model=minicpm-v-4.5` |
+
+## 主题
+
+规则见 [设计语言](02-design-language.md#主题)。原型的主题和外观各自独立，每一条都可以加 `&theme=dark`。
+
+| 状态 | 用户看到 | 参数 |
+|---|---|---|
+| 六套主题 | 对话区纸面、文字色调和模型色随主题变；采集点、琥珀提示、删除按钮不变 | `?task=report&palette=plain`，`palette` 依次是 `plain` `celadon` `xuan` `indigo` `wisteria` `lab` |
+| 增强对比度 | 辅助文字和分隔线加深，模型色朝墨色收 | `?task=report&contrast=more`，可再加 `&palette=` |
+| 主题选择 | 通用设置里外观下面的主题卡片，每张有当前外观的纸面、气泡、模型色缩略 | `?settings=general&palette=xuan` |
+| 不认识的主题 | 显示青瓷，存储里的值不改 | `?task=report&palette=unknown` |
+
 ## 实时会话
 
 话轮状态和打断的完整定义在 [实时会话](04-live-session.md)。

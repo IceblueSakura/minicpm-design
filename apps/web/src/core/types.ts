@@ -58,7 +58,7 @@ export const DEFAULT_PREFS: Prefs = {
   hd: false, idleRelease: '15', thermal: true,
   offlineMode: false, webSearch: 'ask', updates: true, analytics: false, crash: 'ask',
   keepHistory: true, tempDefault: false, retention: 'never', memory: true,
-  tech: false,
+  tech: true,
 };
 
 export type PresetId = 'saver' | 'balanced' | 'detail' | 'custom';

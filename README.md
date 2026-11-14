@@ -6,8 +6,8 @@
 
 现阶段仍是 UI/UX 设计与客户端骨架，计算后端尚未选定或接入。工作区采用**“UI/UX 主线 + Backend 独立实验”双轨解耦**（见 [项目路线与双轨分工](docs/14-roadmap.md)）：
 
-- **UI/UX 与客户端主线（当前重心）：** 持续完善 Web、Desktop、Mobile 三端 UI/UX 设计与 `apps/` 客户端骨架，现阶段重点推进 **Web、iOS、macOS**。
-- **Backend 调研与实验轨道（独立隔离）：** 推理架构对比、Core AI 转换与 LES 判别实验统一收敛在 [`experiments/`](experiments/README.md)，在选型定案前不侵入主设计文档与客户端代码。首发目标仍为全球 App Store（暂不含中国大陆）。
+- **UI/UX 与客户端主线（当前重心）：** 持续完善原生客户端 UI/UX 设计与 `apps/` 客户端骨架，下一步只做 **macOS、iOS App**，按能上架 App Store 来规划；Android、Windows、Linux、Web 暂停（见 [决策记录](docs/10-decisions.md) 与 [WebGPU 调研评估](backend/webgpu-browser-assessment.md)），`index.html` 网页原型继续用于验证结构、状态和文案。
+- **Backend 调研与实验轨道（独立隔离）：** 推理架构对比、Core AI 转换与 LES 判别实验统一收敛在 [`backend/`](backend/README.md)，在选型定案前不侵入主设计文档与客户端代码。首发目标仍为全球 App Store（暂不含中国大陆）。
 
 文案仍是草案，网页继续用于验证交互。客户端若装到真机，只用个人设备的免费签名，不注册付费开发者计划，不用 TestFlight。见 [开发期合规](docs/12-compliance.md)。
 
@@ -18,7 +18,7 @@
 | 操作产品 | [`index.html`](index.html) |
 | 一次看完所有状态 | [`states.html`](states.html) |
 | 理解为什么这样设计 | [设计思想](docs/01-philosophy.md) |
-| 改颜色 | [`tokens/`](tokens/)，然后运行 `node tools/tokens.mjs` |
+| 改颜色或主题 | [`tokens/`](tokens/)、[`tokens/themes/`](tokens/themes/)，然后运行 `node tools/tokens.mjs` |
 | 交给开发 | [平台落地](docs/07-platforms.md#交接方式) |
 | 看还有什么没定 | [决策记录](docs/10-decisions.md) |
 | 确认当前目标和双轨分工 | [项目路线与双轨分工](docs/14-roadmap.md) |
@@ -27,7 +27,7 @@
 | 运行真实 Web 客户端 | [`apps/web`](apps/web/README.md) |
 | 在 Mac 上继续 iOS 客户端 | [`apps/ios`](apps/ios/README.md) |
 | 接入推理后端 | [客户端架构](docs/11-client-architecture.md#推理接口) |
-| 查看独立后端调研与实验 | [`experiments/`](experiments/README.md) |
+| 查看独立后端调研与实验 | [`backend/`](backend/README.md) |
 
 用浏览器直接打开 HTML 文件，不需要服务器。
 
@@ -48,9 +48,9 @@
 | [11 客户端架构](docs/11-client-architecture.md) | `apps/` 的结构、推理接口、空实现 |
 | [12 开发期合规](docs/12-compliance.md) | 按全球发布设计的要求、在线备用同意、个人设备测试限制 |
 | [13 首次发布与商店政策](docs/13-release-and-store-policy.md) | 发布前清单、个人与组织账号、国区（待扩展调研 / 待定） |
-| [14 项目路线与双轨分工](docs/14-roadmap.md) | 项目目标、UI/UX 三端演进主线与 Backend 独立实验的双轨边界 |
+| [14 项目路线与双轨分工](docs/14-roadmap.md) | 项目目标、macOS / iOS 主线与 Backend 独立实验的双轨边界 |
 
-后端推理架构对比、Core AI 转换实验与端侧 MoE 调研已独立归入 [`experiments/README.md`](experiments/README.md)。
+后端推理架构对比、Core AI 转换实验与端侧 MoE 调研已独立归入 [`backend/README.md`](backend/README.md)。
 
 ## 原型怎么用
 
@@ -64,7 +64,7 @@
 
 1. 改之前先看这个改动属于产品层还是表现层，见 [设计语言](docs/02-design-language.md)。
 2. 原型只保留一份，直接改 `index.html`，回退用 git 历史。推送到 `main` 后，在 Actions 里手动运行 Pages 发布（`gh workflow run pages.yml --ref main`），[线上页面](https://icebluesakura.github.io/minicpm-design/)才会更新。
-3. 颜色改 `tokens/*.json`，运行 `node tools/tokens.mjs` 同步到原型并检查对比度。
+3. 颜色改 `tokens/*.json`，主题改 `tokens/themes/*.json`，运行 `node tools/tokens.mjs`。它先检查对比度和色相，通过后才同步到原型和 `apps/`。
 4. 新增状态时，同时加参数、加到 `states.html`、加到状态矩阵。
 5. 决定了什么就记到决策记录。
 
@@ -75,8 +75,8 @@
 | `index.html` | 当前原型 |
 | `states.html` | 状态总览 |
 | `tokens/` | 颜色、尺寸、动效、实时常量 |
-| `tools/tokens.mjs` | 同步 token 到原型和 `apps/`，检查对比度 |
+| `tools/tokens.mjs` | 检查对比度和主题规则，通过后同步 token 到原型和 `apps/` |
 | `docs/` | 设计文档 |
 | `apps/` | 真实客户端：Web 和 iOS |
-| `experiments/` | 独立后端调研、架构对比与隔离实验脚本（不接正式后端，见 [`experiments/README.md`](experiments/README.md)） |
+| `backend/` | 独立后端调研、架构对比与隔离实验脚本（不接正式后端，见 [`backend/README.md`](backend/README.md)） |
 | `refs/` | 上游参考仓库（submodule），只读，说明见 [`refs/README.md`](refs/README.md) |
